@@ -3,12 +3,12 @@ from materials_components import solar_panel, battery, fuel_cell
 
 
 class power_storage:
-    def __init__(self,power_req,latitude, days_from_solstice,DOD):                     # Initialise known/computed values and constants
-        daylight_analysis = solar_incidence(latitude,days_from_solstice)
+    def __init__(self, power_req, latitude, days_from_solstice, DOD):                     # Initialise known/computed values and constants
+        daylight_analysis = solar_incidence(latitude, days_from_solstice)
         daylight_analysis.daylight_cycle()
         self.power_req = power_req
         self.daylight_time = daylight_analysis.daylight_time
-        self.DOD = DOD
+        self.DOD = DOD # depth of discharge
         bat = battery()
         self.massEnergy = bat.massEnergy                     # Mass energy density [J/kg]
         self.volumeEnergy = bat.volumeEnergy             # Volumetric energy density [J/m^3]
@@ -20,7 +20,7 @@ class power_storage:
         self.volume = energy_req/self.volumeEnergy              # Volume of Energy Storage System
 
 class power_generation:
-    def __init__(self,power_req,latitude, days_from_solstice):                     # Initialise known/computed values and constants
+    def __init__(self, power_req, latitude, days_from_solstice):                     # Initialise known/computed values and constants
         daylight_analysis = solar_incidence(latitude,days_from_solstice)
         daylight_analysis.daylight_cycle()
         self.power_req = power_req
@@ -33,40 +33,61 @@ class power_generation:
         self.powLimM = solar.powLimM            # Power limit per kg [W/kg]
 
     def compute_weight_surface(self):       # Compute weight and surface area required for power generation components
-        avg_incidence = np.pi/2 - self.avg_incidence
-        power_per_m = np.maximum(250.0,self.efficiency*1378.0*np.cos(avg_incidence))
-        self.area = self.power_req/power_per_m
-        self.mass = self.area*self.surfRho
+        avg_incidence = np.pi/2 - self.avg_incidence # converting to incidence angle wrt normal
+        power_per_m = np.minimum(self.powLimS,self.efficiency*1378.0*np.cos(avg_incidence))
+        self.daylight_power_req = self.power_req * 86400 / self.daylight_time # watts
+        self.area = self.daylight_power_req/power_per_m # m^2
+        self.mass = self.area*self.surfRho # kg
 
 class solar_incidence:
     def __init__(self, latitude, days_from_solstice = 0):                     # Initialise known/computed values and constants
-        self.axial_tilt = 23.43585/180*np.pi      # Solar Inclination Winter Solstice in Degrees
-        self.lat = latitude/180*np.pi             # Latitude
+        self.axial_tilt = 23.43585/180*np.pi      # Solar Inclination Winter Solstice in Radians
+        self.lat = latitude/180*np.pi             # Latitude in Radians
         self.day = days_from_solstice   # Days away from winter solstice
 
 
-    def daylight_cycle(self):               # Compute energy generated during daylight hours based on given parameters
-        self.eq_inclination = self.axial_tilt * np.sin(2*np.pi/365*(274+self.day))
-        self.max_incidence = np.pi/2 + self.eq_inclination - self.lat
-        self.avg_incidence = self.max_incidence*2/np.pi         
+    def daylight_cycle(self):               # Compute incidence and daylight hours based on given parameters
+        self.eq_inclination = self.axial_tilt * np.sin(2*np.pi/365*(274+self.day)) #radians
+        self.max_incidence = np.pi/2 + self.eq_inclination - self.lat #max incidence angle in radians
+        self.avg_incidence = self.max_incidence*2/np.pi         # radians
         self.daylight_time = 3600*2/15*180/np.pi*np.arccos(-np.tan(self.lat)*np.tan(self.eq_inclination))   # in seconds
         self.night_time = 86400-self.daylight_time                                                                              # in seconds
 
-power_req = 1400 # watts
-latitude = 60 # deg
+class power_required:
+    def __init__(self, mass=120, LD=40, prop_eff=0.8,V_cruise=25, payload=100,payload_peak=150, payload_frac=0.1,margin=300):
+        self.output = mass*9.81/40*V_cruise/prop_eff + payload + payload_peak*payload_frac + margin
+
+
+mass = 120 # kg
+LD = 40 # L/D ratio
+prop_eff = 0.8 # [-]
+V_cruise = 25 # m/s
+payload = 100 # W
+payload_peak = 150 # W
+payload_frac = 0.1 # [-]
+margin = 300 # W
+
+power_req = power_required(mass,LD,prop_eff,V_cruise,payload,payload_peak,payload_frac,margin)
+latitude = 50 # deg
 days_from_solstice = 0 # days
-DoD = 0.8
+DoD = 0.8 # depth of discharge
 
 solar_properties = solar_incidence(latitude,days_from_solstice)
 solar_properties.daylight_cycle()
 
-energy_storage = power_storage(power_req,latitude,days_from_solstice,DoD)
+energy_storage = power_storage(power_req.output,latitude,days_from_solstice,DoD)
 energy_storage.compute_weight_volume()
 
-energy_generation = power_generation(power_req,latitude,days_from_solstice)
+energy_generation = power_generation(power_req.output,latitude,days_from_solstice)
 energy_generation.compute_weight_surface()
 
-print(f'\n At a latitude of {latitude} degrees: \n' + 
-      f'Max Solar Incidence Angle: {solar_properties.max_incidence/np.pi*180:.2f} deg' +
-      f'Avg Solar Incidence Angle: {solar_properties.avg_incidence/np.pi*180:.2f} deg' +
-      f'Daylight Time: {}')
+print(f'\nAt a latitude of {latitude} degrees: \n' + 
+      f'Max Solar Incidence Angle: {solar_properties.max_incidence/np.pi*180:.2f} deg \n' +
+      f'Avg Solar Incidence Angle: {solar_properties.avg_incidence/np.pi*180:.2f} deg \n' +
+      f'Daylight Time: {solar_properties.daylight_time/3600:.2f} hours \n' +
+      f'Power Required: {power_req.output:.2f} W \n' +
+      f'Battery Mass: {energy_storage.mass:.2f} kg \n' +
+      f'Battery Volume: {energy_storage.volume:.3f} m^3 \n' +
+      f'Solar Panel Size: {energy_generation.area:.2f} m^2 \n' +
+      f'Solar Panel Mass: {energy_generation.mass:.2f} kg \n'+
+      f'Remaining Mass: {mass - 20 - energy_generation.mass - energy_storage.mass:.2f} kg \n')
