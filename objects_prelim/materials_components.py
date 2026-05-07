@@ -1,9 +1,9 @@
 import numpy as np
 
-
+'''
 class material:
     def __init__(self):                 # Provide method to define materials with certain parameters
-
+'''
 
 
 class solar_panel:
