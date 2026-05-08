@@ -1,7 +1,7 @@
 import numpy as np
-from objects_prelim.Old_Power_Stuff.materials_components import battery, solar_panel, fuel_cell
+from Old.objects_prelim.Old_Power_Stuff.materials_components import battery, solar_panel, fuel_cell
 from objects_prelim.aero_parameters import wing_par
-from objects_prelim.Old_Power_Stuff.power_sizing import power_storage, power_generation, solar_incidence, power_required
+from Old.objects_prelim.Old_Power_Stuff.power_sizing import power_storage, power_generation, solar_incidence, power_required
 
 
 # Initialise known parameters:

@@ -1,5 +1,5 @@
 import numpy as np
-from objects.class1_est import struct_groups            # Import estimations of structural groups
+from Old.objects.class1_est import struct_groups            # Import estimations of structural groups
 from objects.battery_sizing import prelim_battery       # Import preliminary battery sizing code
 
 

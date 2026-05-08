@@ -1,7 +1,7 @@
 import numpy as np
-from objects.flight_performance import mission_profile                      # Import lift struct. loading and T/W methods and values
-from objects.reference_geometries import foil, fuselage, empennage          # Import reference geometries
-from objects.stab_ctrl import stab_ctrl                                     # Import empennage sizing methods and values
+from Old.objects.flight_performance import mission_profile                      # Import lift struct. loading and T/W methods and values
+from Old.objects.reference_geometries import foil, fuselage, empennage          # Import reference geometries
+from Old.objects.stab_ctrl import stab_ctrl                                     # Import empennage sizing methods and values
 
 
 class class2_weights:

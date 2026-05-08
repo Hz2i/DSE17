@@ -1,6 +1,6 @@
 import numpy as np
-from objects.internal_loads import internal_loading         # Import loading data and methods
-from objects.materials_components import material           # Import material data
+from Old.objects.internal_loads import internal_loading         # Import loading data and methods
+from Old.objects.materials_components import material           # Import material data
 
 
 class stresses:

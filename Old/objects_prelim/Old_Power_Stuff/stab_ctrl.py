@@ -1,5 +1,5 @@
 import numpy as np
-from objects.cg_computation import cg_values        # Import necessary CG data
+from Old.objects.cg_computation import cg_values        # Import necessary CG data
 
 
 class stab_ctrl:

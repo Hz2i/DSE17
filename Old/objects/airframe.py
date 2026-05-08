@@ -1,5 +1,5 @@
 import numpy as np
-from aero_computations import wing_par
+from Old.objects.aero_computations import wing_par
 
 
 class airframe:

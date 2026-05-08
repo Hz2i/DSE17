@@ -1,5 +1,5 @@
 import numpy as np
-from objects.reference_geometries import foil, fuselage, empennage      # Import geometrical data
+from Old.objects.reference_geometries import foil, fuselage, empennage      # Import geometrical data
 
 
 class internal_loading:

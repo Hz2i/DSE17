@@ -1,5 +1,5 @@
 import numpy as np
-from objects.reference_geometries import foil, fuselage, empennage          # Import geometrical parameters
+from Old.objects.reference_geometries import foil, fuselage, empennage          # Import geometrical parameters
 
 
 class wing_par:
