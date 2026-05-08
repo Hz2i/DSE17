@@ -3,7 +3,7 @@ from aero_computations import wing_par
 
 
 class airframe:
-    def __init__(self, wing, empennage, fuselage):
+    def __init__(self, wing, empennage, fuselage): #Input Classes for wing, empennage and fuselage
         self.wing = wing
         self.empennage = empennage
         self.fuselage = fuselage
