@@ -1,5 +1,5 @@
 import numpy as np
-from materials_components import solar_panel, battery, fuel_cell
+from objects_prelim.materials_components import solar_panel, battery, fuel_cell
 
 
 class power_storage:
@@ -46,9 +46,10 @@ class solar_incidence:
         self.daylight_time = 3600*2/15*180/np.pi*np.arccos(-np.tan(self.lat)*np.tan(self.eq_inclination))   # in seconds
         self.night_time = 86400-self.daylight_time                                                                              # in seconds
 
-class power_required:
-    def __init__(self, mass=120, LD=40, prop_eff=0.8,V_cruise=25, payload=100,payload_peak=150, payload_frac=0.1,margin=300):
-        self.output = mass*9.81/LD*V_cruise/prop_eff + payload + payload_peak*payload_frac + margin
+
+def power_required(self, mass=120, LD=40, prop_eff=0.8,V_cruise=25, payload=100,payload_peak=150, payload_frac=0.1,margin=300):
+    output = mass*9.81/LD*V_cruise/prop_eff + payload + payload_peak*payload_frac + margin
+    return output
 
 
 mass = 120 # kg
@@ -71,10 +72,10 @@ DoD = 0.8 # depth of discharge
 solar_properties = solar_incidence(latitude,days_from_solstice)
 solar_properties.daylight_cycle()
 
-energy_storage = power_storage(power_req.output,latitude,days_from_solstice,DoD,fuel_cell())
+energy_storage = power_storage(power_req,latitude,days_from_solstice,DoD,fuel_cell())
 energy_storage.compute_weight_volume()
 
-energy_generation = power_generation(power_req.output,latitude,days_from_solstice,solar_c)
+energy_generation = power_generation(power_req,latitude,days_from_solstice,solar_c)
 energy_generation.compute_weight_surface()
 
 print(f'\nAt a latitude of {latitude} degrees: \n' + 
