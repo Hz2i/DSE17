@@ -1,5 +1,5 @@
 import numpy as np
-from objects_prelim.materials_components import solar_panel, battery, fuel_cell
+from objects_prelim.Old_Power_Stuff.materials_components import solar_panel, battery, fuel_cell
 
 
 class power_storage:
