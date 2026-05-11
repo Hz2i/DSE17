@@ -42,7 +42,7 @@ gradient_damping = 0.05
 iteration = 0
 
 while error > 1e-3 and iterations < 1e3:
-    AHAPS = Aircraft(MTOW_guess=MTOW + dM, TAS=TAS_initial, wing=wing_geo, fus=fus_geo, emp=emp_geo)
+    AHAPS = Aircraft(MTOW_guess=MTOW+dM, TAS=TAS_initial, wing=wing_geo, fus=fus_geo, emp=emp_geo)
     AHAPS.compute_motor_pow(h=h_cruise)
     AHAPS.compute_total_pow()
 
@@ -55,6 +55,7 @@ while error > 1e-3 and iterations < 1e3:
     grad = (error_current - error_vec[0])/dM
     error_vec = np.roll(error_vec, 1)
     error_vec[0] = error_current
+    error = np.linalg.norm(error_vec)
 
     MTOW -= gradient_damping * error_current
 
