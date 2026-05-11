@@ -35,4 +35,4 @@ class fuselage:
 class empennage:
     def __init__(self):
         self.Sh = 0.0           # Currently initialised with 0
-        self.m = 0.0           # Currently initialised with 0
+        self.m = 0.0            # Currently initialised with 0
