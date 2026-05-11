@@ -5,6 +5,5 @@ class MatchingDiagram:
         pass
     def compute_matching_diagram_functions(self):          # Compute the necessary functions for the matching diagram (T/W, V, etc.)
         return None
-
     def plot_matching_diagram(self):                       # Plot the matching diagram and choose design point
         return None
