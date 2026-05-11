@@ -3,18 +3,26 @@ from Objects.Characteristics.Components_Materials import solar_panel, battery, f
 
 
 class power_storage:
-    def __init__(self, power_req, latitude, days_from_solstice, DOD, battery_input=battery()):                     # Initialise known/computed values and constants
+    def __init__(self, power_req, latitude, days_from_solstice, DOD, batteries_used=True, f_c_efficiency=0.75, battery_input=battery(), fuel_cell_input=fuel_cell()):                     # Initialise known/computed values and constants
         daylight_analysis = solar_incidence(latitude, days_from_solstice)
         daylight_analysis.daylight_cycle()
         self.power_req = power_req
         self.daylight_time = daylight_analysis.daylight_time
         self.DOD = DOD # depth of discharge
+        self.batteries_used = batteries_used
         self.bat = battery_input
+        self.f_c = fuel_cell_input
+        self.f_c_efficiency = f_c_efficiency
 
     def compute_weight_volume(self):        # Compute weight and volume of power storage components
-        energy_req = self.power_req*(86400-self.daylight_time)/self.DOD
-        self.mass = energy_req/self.bat.massEnergy                  # Mass of Energy Storage System
-        self.volume = energy_req/self.bat.volumeEnergy              # Volume of Energy Storage System
+        if self.batteries_used:
+            energy_req = self.power_req*(86400-self.daylight_time)/self.DOD
+            self.mass = energy_req/self.bat.massEnergy                  # Mass of Energy Storage System
+            self.volume = energy_req/self.bat.volumeEnergy              # Volume of Energy Storage System
+        else:
+            energy_req = self.power_req*(86400-self.daylight_time)/self.f_c_efficiency
+            self.mass = energy_req/self.f_c.massEnergy                  # Mass of Energy Storage System
+            self.volume = energy_req/self.f_c.volumeEnergy              # Volume of Energy Storage System
 
 class power_generation:
     def __init__(self, power_req, latitude, days_from_solstice, solar_panel_input=solar_panel()):                     # Initialise known/computed values and constants
