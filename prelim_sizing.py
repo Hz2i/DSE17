@@ -10,7 +10,7 @@ from Objects.Constants import Constants
 from Objects.AircraftGeneral.Aircraft_new import Aircraft
 
 
-OEM_frac = 0.3
+dryM_frac_target = 0.3
 MTOW_initial = 120.0
 TAS_initial = 25.0
 h_cruise = 18000.0
@@ -35,13 +35,34 @@ emp_geo = empennage()
 error = 1.0e5
 error_vec = np.ones(5)
 error_vec *= error
+error = np.linalg.norm(error_vec)
+MTOW = MTOW_initial
+dM = 0.1
+gradient_damping = 0.05
+iteration = 0
 
-AHAPS = Aircraft(MTOW_guess=MTOW_initial, TAS=TAS_initial, wing=wing_geo, fus=fus_geo, emp=emp_geo)
-AHAPS.compute_motor_pow(h=h_cruise)
-AHAPS.compute_total_pow()
+while error > 1e-3 and iterations < 1e3:
+    AHAPS = Aircraft(MTOW_guess=MTOW + dM, TAS=TAS_initial, wing=wing_geo, fus=fus_geo, emp=emp_geo)
+    AHAPS.compute_motor_pow(h=h_cruise)
+    AHAPS.compute_total_pow()
 
-pow_storage_sys = power_storage(AHAPS.Pow_req, latitude=lat, days_from_solstice=day_margin, DOD=DoD)
-pow_gen = power_generation(AHAPS.Pow_req, latitude=lat, days_from_solstice=day_margin)
+    pow_storage_sys = power_storage(AHAPS.Pow_req, latitude=lat, days_from_solstice=day_margin, DOD=DoD)
+    pow_gen_sys = power_generation(AHAPS.Pow_req, latitude=lat, days_from_solstice=day_margin)
+
+    dryM_frac = (MTOW + dM - pow_storage_sys.mass - pow_gen.mass)/(MTOW + dM)
+    error_current = (dryM_frac - dryM_frac_target)/dryM_frac_target
+
+    grad = (error_current - error_vec[0])/dM
+    error_vec = np.roll(error_vec, 1)
+    error_vec[0] = error_current
+
+    MTOW -= gradient_damping * error_current
+
+    iteration += 1
+    print("Iteration:", iteration)
+    print("current error:", error_current)
+    print("___________________________________")
+
 
 
 
