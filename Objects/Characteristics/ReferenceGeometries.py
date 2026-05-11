@@ -1,13 +1,20 @@
 import numpy as np
 
 
-class foil:
+class airfoil_e334: #FLYING WING
     def __init__(self):                         # Study literature and add foil parameters, if applicable
+        self.clmax = 1.4
+        self.max_thickness = 0.119
+        self.thickness_pos = 0.303
+        self.max_camber = 0.04
+        self.camber_pos = 0.254
 
 
-class fuselage:                                 # Study literature and add fuselage parameters, if applicable
-    def __init__(self):
-
-
-class empennage:                                # Study literature and add empennage parameters, if applicable
-    def __init__(self):
+class airfoil_e387: #TRADITIONAL
+    def __init__(self):                         # Study literature and add foil parameters, if applicable
+        self.clmax = 1.3
+        self.max_thickness = 0.091
+        self.thickness_pos = 0.311
+        self.max_camber = 0.032
+        self.camber_pos = 0.448
+         
