@@ -1,6 +1,6 @@
 import numpy as np
-from objects.class1_est import struct_groups            # Import preliminary weights
-from objects.flight_performance import mission_profile  # Import matching diagram methods and values (mainly acquiring T/W)
+from Old.objects.class1_est import struct_groups            # Import preliminary weights
+from Old.objects.flight_performance import mission_profile  # Import matching diagram methods and values (mainly acquiring T/W)
 
 
 class motor:

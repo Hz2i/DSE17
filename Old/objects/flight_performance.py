@@ -1,5 +1,5 @@
 import numpy as np
-from objects.class1_est import struct_groups                # Import weight fractions and other such preliminary values
+from Old.objects.class1_est import struct_groups                # Import weight fractions and other such preliminary values
 from objects.aero_parameters import wing_par, drag_par      # Import aerodynamic parameters
 
 

@@ -1,7 +1,7 @@
 import numpy as np
 from objects.motor_sizing import motor
 from objects.comms import link_budget
-from objects.materials_components import solar_panel, battery, fuel_cell
+from Old.objects.materials_components import solar_panel, battery, fuel_cell
 
 
 class power_storage:
