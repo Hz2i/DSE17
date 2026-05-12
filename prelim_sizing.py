@@ -7,7 +7,7 @@ from Objects.Characteristics.PropulsionSystem import prop_eff_height
 from Objects.Characteristics.ReferenceGeometries import foil, fuselage, empennage
 from Objects.Constants import Constants
 
-from Objects.AircraftGeneral.Aircraft_new import Aircraft
+from Objects.AircraftGeneral.Aircraft import Aircraft
 
 
 dryM_frac_target = 0.3
