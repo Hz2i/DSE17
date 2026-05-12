@@ -22,7 +22,7 @@ class Endurance:
     def P(self,A,h,lat,init_days_from_solstice,time_passed,starting_timeofday=0):
         days_passed = (time_passed+starting_timeofday) // (24*60*60)
         days_from_solstice = init_days_from_solstice + days_passed
-        time_of_day = time_passed - days_passed * 24*60*60
+        time_of_day = time_passed + starting_timeofday - days_passed * 24*60*60
 
         daylight_analysis = solar_incidence(lat,days_from_solstice)
         daylight_analysis.daylight_cycle()
@@ -51,7 +51,6 @@ class Endurance:
         Energy = self.init_bat_capacity
         iteration = 0
         time_passed = 0
-        endurance_limit = 86400 * 30
 
         while Energy > 0 and time_passed < endurance_limit:
             iteration += 1
@@ -65,12 +64,11 @@ class Endurance:
                 Energy = self.init_bat_capacity * self.reduced_capacity_frac(cycle)
             else:
                 continue
-        
-        time_passed += self.starting_timeofday
+    
 
         if time_passed < endurance_limit:
             print(f'Ran out of battery after {time_passed//86400} days and {(time_passed - (time_passed//86400) * 86400)/(3600):.2f} hours.')
-        if time_passed > endurance_limit:
+        if time_passed >= endurance_limit:
             print(f'The battery remained sufficiently charged for {time_passed//86400} days and {(time_passed - (time_passed//86400) * 86400)/(3600):.2f} hours.')
 
         return time_passed
