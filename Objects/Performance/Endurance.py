@@ -5,7 +5,7 @@ from Objects.Characteristics.Components_Materials import solar_panel, battery, f
 from Objects.Constants import Constants
 
 class Endurance:
-    def __init__(self,power_consumption, init_bat_capacity,S=35.0,latitude = 40, height = 18000, startingtimeofday = 0,solar_panel = solar_panel(), battery= battery(),days_from_solstice_start = 0):                                 # Initialise with required values (add inputs after self, as per necessity)
+    def __init__(self,power_consumption, init_bat_capacity,init_bat_charge=100,S=35.0,latitude = 40, height = 18000, startingtimeofday = 0,solar_panel = solar_panel(), battery= battery(),days_from_solstice_start = 0):                                 # Initialise with required values (add inputs after self, as per necessity)
         self.init_bat_capacity = init_bat_capacity
         self.cycle_limit_nr = battery.cycle_limit_nr
         self.cycle_limit_degradation = battery.cycle_limit_degradation
@@ -15,6 +15,7 @@ class Endurance:
         self.lat = latitude
         self.h = height
         self.starting_timeofday = startingtimeofday
+        self.init_bat_charge = init_bat_charge
 
         self.S = S
 
@@ -48,7 +49,7 @@ class Endurance:
             return (1-nr_of_cycles/self.cycle_limit_nr*self.cycle_limit_degradation)
 
     def compute_endurance(self,time_step=20,endurance_limit=86400*30):
-        Energy = self.init_bat_capacity
+        Energy = self.init_bat_capacity * self.init_bat_charge/100
         iteration = 0
         time_passed = 0
 
@@ -78,7 +79,7 @@ class Endurance:
     def plot_endurance(self,total_time, time_step):
         t = np.arange(0,total_time+time_step,time_step)
         Energy = np.zeros_like(t)
-        Energy[0] = self.init_bat_capacity
+        Energy[0] = self.init_bat_capacity * self.init_bat_charge/100
 
         for i in range(0,len(t)-1):
             Energy[i+1] = Energy[i] - self.power_consumption*time_step + self.P(self.S,self.h,self.lat,self.days_from_solstice_start,t[i],self.starting_timeofday)*time_step
