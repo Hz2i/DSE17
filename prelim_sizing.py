@@ -34,7 +34,7 @@ emp_geo = empennage()
 
 
 # Compute intial error:
-AHAPS = Aircraft(MTOW_guess=MTOW, TAS=TAS_initial, wing=wing_geo, fus=fus_geo, emp=emp_geo)
+AHAPS = Aircraft(MTOW_guess=MTOW, TAS=TAS_initial, gamma=gamma, wing=wing_geo, fus=fus_geo, emp=emp_geo)
 AHAPS.compute_motor_pow(h=h_cruise)
 AHAPS.compute_total_pow()
 
