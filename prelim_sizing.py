@@ -31,8 +31,16 @@ emp_geo = empennage()
 # gen_ctrl = ControlSystem()
 # gen_payload = PayloadSystem()
 
+AHAPS = Aircraft(MTOW_guess=MTOW, TAS=TAS_initial, wing=wing_geo, fus=fus_geo, emp=emp_geo)
+AHAPS.compute_motor_pow(h=h_cruise)
+AHAPS.compute_total_pow()
 
-error = 1.0e5
+pow_storage_sys = power_storage(AHAPS.Pow_req, latitude=lat, days_from_solstice=day_margin, DOD=DoD)
+pow_gen_sys = power_generation(AHAPS.Pow_req, latitude=lat, days_from_solstice=day_margin)
+
+dryM_frac = (MTOW - pow_storage_sys.mass - pow_gen.mass)/(MTOW)
+
+error = (dryM_frac - dryM_frac_target)/dryM_frac_target
 error_vec = np.ones(5)
 error_vec *= error
 error = np.linalg.norm(error_vec)
@@ -63,8 +71,6 @@ while error > 1e-3 and iterations < 1e3:
     print("Iteration:", iteration)
     print("current error:", error_current)
     print("___________________________________")
-
-
 
 
 # solar_conditions = solar_incidence(latitude=lat, days_from_solstice=day_margin)

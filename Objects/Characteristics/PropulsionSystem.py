@@ -31,7 +31,7 @@ class PropulsionSystem:
         #Power Required
         self.power_required = self.Calc_Power_Req(thrust=10.0)
 
-    def calc_motor_eff(self, motor_temp, rpm, torque, plotdata):                          # Compute all relevant characteristics of the propulsion system
+    def calc_motor_eff(self, motor_temp, rpm, torque, plotdata=False):                          # Compute all relevant characteristics of the propulsion system
         def convex_hull(points):
             pts = np.unique(points, axis=0)
             if len(pts) <= 2:

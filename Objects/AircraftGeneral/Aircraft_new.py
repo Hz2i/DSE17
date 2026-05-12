@@ -2,7 +2,7 @@ import numpy as np
 from Objects.Characteristics.Airframe import wing, fuselage, empennage
 from Objects.Characteristics.GeneralSubsystems import ComputerSystem, CommunicationSystem, FlightConditionsSystem, PayloadSystem, ControlSystem
 from Objects.Characteristics.PowerSystem import power_storage, solar
-from Objects.Characteristics.PropulsionSystem import prop_eff_height
+from Objects.Characteristics.PropulsionSystem import PropulsionSystem
 from Objects.Constants import Constants
 
 
@@ -37,3 +37,9 @@ class Aircraft:
 
     def compute_total_pow(self):
         self.Pow_req = self.Pow_motor + self.compute_subsys_pow()
+
+    def compute_total_mass(self):
+        pass
+
+    def compute_total_volume(self):
+        pass
