@@ -31,9 +31,9 @@ class Aircraft:
         self.Pow_prop = MTOW_guess*Constants.g*TAS / self.wing.CL_CD
 
     def update_flight_conditions(self, TAS_new=20.0, h_new=18000.0, gamma_new):
-        self.TAS = TAS
-        self.h = h
-        self.gamma = gamma
+        self.TAS = TAS_new
+        self.h = h_new
+        self.gamma = gamma_new
         self.T_req = MTOW_guess*Constants.g/self.wing.CL_CD + MTOW_guess*Constants.g * np.sin(np.radians(gamma))
         self.prop = PropulsionSystem(T=T_req, gamma=self.gamma, velocity=self.TAS, alt=self.h)
 
