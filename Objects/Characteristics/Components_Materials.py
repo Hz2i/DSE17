@@ -7,7 +7,7 @@ class material:
 
 
 class solar_panel:
-    def __init__(self, eff=0.31, rhoS=0.25, powS=250.0, powM=1000.0):                 # Provide method to define solar panel types with certain parameters
+    def __init__(self, eff=0.20, rhoS=0.665, powS=200.0, powM=1000.0):                 # Provide method to define solar panel types with certain parameters
         self.efficiency = eff           # Efficiency
         self.surfRho = rhoS             # Surface mass density [kg/m^2]
         self.powLimS = powS             # Power limit per m^2 [W/m^2]
