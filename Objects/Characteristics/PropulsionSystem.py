@@ -8,30 +8,45 @@ import pandas as pd
 
 
 class PropulsionSystem:
-    def __init__(self, plotdata, thrust=0, velocity=0, alt=0, rpm=0, torque=0, motor_temp=0):                                     # Initialise with proper values
-        self.mass = 2.0  # kg, estimated mass of the propulsion system
-        self.volume = None
-        self.x_pos = None
-        self.T = thrust  # Thrust, to be calculated based on motor and propeller characteristics
+    def __init__(self, plotdata, gamma=0, W=0, velocity=0, alt=0, rpm=0, torque=0, motor_temp=0, CD=0, S=0, propeller_diameter=0.2):                                     # Initialise with proper values
+        self.mass = None  # kg, estimated mass of the propulsion system
+        self.alt = alt  # Altitude in meters
+        self.velocity = velocity  # m/s, cruise airspeed
+        self.CD = CD  # Drag coefficient
+        self.S = S  # m², reference area for drag calculation
+        self.gamma = gamma  # degrees, flight path angle
+        self.W = W  # N, weight of the aircraft
+        
+        
+        self.T = self.calc_Thrust()  # Thrust, to be calculated based on motor and propeller characteristics
+
+        
         #Motor characteristics
         self.motor_temp = motor_temp
         
+        # self.q = 0  # Dynamic pressure, to be calculated based on altitude and velocity
         # Propeller characteristics for a HAPS-scale low-speed propeller
-        self.propeller_diameter = 2.5  # meters
+        self.propeller_diameter = propeller_diameter  # meters
         self.propeller_area = np.pi * (self.propeller_diameter / 2) ** 2
         self.velocity = velocity  # m/s, cruise airspeed
-
+        self.lambda_adv = None  # Advance ratio, to be calculated based on velocity and propeller characteristics
         
         #Efficiencies
+        self.rpm_out = rpm  # Initialize RPM output (assuming direct drive, no gearbox)
         self.motor_eff = self.calc_motor_eff(motor_temp, rpm, torque, plotdata)
         self.gearbox_eff = self.calc_gearbox_eff()
-        self.propeller_eff = self.calc_propeller_eff(alt, rpm, torque)
+        self.propeller_eff = self.calc_propeller_eff()
         self.overall_eff = self.calc_overall_eff()
 
         #Power Required
-        self.power_required = self.Calc_Power_Req(thrust=10.0)
+        self.power_required = self.Calc_Power_Req()
 
-    def calc_motor_eff(self, motor_temp, rpm, torque, plotdata=False):                          # Compute all relevant characteristics of the propulsion system
+    def calc_Thrust(self):
+        D = 0.5 * am.Atmosphere(self.alt).density * self.velocity**2 * self.CD * self.S  # Drag force
+        T = D + self.W*np.sin(np.radians(self.gamma))  # Thrust required to balance drag and weight component along flight path
+        return T
+    
+    def calc_motor_eff(self, motor_temp, rpm, torque, plotdata):                          # Compute all relevant characteristics of the propulsion system
         def convex_hull(points):
             pts = np.unique(points, axis=0)
             if len(pts) <= 2:
@@ -118,10 +133,10 @@ class PropulsionSystem:
         gearbox_eff = 0.95
         return gearbox_eff
     
-    def calc_propeller_eff(self, alt, rpm, torque):
+    def calc_propeller_eff(self):
         """
         Calculate propeller efficiency using Truckenbrodt 1999 formula (eq. 3.5).
-        
+         
         η_prop ≈ 2·(1-λ²·ln(1 + 1/λ²)) / (1 + √(1 + T/(q·A) - 2·λ²·ln(1 + 1/λ²)))
         
         where:
@@ -130,34 +145,27 @@ class PropulsionSystem:
             T = thrust
             A = propeller disk area
         """
-        density = float(np.asarray(am.Atmosphere(alt).density))
-        
-        # Handle edge cases
-        if rpm <= 0:
-            return 0.0
-        
         # Calculate parameters
         n_hz = rpm / 60.0  # rotational frequency [Hz]
-        lambda_adv = self.velocity / (n_hz * self.propeller_diameter)  # advance ratio λ
-        q = 0.5 * density * self.velocity ** 2  # dynamic pressure [Pa]
+        self.lambda_adv = velocity / (n_hz * self.propeller_diameter * np.pi)  # advance ratio λ = V / (n·D)
+        q = 0.5 * am.Atmosphere(alt).density * velocity ** 2  # dynamic pressure [Pa]
         
         # Compute ln term (appears twice in formula)
-        ln_term = np.log(1.0 + 1.0 / (lambda_adv ** 2))
+        ln_term = np.log(1.0 + 1.0 / (self.lambda_adv ** 2))
         
         # Numerator: 2·(1 - λ²·ln(...))
-        numerator = 2.0 * (1.0 - lambda_adv ** 2 * ln_term)
+        numerator = 2.0 * (1.0 - self.lambda_adv ** 2 * ln_term)
         
         # Denominator: 1 + √(1 + T/(q·A) - 2·λ²·ln(...))
-        inner = 1.0 + self.T / (q * self.propeller_area) - 2.0 * lambda_adv ** 2 * ln_term
-        
-        if inner <= 0:
-            return 0.0
-        
+        # Disc loading: T/(q·A) [Pa]
+        disc_loading = self.T / (q * self.propeller_area) if q > 0 else 0.0
+        inner = 1.0 + disc_loading - 2.0 * self.lambda_adv ** 2 * ln_term     
         denominator = 1.0 + np.sqrt(inner)
+        
         eta_prop = numerator / denominator
         
         # Clamp to valid range [0, 1]
-        return float(max(0.0, min(1.0, eta_prop)))
+        return float(eta_prop)
     
     def calc_overall_eff(self):
         # Implement method to calculate overall efficiency based on motor, gearbox, and propeller efficiencies
@@ -166,24 +174,86 @@ class PropulsionSystem:
         else:
             return None
         
-    def Calc_Power_Req(self, thrust):
+    def Calc_Power_Req(self):
         # Implement method to calculate power required based on thrust and velocity
-        return thrust * self.velocity/self.overall_eff
+        return float(self.T * self.velocity / self.overall_eff)
     
 if __name__ == "__main__":
     #Example Inputs
     velocity = 25.0  # m/s, cruise airspeed
-    alt = 0  # m, altitude
-    rpm = 1000  # RPM of the motor
+    alt = 15000 # m, altitude
+    propeller_diameter = 2.5  # m
+    rpm = 1000
     torque = 4  # Nm, torque of the motor
-    motor_temp = 20  # °C, motor temperature
-    thrust = 1000  # N, thrust
+    motor_temp = -40  # °C, motor temperature
+    gamma = 0  # degrees, flight path angle
+    W = 1000  # N, weight of the aircraft
+    CD = 0.04 # Drag coefficient
+    S = 36.0  # m², reference area for drag calculation
+
     # Example usage
-    propulsion_system = PropulsionSystem(plotdata=True, velocity=velocity, alt=alt, rpm=rpm, torque=torque, motor_temp=motor_temp, thrust=thrust)
+    propulsion_system = PropulsionSystem(plotdata=True, gamma=gamma, W=W, velocity=velocity, alt=alt, rpm=rpm, torque=torque, motor_temp=motor_temp, CD=CD, S=S, propeller_diameter=propeller_diameter)
     
     # Print calculated efficiencies
+    print("Propulsion System Characteristics:")
     print(f"Motor Efficiency: {propulsion_system.motor_eff:.2f}")
     print(f"Gearbox Efficiency: {propulsion_system.gearbox_eff:.2f}")
     print(f"Propeller Efficiency: {propulsion_system.propeller_eff:.2f}")
     print(f"Overall Efficiency: {propulsion_system.overall_eff:.2f}")
     print(f"Power Required: {propulsion_system.power_required:.2f} W")
+    print(f"Advance Ratio (λ): {propulsion_system.lambda_adv:.2f}")
+    
+    #Plot Changes in Alt with same velocity
+    altitudes = np.linspace(0, 20000, 5)  # Alt
+    powers = []
+    efficiencies = []
+    for alt in altitudes:
+        propulsion_system.alt = alt
+        propulsion_system.T = propulsion_system.calc_Thrust()
+        propulsion_system.propeller_eff = propulsion_system.calc_propeller_eff()
+        propulsion_system.overall_eff = propulsion_system.calc_overall_eff()
+        power_req = propulsion_system.Calc_Power_Req()
+        powers.append(power_req)
+        efficiencies.append(propulsion_system.propeller_eff)
+    plt.figure()
+    plt.subplot(2, 1, 1)
+    plt.plot(altitudes, powers, marker='o')
+    plt.xlabel('Altitude (m)')
+    plt.ylabel('Power Required (W)')
+    plt.title('Power Required vs Altitude at Constant Velocity')
+    plt.grid()
+    plt.subplot(2, 1, 2)
+    plt.plot(altitudes, efficiencies, marker='o')
+    plt.xlabel('Altitude (m)')
+    plt.ylabel('Propeller Efficiency')
+    plt.title('Propeller Efficiency vs Altitude at Constant Velocity')
+    plt.grid()
+    plt.show()
+
+    #plot changes in velocity with same altitude
+    velocities = np.linspace(10, 50, 5)  # m/s
+    powers = []
+    efficiencies = []
+    for velocity in velocities:
+        propulsion_system.velocity = velocity
+        propulsion_system.T = propulsion_system.calc_Thrust()
+        propulsion_system.propeller_eff = propulsion_system.calc_propeller_eff()
+        propulsion_system.overall_eff = propulsion_system.calc_overall_eff()
+        power_req = propulsion_system.Calc_Power_Req()
+        powers.append(power_req)
+        efficiencies.append(propulsion_system.propeller_eff)
+    plt.figure()
+    plt.subplot(2, 1, 1)
+    plt.plot(velocities, powers, marker='o')
+    plt.xlabel('Velocity (m/s)')
+    plt.ylabel('Power Required (W)')
+    plt.title('Power Required vs Velocity at Constant Altitude')
+    plt.grid()
+    plt.subplot(2, 1, 2)
+    plt.plot(velocities, efficiencies, marker='o')
+    plt.xlabel('Velocity (m/s)')
+    plt.ylabel('Propeller Efficiency')
+    plt.title('Propeller Efficiency vs Velocity at Constant Altitude')
+    plt.grid()
+    plt.show()
+
