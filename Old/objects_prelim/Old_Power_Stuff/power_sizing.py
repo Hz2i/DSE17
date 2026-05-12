@@ -1,5 +1,5 @@
 import numpy as np
-from Old.objects_prelim.Old_Power_Stuff.materials_components import solar_panel, battery, fuel_cell
+from materials_components import solar_panel, battery, fuel_cell
 
 
 class power_storage:
@@ -47,7 +47,7 @@ class solar_incidence:
         self.night_time = 86400-self.daylight_time                                                                              # in seconds
 
 
-def power_required(self, mass=120, LD=40, prop_eff=0.8,V_cruise=25, payload=100,payload_peak=150, payload_frac=0.1,margin=300):
+def power_required(mass=120, LD=40, prop_eff=0.8,V_cruise=25, payload=100,payload_peak=150, payload_frac=0.1,margin=300):
     output = mass*9.81/LD*V_cruise/prop_eff + payload + payload_peak*payload_frac + margin
     return output
 
@@ -62,17 +62,17 @@ payload_frac = 0.1 # [-]
 margin = 300 # W
 
 bat = battery()
-solar_c = solar_panel()
+solar_c = solar_panel(0.2,0.665,200,300) #
 
 power_req = power_required(mass,LD,prop_eff,V_cruise,payload,payload_peak,payload_frac,margin)
-latitude = 50 # deg
+latitude = 30 # deg
 days_from_solstice = 0 # days
 DoD = 0.8 # depth of discharge
 
 solar_properties = solar_incidence(latitude,days_from_solstice)
 solar_properties.daylight_cycle()
 
-energy_storage = power_storage(power_req,latitude,days_from_solstice,DoD,fuel_cell())
+energy_storage = power_storage(power_req,latitude,days_from_solstice,DoD,battery())
 energy_storage.compute_weight_volume()
 
 energy_generation = power_generation(power_req,latitude,days_from_solstice,solar_c)
@@ -82,7 +82,7 @@ print(f'\nAt a latitude of {latitude} degrees: \n' +
       f'Max Solar Incidence Angle: {solar_properties.max_incidence/np.pi*180:.2f} deg \n' +
       f'Avg Solar Incidence Angle: {solar_properties.avg_incidence/np.pi*180:.2f} deg \n' +
       f'Daylight Time: {solar_properties.daylight_time/3600:.2f} hours \n' +
-      f'Power Required: {power_req.output:.2f} W \n' +
+      f'Power Required: {power_req:.2f} W \n' +
       f'Battery Mass: {energy_storage.mass:.2f} kg \n' +
       f'Battery Volume: {energy_storage.volume:.3f} m^3 \n' +
       f'Solar Panel Size: {energy_generation.area:.2f} m^2 \n' +
