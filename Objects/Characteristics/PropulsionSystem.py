@@ -8,18 +8,11 @@ import pandas as pd
 
 
 class PropulsionSystem:
-    def __init__(self, plotdata, gamma=0, W=0, velocity=0, alt=0, rpm=0, torque=0, motor_temp=0, CD=0, S=0, propeller_diameter=0.2):                                     # Initialise with proper values
+    def __init__(self, plotdata=False, T=0.0, velocity=0.0, alt=0.0, rpm=0.0, torque=0.0, motor_temp=0.0, propeller_diameter=0.2):                                     # Initialise with proper values
         self.mass = None  # kg, estimated mass of the propulsion system
         self.alt = alt  # Altitude in meters
         self.velocity = velocity  # m/s, cruise airspeed
-        self.CD = CD  # Drag coefficient
-        self.S = S  # m², reference area for drag calculation
-        self.gamma = gamma  # degrees, flight path angle
-        self.W = W  # N, weight of the aircraft
-        
-        
-        self.T = self.calc_Thrust()  # Thrust, to be calculated based on motor and propeller characteristics
-
+        self.T = T
         
         #Motor characteristics
         self.motor_temp = motor_temp
@@ -40,11 +33,6 @@ class PropulsionSystem:
 
         #Power Required
         self.power_required = self.Calc_Power_Req()
-
-    def calc_Thrust(self):
-        D = 0.5 * am.Atmosphere(self.alt).density * self.velocity**2 * self.CD * self.S  # Drag force
-        T = D + self.W*np.sin(np.radians(self.gamma))  # Thrust required to balance drag and weight component along flight path
-        return T
     
     def calc_motor_eff(self, motor_temp, rpm, torque, plotdata):                          # Compute all relevant characteristics of the propulsion system
         def convex_hull(points):

@@ -1,78 +1,49 @@
 import numpy as np
+from Objects.Characteristics.Airframe import wing, fuselage, empennage
+from Objects.Characteristics.GeneralSubsystems import ComputerSystem, CommunicationSystem, FlightConditionsSystem, PayloadSystem, ControlSystem
+from Objects.Characteristics.PowerSystem import power_storage, solar
+from Objects.Characteristics.PropulsionSystem import PropulsionSystem
+from Objects.Constants import Constants
 
 
 class Aircraft:
-    def __init__(self, airframe, power_budget, mass_aircraft, volume_aircraft, link_budget, cg):
-        self.airframe = airframe
-        self.power_budget = power_budget
-        self.mass_aircraft = mass_aircraft
-        self.volume_aircraft = volume_aircraft
-        self.link_budget = link_budget
-        self.cg = cg
+    def __init__(self, MTOW_guess=100.0, TAS=20.0, h=18000.0, gamma=0.0, wing=wing(), fus=fuselage(), emp=empennage(), comp=ComputerSystem(), comms=CommunicationSystem(), flight_con=FlightConditionsSystem(), payload=PayloadSystem(), ctrls=ControlSystem()):
+        self.wing = wing
+        self.fus = fus
+        self.emp = emp
+        self.comp = comp
+        self.comms = comms
+        self.flight_con = flight_con
+        self.payload = payload
+        self.ctrls = ctrls
 
-class CG:
-    def __init__(self):
-        self.cg = self.calc_cg()       # Method to calculate CG based on mass distribution and geometry of the aircraft
-    
-    def calc_cg(self):
-        # Implement CG calculation based on mass distribution and geometry of the aircraft
-        #summation of moments about a reference point, divided by total mass
-        return None
+        self.TAS = TAS
+        self.h = h
+        self.gamma = gamma
+        self.T_req = MTOW_guess*Constants.g/self.wing.CL_CD + MTOW_guess*Constants.g * np.sin(np.radians(gamma))
 
-class PowerBudget:
-    def __init__(self):
-        # Placeholder for PowerBudget initialization
+        self.pow_store = None
+        self.solar = None
+        self.prop = PropulsionSystem(T=T_req, gamma=self.gamma, velocity=self.TAS, alt=self.h, rpm=1000.0, torque=4.0, motor_temp=-40.0)
+
+        self.Pow_motor = self.prop.power_required
+        self.Pow_req = self.compute_subsys_pow() + self.Pow_motor
+        self.Pow_prop = MTOW_guess*Constants.g*TAS / self.wing.CL_CD
+
+    def update_flight_conditions(self, TAS_new=20.0, h_new=18000.0, gamma_new):
+        self.TAS = TAS_new
+        self.h = h_new
+        self.gamma = gamma_new
+        self.T_req = MTOW_guess*Constants.g/self.wing.CL_CD + MTOW_guess*Constants.g * np.sin(np.radians(gamma))
+        self.prop = PropulsionSystem(T=T_req, gamma=self.gamma, velocity=self.TAS, alt=self.h)
+
+
+    def compute_subsys_pow(self):
+        return self.comp.Pow + self.comms.Pow + self.flight_con.Pow + self.payload.Pow + self.ctrls.Pow
+
+
+    def compute_total_mass(self):
         pass
 
-class MassAircraft:
-    def __init__(self):
-        # Placeholder for MassAircraft initialization
+    def compute_total_volume(self):
         pass
-
-class VolumeAircraft:
-    def __init__(self):
-        # Placeholder for VolumeAircraft initialization
-        pass
-
-class LinkBudget:
-    def __init__(self):
-        # Placeholder for LinkBudget initialization
-        pass
-class AeroProperties:
-    def __init__(self):
-        # Calculate or set aerodynamic properties. Calculation methods
-        # are placeholders and should be implemented as needed.
-        self.Cl_opt_climb = self.Calc_Cl_opt_climb()
-        self.Cl_opt_cruise = self.Calc_Cl_opt_cruise()
-        self.Cl_opt_descent = self.Calc_Cl_opt_descent()
-        # Do not compute drag here because required parameters (AR, e, etc.)
-        # are not available at construction time. Initialize to None.
-        self.Cd_climb = None
-        self.Cd_cruise = None
-        self.Cd_descent = None
-
-    def Calc_Cl_opt_climb(self):
-        # Implement method to calculate optimal lift coefficient for climb phase
-        pass
-
-    def Calc_Cl_opt_cruise(self):
-        # Implement method to calculate optimal lift coefficient for cruise phase
-        pass
-
-    def Calc_Cl_opt_descent(self):
-        # Implement method to calculate optimal lift coefficient for descent phase
-        pass
-
-    def Calc_Cd(self, Cl):
-        # Placeholder implementation for drag coefficient calculation.
-        # Requires `AR` (aspect ratio) and `e` (Oswald efficiency factor) to be
-        # provided by the caller or available as attributes.
-        try:
-            k = 1.0 / (np.pi * self.AR * self.e)
-        except AttributeError:
-            # AR/e not set; cannot compute Cd
-            return None
-
-        Cd0 = 0.02
-        Cd = Cd0 + k * Cl**2
-        return Cd
