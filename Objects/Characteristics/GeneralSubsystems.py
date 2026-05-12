@@ -80,8 +80,20 @@ class FlightConditionsSystem:
         self.volume = 0.0
         self.x_pos = 0.0
         self.power_required = 0.0
-    def compute_flight_conditions_system(self):                          # Compute all relevant characteristics of the flight conditions system
-        return None
+        self.IMU_mass = 0.055 #kg, STIM320
+        self.IMU_volume = 3.5 * 10**(-7) #m^3, STIM320
+        self.IMU_power_required = 1.5 #W, STIM320
+        self.GNSS_mass = 0.0068 #kg, mosaic-x5
+        self.GNSS_volume = 0.031 * 0.031 * 0.004 #m^3, mosaic-x5
+        self.GNSS_power_required = 0.6 #W, mosaic-x5
+        self.pitot_mass = 0.160 #kg, heated pitot tube
+        self.pitot_volume = 0.19 * 0.019 * 0.019 #m^3, heated pitot tube
+        self.pitot_power_required = 30 #W, heated pitot tube heating estimate
+    def compute_flight_conditions_system(self):
+        self.FCS_mass = self.mass + self.IMU_mass + self.GNSS_mass + self.pitot_mass
+        self.FCS_volume = self.volume + self.IMU_volume + self.GNSS_volume + self.pitot_volume
+        self.FCS_power_required = self.power_required + self.IMU_power_required + self.GNSS_power_required + self.pitot_power_required
+        return self.FCS_mass, self.FCS_volume, self.FCS_power_required
 
 class PayloadSystem:
     def __init__(self):                                     # Initialise with proper values
