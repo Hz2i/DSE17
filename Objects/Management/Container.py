@@ -69,48 +69,6 @@ def assess_packing_feasibility(packets, visualize=False):
 
     # Visualization (optional)
     if visualize == True:
-        print("PLOTTING STARTED")
-        """fig = go.Figure()
-
-        W = constants.container_inner_width
-        H = constants.container_inner_height
-        D = constants.container_inner_length
-
-        corners = [(0, 0, 0), (W, 0, 0), (W, H, 0), (0, H, 0), (0, 0, D), (W, 0, D), (W, H, D), (0, H, D)]
-        edges = [(0, 1), (1, 2), (2, 3), (3, 0), (4, 5), (5, 6), (6, 7), (7, 4), (0, 4), (1, 5), (2, 6), (3, 7)]
-
-        for edge in edges:
-            x = [corners[edge[0]][0], corners[edge[1]][0]]
-            y = [corners[edge[0]][1], corners[edge[1]][1]]
-            z = [corners[edge[0]][2], corners[edge[1]][2]]
-            fig.add_trace(go.Scatter3d(x=x, y=y, z=z, mode='lines', line=dict(color='black', width=2), showlegend=False))
-        
-        for item in b.items:
-            x, y, z = item.position
-            w, h, d = item.width, item.height, item.depth
-            vertices = [(x, y, z), (x+w, y, z), (x+w, y+h, z), (x, y+h, z), (x, y, z+d), (x+w, y, z+d), (x+w, y+h, z+d), (x, y+h, z+d)]
-            X = [v[0] for v in vertices]
-            Y = [v[1] for v in vertices]
-            Z = [v[2] for v in vertices]
-
-            # Cube faces
-            I = [0, 0, 0, 1, 4, 4, 5, 2, 3, 6, 7, 1]
-            J = [1, 2, 3, 2, 5, 6, 6, 3, 7, 7, 4, 5]
-            K = [2, 3, 1, 6, 6, 7, 2, 7, 4, 4, 5, 0]
-        
-            fig.add_trace(go.Mesh3d(x=X, y=Y, z=Z, i=I, j=J, k=K, opacity=0.5, name=item.name, 
-                                    hovertext=f"{item.name}<br>Mass: {item.weight:.2f} kg<br>Dimensions: {item.width:.2f} x {item.height:.2f} x {item.depth:.2f} m", hoverinfo='text'))
-            fig.update_layout(
-                scene=dict(
-                    xaxis_title='Width (m)',
-                    yaxis_title='Height (m)',
-                    zaxis_title='Depth (m)',
-                    aspectmode='data'
-                ),
-                title='Container Packing Visualization'
-            )
-        fig.show()"""
-        
         # Container
         vertices = np.array([
             [0, 0, 0],
@@ -162,14 +120,7 @@ def assess_packing_feasibility(packets, visualize=False):
         ax = fig.add_subplot(111, projection='3d')
 
         # Plot container
-        cube = Poly3DCollection(
-            faces,
-            facecolors='cyan',
-            edgecolors='black',
-            linewidths=1,
-            alpha=0.3
-        )
-
+        cube = Poly3DCollection(faces, facecolors='cyan', edgecolors='black', linewidths=1, alpha=0.3)
         ax.add_collection3d(cube)
 
         # Plot items
@@ -200,15 +151,14 @@ def assess_packing_feasibility(packets, visualize=False):
 
 def main():
     # Example usage
-    subsytem_masses = [1000] # kg
-    subsystem_densities = [500] # kg/m^
+    subsystem_masses = [10, 20, 30, 40, 50] # kg
+    subsystem_densities = [5, 6, 7, 8, 9] # kg/m^3
+    subsystem_names = ["computer", "communications", "payload", "control system", "flight conditions system"]
     packets = {}
-    for subsystem_mass, subsystem_density in zip(subsytem_masses, subsystem_densities):
+    for subsystem_mass, subsystem_density, subsystem_name in zip(subsystem_masses, subsystem_densities, subsystem_names):
         packet = get_packet(subsystem_mass, subsystem_density)
-        packets[f"Subsystem {subsystem_mass}"] = packet
+        packets[subsystem_name] = packet
     assess_packing_feasibility(packets, visualize=True)
-
-    
 
 if __name__ == "__main__":
     main()
