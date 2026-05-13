@@ -9,12 +9,12 @@ from Objects.Constants import Constants
 from Objects.AircraftGeneral.Aircraft import Aircraft
 
 
-powM_frac_target = 0.45
+powM_frac_target = 0.45     # From the NASA paper (mass fraction of the power system)
 MTOW_initial = 120.0
 TAS_initial = 25.0
 gamma = 0.0
 h_cruise = 18000.0
-lat = 44.0
+lat = 40.0
 day_margin = 0
 DoD = 0.8
 night_time = 0.0
@@ -57,4 +57,8 @@ while error > 1e-3:
     print("___________________________________")
 
 print("Final MTOW:", AHAPS.MTOW)
+print("Final power consumption:", AHAPS.Pow_req)
 print("Final surface area:", AHAPS.wing.S, AHAPS)
+print("Final solar panel area:", AHAPS.solar.area)
+print("Final battery mass:", AHAPS.pow_store.mass)
+print("Final battery volume:", AHAPS.pow_store.volume)
