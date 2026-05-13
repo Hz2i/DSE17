@@ -3,17 +3,16 @@ from Objects.Characteristics.ReferenceGeometries import *
 
 
 class wing:
-    def __init__(self, A=25, qc_sweep=0.0, taper=0.0, dihedral=0.0 , airfoil=airfoil_e387()): # airfoil = foil()
+    def __init__(self, S=30.0, A=25, qc_sweep=0.0, taper=0.0, dihedral=0.0, airfoil=airfoil_e387()): # airfoil = foil()
         self.foil = airfoil
         self.AR = A
         self.qc_sweep = qc_sweep
         self.taper = taper
         self.c_sweep = np.arctan( np.tan( self.qc_sweep - 1/self.AR * (1-self.taper)/(1+self.taper) ) )
         self.dihedral = dihedral
-        self.S = 0.0                # Currently initialised with 0; Power sizing must be performed first to obtain it
+        self.S = S                  # Power sizing must be performed converge to it
         self.CL_grad = 0.0          # Currently initialised with 0; Add method to compute
         self.CL_max = 0.0           # Currently initialised with 0; Add method to compute
-        self.CL_CD = 0.0            # Currently initialised with 0; Add method to compute
         self.e = 0.0
 
         self.m = 0.0                # Currently initialised with 0; Class 2 estimation methods required!
@@ -84,7 +83,7 @@ class fuselage:
         self.m = 0.0            # Currently initialised with 0; Class 2 estimation methods required!
         self.v_total = 0.0      # Currently initialised with 0
     
-    def zero_lift_drag(self)
+    def zero_lift_drag(self, rho_cruise, V_cruise):
         self.Sw = np.pi*self.D/4 * (1/(3*self.L1**2)*((4*self.L1**2+self.D**2/4)**1.5-self.D**3/8)-self.D+4*self.L2+2*np.sqrt(self.L3**2+self.D**2/4))
 
         length = self.L1+self.L2+self.L3

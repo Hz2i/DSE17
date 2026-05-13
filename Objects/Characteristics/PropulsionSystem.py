@@ -134,9 +134,9 @@ class PropulsionSystem:
             A = propeller disk area
         """
         # Calculate parameters
-        n_hz = rpm / 60.0  # rotational frequency [Hz]
-        self.lambda_adv = velocity / (n_hz * self.propeller_diameter * np.pi)  # advance ratio λ = V / (n·D)
-        q = 0.5 * am.Atmosphere(alt).density * velocity ** 2  # dynamic pressure [Pa]
+        n_hz = self.rpm_out / 60.0  # rotational frequency [Hz]
+        self.lambda_adv = self.velocity / (n_hz * self.propeller_diameter * np.pi)  # advance ratio λ = V / (n·D)
+        q = 0.5 * am.Atmosphere(self.alt).density[0] * self.velocity ** 2  # dynamic pressure [Pa]
         
         # Compute ln term (appears twice in formula)
         ln_term = np.log(1.0 + 1.0 / (self.lambda_adv ** 2))

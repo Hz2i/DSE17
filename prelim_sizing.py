@@ -2,9 +2,8 @@ import numpy as np
 
 from Objects.Characteristics.Airframe import wing, fuselage, empennage
 from Objects.Characteristics.GeneralSubsystems import ComputerSystem, CommunicationSystem, FlightConditionsSystem, PayloadSystem, ControlSystem
-from Objects.Characteristics.PowerSystem_sizing import power_storage, power_generation, solar_incidence
-from Objects.Characteristics.PropulsionSystem import prop_eff_height
-from Objects.Characteristics.ReferenceGeometries import foil, fuselage, empennage
+from Objects.Characteristics.PropulsionSystem import PropulsionSystem
+from Objects.Characteristics.ReferenceGeometries import *
 from Objects.Constants import Constants
 
 from Objects.AircraftGeneral.Aircraft import Aircraft
@@ -33,15 +32,15 @@ emp_geo = empennage()
 # gen_payload = PayloadSystem()
 
 
+MTOW = MTOW_initial
+dM = 0.1
+gradient_damping = 0.05
+iteration = 0
+
 # Compute intial error:
-AHAPS = Aircraft(MTOW_guess=MTOW, TAS=TAS_initial, gamma=gamma, wing=wing_geo, fus=fus_geo, emp=emp_geo)
-AHAPS.compute_motor_pow(h=h_cruise)
-AHAPS.compute_total_pow()
+AHAPS = Aircraft(MTOW_guess=MTOW, TAS=TAS_initial, gamma=gamma, lat=lat, day_margin=day_margin, DoD=DoD, wing=wing_geo, fus=fus_geo, emp=emp_geo)
 
-pow_storage_sys = power_storage(AHAPS.Pow_req, latitude=lat, days_from_solstice=day_margin, DOD=DoD)
-pow_gen_sys = power_generation(AHAPS.Pow_req, latitude=lat, days_from_solstice=day_margin)
-
-dryM_frac = (MTOW - pow_storage_sys.mass - pow_gen.mass)/(MTOW)
+dryM_frac = (MTOW - AHAPS.pow_store.mass - AHAPS.solar.mass)/(MTOW)
 
 error = ((dryM_frac - dryM_frac_target)**2/dryM_frac_target)**0.5
 
@@ -51,20 +50,10 @@ error_vec *= error
 error = np.linalg.norm(error_vec)
 # Note: current implementation is non-functional: vector exists, but its variance is not monitored
 
-MTOW = MTOW_initial
-dM = 0.1
-gradient_damping = 0.05
-iteration = 0
-
 while error > 1e-3 and iterations < 1e3:
-    AHAPS = Aircraft(MTOW_guess=MTOW+dM, TAS=TAS_initial, gamma=gamma, wing=wing_geo, fus=fus_geo, emp=emp_geo)
-    AHAPS.compute_motor_pow(h=h_cruise)
-    AHAPS.compute_total_pow()
+    AHAPS = Aircraft(MTOW_guess=MTOW, TAS=TAS_initial, gamma=gamma, lat=lat, day_margin=day_margin, DoD=DoD, wing=wing_geo, fus=fus_geo, emp=emp_geo)
 
-    pow_storage_sys = power_storage(AHAPS.Pow_req, latitude=lat, days_from_solstice=day_margin, DOD=DoD)
-    pow_gen_sys = power_generation(AHAPS.Pow_req, latitude=lat, days_from_solstice=day_margin)
-
-    dryM_frac = (MTOW + dM - pow_storage_sys.mass - pow_gen.mass)/(MTOW + dM)
+    dryM_frac = (MTOW + dM - AHAPS.pow_store.mass - AHAPS.solar.mass)/(MTOW + dM)
     error_current = ((dryM_frac - dryM_frac_target)**2/dryM_frac_target)**0.5
 
     # Note: dry mass fraction is the current optimization target
@@ -77,8 +66,8 @@ while error > 1e-3 and iterations < 1e3:
 
     iteration += 1
     print("Iteration:", iteration)
-    print("current error:", error_current)
+    print("Current error:", error_current)
+    print("Current MTOW estimate:", MTOW)
     print("___________________________________")
 
-
-# solar_conditions = solar_incidence(latitude=lat, days_from_solstice=day_margin)
+print("Final MTOW:", MTOW)
