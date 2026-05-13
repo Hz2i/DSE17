@@ -84,7 +84,7 @@ class fuselage:
         self.m = 0.0            # Currently initialised with 0; Class 2 estimation methods required!
         self.v_total = 0.0      # Currently initialised with 0
     
-    def zero_lift_drag(self)
+    def zero_lift_drag(self):
         self.Sw = np.pi*self.D/4 * (1/(3*self.L1**2)*((4*self.L1**2+self.D**2/4)**1.5-self.D**3/8)-self.D+4*self.L2+2*np.sqrt(self.L3**2+self.D**2/4))
 
         length = self.L1+self.L2+self.L3
