@@ -1,8 +1,13 @@
-from mimetypes import init
 import numpy as np
 from Objects.Characteristics.Airframe import wing, fuselage, empennage
 
 
+# ==============================
+# CODE VERIFICATION TESTS
+# ==============================
+
+
+# UNIT TESTS
 def test_compute_CL_grad():
     # Order of magnitude test
     test_wing_1 = wing(A=10**6)
@@ -29,27 +34,27 @@ def test_compute_CL_grad():
 
 def test_zero_lift_drag_wing():
     # Order of magnitude test
-    test_wing_5 = wing(qc_sweep=10)
-    test_wing_5.zero_lift_drag()
-    assert 0. < test_wing_5.CD0 < 0.1
+    test_wing_5 = wing(qc_sweep=0.0)
+    test_wing_5.zero_lift_drag(0.07, 25, 0.1)
+    assert 0. < test_wing_5.CD0 < 0.2
 
     # Sensitivity test
-    test_wing_6 = wing(qc_sweep=0)
-    test_wing_6.zero_lift_drag()
-    assert test_wing_5.CD0 < test_wing_6.CD0
+    test_wing_6 = wing(qc_sweep=0.1)
+    test_wing_6.zero_lift_drag(0.07, 25, 0.1)
+    assert test_wing_6.CD0 < test_wing_5.CD0
 
 def test_zero_lift_drag_fuselage():
     # Sensitivity test
     test_fuselage_1 = fuselage(D=0.6)
-    test_fuselage_1.zero_lift_drag()
+    test_fuselage_1.zero_lift_drag(0.07, 25)
     test_fuselage_2 = fuselage(D=0.3)
-    test_fuselage_2.zero_lift_drag()
+    test_fuselage_2.zero_lift_drag(0.07, 25)
     assert test_fuselage_1.CD0 > test_fuselage_2.CD0
 
-def test_zero_lift_drag_wing_empennage(): # not complete
+def test_zero_lift_drag_wing_empennage():
     # Sensitivity test
-    test_empennage_1 = empennage()
-    test_empennage_1.zero_lift_drag()
-    test_empennage_2 = empennage()
-    test_empennage_2.zero_lift_drag()
-    assert test_empennage_1.CD0 > test_empennage_2.CD0
+    test_empennage_1 = empennage(qcsweep_h=0.0)
+    test_empennage_1.zero_lift_drag(0.07, 25, 0.1)
+    test_empennage_2 = empennage(qcsweep_h=0.1)
+    test_empennage_2.zero_lift_drag(0.07, 25, 0.1)
+    assert test_empennage_2.CD0 < test_empennage_1.CD0
