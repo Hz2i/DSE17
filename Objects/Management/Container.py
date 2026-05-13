@@ -151,13 +151,13 @@ def assess_packing_feasibility(packets, visualize=False):
 
 def main():
     # Example usage
-    subsystem_masses = [10, 20, 30, 40, 50] # kg
-    subsystem_densities = [5, 6, 7, 8, 9] # kg/m^3
-    subsystem_names = ["computer", "communications", "payload", "control system", "flight conditions system"]
+    packet_masses = [10, 20, 30, 40, 50] # kg
+    packet_densities = [5, 6, 7, 8, 9] # kg/m^3
+    packet_names = ["Packet 1", "Packet 2", "Packet 3", "Packet 4", "Packet 5"]
     packets = {}
-    for subsystem_mass, subsystem_density, subsystem_name in zip(subsystem_masses, subsystem_densities, subsystem_names):
-        packet = get_packet(subsystem_mass, subsystem_density)
-        packets[subsystem_name] = packet
+    for packet_mass, packet_density, packet_name in zip(packet_masses, packet_densities, packet_names):
+        packet = get_packet(packet_mass, packet_density)
+        packets[packet_name] = packet
     assess_packing_feasibility(packets, visualize=True)
 
 if __name__ == "__main__":
