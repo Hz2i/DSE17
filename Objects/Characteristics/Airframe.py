@@ -167,7 +167,7 @@ class empennage:
         Cf_h = f_l*Cf_l_h + (1-f_l)*Cf_t_h # coefficient of friction
         Cf_v = f_l*Cf_l_v + (1-f_l)*Cf_t_v # coefficient of friction
 
-        FF_h = (1+0.6/self.foil_h.thickness_pos * self.foil_h.max_thickness + 100 * self.foil_h.max_thickness**4)*(1.34*M**0.18*(np.cos(self.qc_sweep))**0.28)
-        FF_v = (1+0.6/self.foil_v.thickness_pos * self.foil_v.max_thickness + 100 * self.foil_v.max_thickness**4)*(1.34*M**0.18*(np.cos(self.qc_sweep))**0.28)
+        FF_h = (1+0.6/self.foil_h.thickness_pos * self.foil_h.max_thickness + 100 * self.foil_h.max_thickness**4)*(1.34*M**0.18*(np.cos(self.qc_sweep_h))**0.28)
+        FF_v = (1+0.6/self.foil_v.thickness_pos * self.foil_v.max_thickness + 100 * self.foil_v.max_thickness**4)*(1.34*M**0.18*(np.cos(self.qc_sweep_v))**0.28)
 
         self.CD0 = (Cf_h * FF_h * S_wet_h + Cf_v * FF_v * S_wet_v) ## 1/S needs to be applied externally
