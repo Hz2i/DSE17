@@ -52,7 +52,8 @@ class Aircraft:
 
 
             CL = (3.0 * self.wing.CD0 * np.pi * self.wing.AR * self.wing.e)**0.5
-            CD = self.fus.CD0 + self.wing.CD0 + CL**2/(np.pi*self.wing.AR*self.wing.e)
+            CD0 = (self.fus.CD0 + self.wing.CD0 + self.emp.CD0)/self.wing.S
+            CD = CD0 + CL**2/(np.pi*self.wing.AR*self.wing.e)
             CL_CD = CL/CD
             self.CL_CD = CL_CD
 
