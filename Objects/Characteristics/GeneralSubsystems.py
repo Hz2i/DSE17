@@ -1,7 +1,7 @@
 import numpy as np
 
 class ComputerSystem:
-    def __init__(self, required_flops, computing_efficiency = 2 * 10**9, mass_density = 2.5 * 10**(-12), volume_density = 95.2 * 10**(-6)):                                     # Initialise with proper values
+    def __init__(self, required_flops=1e9, computing_efficiency = 2 * 10**9, mass_density = 2.5 * 10**(-12), volume_density = 95.2 * 10**(-6)):                                     # Initialise with proper values
         """required_flops: conservative estimate of the required computing power, in FLOPS
             computing_efficiency: from Raspberry Pi 5, in FLOPS/W
             mass_density: from Raspberry Pi 5, in kg/FLOPS
@@ -11,6 +11,8 @@ class ComputerSystem:
         self.computing_efficiency = computing_efficiency    # FLOPS/W, Raspberry Pi 5
         self.mass_density = mass_density                    # kg/FLOPS, Raspberry Pi 5
         self.volume_density = volume_density                # m^3/FLOPS, Raspberry Pi 5
+
+        self.compute_computer_system()
      
     def compute_computer_system(self):
         """Compute all relevant characteristics of the computer system, 
@@ -19,7 +21,7 @@ class ComputerSystem:
         self.comp_mass = self.computing_power_required * self.mass_density               
         self.comp_volume = self.computing_power_required * self.volume_density     
         self.comp_x_pos = 0.0  # Needs implementation
-        return self.comp_electrical_power_required, self.comp_mass, self.comp_volume, self.comp_x_pos                                                   
+        # return self.comp_electrical_power_required, self.comp_mass, self.comp_volume, self.comp_x_pos
 
 class CommunicationSystem:
     def __init__(self, required_bitrate=2*10**6, required_distance=400*10**3, link_budget=10**(-12), transmit_power=10, 
@@ -64,6 +66,8 @@ class CommunicationSystem:
         self.ssr_mass = ssr_mass                                #kg, Garmin GTX 345
         self.ssr_volume = ssr_volume                            #m^3, Garmin GTX 345
 
+        self.compute_communication_system()
+
     def compute_communication_system(self):                
         """Compute all relevant characteristics of the communication system, 
         by simple summation of the characteristics of the individual components, 
@@ -72,7 +76,7 @@ class CommunicationSystem:
         self.comms_volume = self.adsb_volume + self.elt_volume + self.ssr_volume + self.comms_volume_density * self.transmit_power
         self.comms_x_pos = self.comms_x_pos  # Needs implementation
         self.comms_electrical_power_required = self.adsb_power + self.elt_power + self.ssr_power + self.transmit_power * self.transmit_efficiency
-        return self.comms_mass
+        # return self.comms_mass
 
 class FlightConditionsSystem:
     def __init__(self):                                     # Initialise with proper values
@@ -89,11 +93,14 @@ class FlightConditionsSystem:
         self.pitot_mass = 0.160 #kg, heated pitot tube
         self.pitot_volume = 0.19 * 0.019 * 0.019 #m^3, heated pitot tube
         self.pitot_power_required = 30 #W, heated pitot tube heating estimate
+
+        self.compute_flight_conditions_system()
+
     def compute_flight_conditions_system(self):
         self.FCS_mass = self.mass + self.IMU_mass + self.GNSS_mass + self.pitot_mass
         self.FCS_volume = self.volume + self.IMU_volume + self.GNSS_volume + self.pitot_volume
         self.FCS_power_required = self.power_required + self.IMU_power_required + self.GNSS_power_required + self.pitot_power_required
-        return self.FCS_mass, self.FCS_volume, self.FCS_power_required
+        # return self.FCS_mass, self.FCS_volume, self.FCS_power_required
 
 class PayloadSystem:
     def __init__(self):                                     # Initialise with proper values
