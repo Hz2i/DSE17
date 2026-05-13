@@ -8,6 +8,7 @@ class airfoil_e334: #FLYING WING
         self.thickness_pos = 0.303
         self.max_camber = 0.04
         self.camber_pos = 0.254
+        self.cm_0 = -0.05
 
 
 class airfoil_e387: #TRADITIONAL
@@ -17,14 +18,16 @@ class airfoil_e387: #TRADITIONAL
         self.thickness_pos = 0.311
         self.max_camber = 0.032
         self.camber_pos = 0.448
+        self.cm_0 = -0.09
 
 class airfoil_NACA0012: #Empennage
     def __init__(self):
         self.clmax = 1.0
         self.max_thickness = 0.12
         self.thickness_pos = 0.30
-        self.max_camber = 0
-        self.camber_pos = 0
+        self.max_camber = 0.0
+        self.camber_pos = 0.0
+        self.cm_0 = 0.0
 
     
 

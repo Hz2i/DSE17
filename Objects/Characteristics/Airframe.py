@@ -3,17 +3,22 @@ from Objects.Characteristics.ReferenceGeometries import *
 
 
 class wing:
-    def __init__(self, S=30.0, A=25, qc_sweep=0.0, taper=0.0, dihedral=0.0, airfoil=airfoil_e387()): # airfoil = foil()
+    def __init__(self, S=36.0, A=25.0, qc_sweep=0.0, taper=1.0, dihedral=0.0 , airfoil=airfoil_e387()): # airfoil = foil()
         self.foil = airfoil
         self.AR = A
         self.qc_sweep = qc_sweep
         self.taper = taper
         self.c_sweep = np.arctan( np.tan( self.qc_sweep - 1/self.AR * (1-self.taper)/(1+self.taper) ) )
         self.dihedral = dihedral
-        self.S = S                  # Power sizing must be performed converge to it
+        self.S = S                
+        self.geo_chord = np.sqrt(self.S/self.AR)
+        self.root_chord = self.geo_chord * 2 / (1+taper)
+        self.MAC = self.root_chord * 2/3 * ((1+self.taper+self.taper**2)/(1+self.taper))
+        self.b = self.geo_chord*self.AR
         self.CL_grad = 0.0          # Currently initialised with 0; Add method to compute
         self.CL_max = 0.0           # Currently initialised with 0; Add method to compute
         self.e = 0.0
+        self.x_ac = 0.25
 
         self.m = 0.0                # Currently initialised with 0; Class 2 estimation methods required!
         self.v_int = 0.0            # Currently initialised with 0; Stress calculations and internal design required!
@@ -29,6 +34,9 @@ class wing:
         scale = 0.9
         self.CL_max = scale*cl_max
 
+    def compute_Cm_ac(self):
+        self.Cm_ac = self.foil.cm_0 * (self.AR * np.cos(self.qc_sweep)/(self.AR + 2*np.cos(self.qc_sweep)))
+
     def compute_oswald_eff(self): # Paper: Estimating the Oswald Factor from Basic Aircraft Geometrical Parameters
         taper_adjusted = self.taper - (-0.357 + 0.45*np.exp(0.0375*self.qc_sweep))
         f_lambda = 0.0524*taper_adjusted**4 - 0.15*taper_adjusted**3 + 0.1659*taper_adjusted**2 - 0.0706*taper_adjusted + 0.0119
@@ -38,7 +46,7 @@ class wing:
 
     def zero_lift_drag(self,rho_cruise,V_cruise, M): # ADSEE 2 lectures; Requires cruise rho, cruise V, cruise M; Assumes average chord length based on surface area and AR.
         S_wet_w = 1.07*2*self.S
-        chord = np.sqrt(self.S/self.AR)
+        chord = self.MAC
         mu = 1.4216e-5 # at 60,000 ft (18,500 m)
         k = 0.634e-5 # surface roughness of smooth paint
 
@@ -56,7 +64,7 @@ class wing:
 
         FF = (1+0.6/airfoil_x_maxthickness * airfoil_thickness + 100 * airfoil_thickness**4)*(1.34*M**0.18*(np.cos(self.qc_sweep))**0.28)
 
-        self.CD0 = 1/self.S * Cf * FF * S_wet_w
+        self.CD0 = Cf * FF * S_wet_w ## 1/S needs to be applied externally
 
 
 '''
@@ -101,12 +109,12 @@ class fuselage:
 
         f = 1/self.D
 
-        self.CD0 = 1/self.Sw * (Cf*(1+60/f**3+f/400))
+        self.CD0 = (Cf*(1+60/f**3+f/400)) ## 1/S needs to be applied externally
 
 
 
 class empennage:
-    def __init__(self,S_h = 1.5, S_v = 1, h_AR = 4.0, v_AR = 1.5, airfoilh=airfoil_NACA0012(),airfoilv=airfoil_NACA0012(), qcsweep_h = 0.0, qcsweep_v = 0.0 ): # average values taken from Roelof Vos' ADSEE book
+    def __init__(self,S_h = 1.5, S_v = 1, h_AR = 4.0, v_AR = 1.5, lh = 3, vh = 0.0, taper_h = 1.0, taper_v = 1.0, airfoilh=airfoil_NACA0012(),airfoilv=airfoil_NACA0012(), qcsweep_h = 0.0, qcsweep_v = 0.0 ): # average values taken from Roelof Vos' ADSEE book
         self.foil_h = airfoilh
         self.foil_v = airfoilv
         self.AR_h = h_AR         # Currently initialised with 0
@@ -115,14 +123,33 @@ class empennage:
         self.Sv = S_v           # Currently initialised with 0
         self.qc_sweep_h = qcsweep_h   # Currently initialised with 0
         self.qc_sweep_v = qcsweep_v   # Currently initialised with 0
+        self.taper_h = taper_h
+        self.taper_v = taper_v
+
+        self.geo_chord_h = np.sqrt(self.Sh/self.AR_h)
+        self.root_chord_h = self.geo_chord_h * 2 / (1+taper_h)
+        self.MAC_h = self.root_chord_h * 2/3 * ((1+self.taper_h+self.taper_h**2)/(1+self.taper_h))
+
+        self.geo_chord_v = np.sqrt(self.Sv/self.AR_v)
+        self.root_chord_v = self.geo_chord_v * 2 / (1+taper_v)
+        self.MAC_v = self.root_chord_v * 2/3 * ((1+self.taper_v+self.taper_v**2)/(1+self.taper_v))
+
+        self.c_sweep_h = np.arctan( np.tan( self.qc_sweep_h - 1/self.AR_h * (1-self.taper_h)/(1+self.taper_h) ) )
         self.m = 0.0            # Currently initialised with 0
+        self.lh = lh            # Longitudinal distance between x_ac_w and x_ac_h
+        self.vh = vh            # Vertical distance between x_ac_w and x_ac_h
+
+    def compute_CL_grad(self):
+        beta = 1.0
+        eta = 0.95
+        self.CL_grad_h = 2*np.pi*self.AR_h/(2+np.sqrt(4+(self.AR_h*beta/eta)**2 * (1+np.tan(self.c_sweep_h)/beta**2)))
 
     def zero_lift_drag(self,rho_cruise,V_cruise, M): # ADSEE 2 lectures; Requires cruise rho, cruise V, cruise M; Assumes average chord length based on surface area and AR.
         S_wet_h = 1.05*2*self.Sh
         S_wet_v = 1.05*2*self.Sv
         
-        chord_h = np.sqrt(self.Sh/self.AR_h)
-        chord_v = np.sqrt(self.Sh/self.AR_v)
+        chord_h = self.MAC_h
+        chord_v = self.MAC_v
         mu = 1.4216e-5 # at 60,000 ft (18,500 m)
         k = 0.634e-5 # surface roughness of smooth paint
 
@@ -143,4 +170,4 @@ class empennage:
         FF_h = (1+0.6/self.foil_h.thickness_pos * self.foil_h.max_thickness + 100 * self.foil_h.max_thickness**4)*(1.34*M**0.18*(np.cos(self.qc_sweep))**0.28)
         FF_v = (1+0.6/self.foil_v.thickness_pos * self.foil_v.max_thickness + 100 * self.foil_v.max_thickness**4)*(1.34*M**0.18*(np.cos(self.qc_sweep))**0.28)
 
-        self.CD0 = 1/self.S (Cf_h * FF_h * S_wet_h + Cf_v * FF_v * S_wet_v)
+        self.CD0 = (Cf_h * FF_h * S_wet_h + Cf_v * FF_v * S_wet_v) ## 1/S needs to be applied externally
