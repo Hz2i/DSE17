@@ -100,10 +100,11 @@ class FlightConditionsSystem:
         self.FCS_mass = self.mass + self.IMU_mass + self.GNSS_mass + self.pitot_mass
         self.FCS_volume = self.volume + self.IMU_volume + self.GNSS_volume + self.pitot_volume
         self.FCS_power_required = self.power_required + self.IMU_power_required + self.GNSS_power_required + self.pitot_power_required
-        # return self.FCS_mass, self.FCS_volume, self.FCS_power_required
+        return self.FCS_mass, self.FCS_volume, self.FCS_power_required
 
 class PayloadSystem:
     def __init__(self):                                     # Initialise with proper values
+        self.mass = self.compute_payload_system()
         self.volume = 0.01 #m^3 common aerospace values
         self.x_pos = 0.0
         self.mass_payload = 20 #kg
@@ -114,7 +115,6 @@ class PayloadSystem:
         self.current_cable = 35 #A, AWG16 maximum current
         self.power_loss = self.resistance_cable * self.current_cable**2 #W, power loss in the cables
         self.mass_mounting = 0.05 * self.mass_payload #kg, 5% of payload mass
-        self.mass = self.compute_payload_system()
 
     def compute_payload_system(self):     
         self.PS_mass = self.mass_connector + self.mass_cables + self.mass_mounting
@@ -140,8 +140,8 @@ class ControlSystem:
         self.joints_mass_ratio = 0.5 #Estimated mass ratio of the joints compared to the pushrod mass
 
 
-    def compute_control_system(self):
+    def compute_control_system(self): #Assumed a total of 4 actuators (ailerons, elevator, rudder), so all characteristics are multiplied by 4
         self.CS_mass = (self.actuator_mass + self.mass_cables + self.mass_pushrod + self.joints_mass_ratio * self.mass_pushrod) * 4
         self.CS_volume = (self.actuator_volume + self.mass_cables + self.volume_pushrod) * 4
         self.CS_power_required = (self.actuator_power + self.power_loss_cable) * 4
-        return None
+        return self.CS_mass, self.CS_volume, self.CS_power_required
