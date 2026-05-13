@@ -8,7 +8,7 @@ import pandas as pd
 
 
 class PropulsionSystem:
-    def __init__(self, plotdata=False, T=0.0, velocity=0.0, alt=0.0, rpm=0.0, torque=0.0, motor_temp=0.0, propeller_diameter=0.2):                                     # Initialise with proper values
+    def __init__(self, plotdata=False, T=0.0, velocity=0.0, alt=0.0, rpm=0.0, torque=0.0, motor_temp=0.0, propeller_diameter=2.5):                                     # Initialise with proper values
         self.mass = None  # kg, estimated mass of the propulsion system
         self.alt = alt  # Altitude in meters
         self.velocity = velocity  # m/s, cruise airspeed

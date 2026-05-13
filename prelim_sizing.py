@@ -9,13 +9,13 @@ from Objects.Constants import Constants
 from Objects.AircraftGeneral.Aircraft import Aircraft
 
 
-dryM_frac_target = 0.3
+powM_frac_target = 0.45
 MTOW_initial = 120.0
-TAS_initial = 20.0
+TAS_initial = 25.0
 gamma = 0.0
 h_cruise = 18000.0
-lat = 40.0
-day_margin = 30
+lat = 44.0
+day_margin = 0
 DoD = 0.8
 night_time = 0.0
 
@@ -33,45 +33,28 @@ emp_geo = empennage()
 
 
 MTOW = MTOW_initial
-dM = 0.1
-gradient_damping = 0.0001
-iterations = 0
 
 # Compute intial error:
 AHAPS = Aircraft(MTOW_guess=MTOW, TAS=TAS_initial, gamma=gamma, lat=lat, day_margin=day_margin, DoD=DoD, wing=wing_geo, fus=fus_geo, emp=emp_geo)
-
-dryM_frac = (MTOW - AHAPS.pow_store.mass - AHAPS.solar.mass)/(MTOW)
-
-error = abs(dryM_frac - dryM_frac_target)/dryM_frac_target
-
-# # Consider implementing error monitoring code (stop iterations if convergence stagnates):
-# error_vec = np.ones(5)
-# error_vec *= error
-# error = np.linalg.norm(error_vec)
-# # Note: current implementation is non-functional: vector exists, but its variance is not monitored
+powM_frac = (AHAPS.pow_store.mass + AHAPS.solar.mass)/MTOW
+error = abs(powM_frac - powM_frac_target)/powM_frac_target
 
 
-
-# while error > 1e-3 and iterations < 1e3:
+iterations = 0
 while error > 1e-3:
-    # dM = 0.01*MTOW
-    AHAPS = Aircraft(MTOW_guess=(MTOW+dM), TAS=TAS_initial, gamma=gamma, lat=lat, day_margin=day_margin, DoD=DoD, wing=wing_geo, fus=fus_geo, emp=emp_geo)
+    AHAPS = Aircraft(MTOW_guess=MTOW, TAS=TAS_initial, gamma=gamma, lat=lat, day_margin=day_margin, DoD=DoD, wing=wing_geo, fus=fus_geo, emp=emp_geo)
+    powM_frac = (AHAPS.pow_store.mass + AHAPS.solar.mass)/MTOW
+    error = abs(powM_frac - powM_frac_target)/powM_frac_target
 
-    dryM_frac = (MTOW + dM - AHAPS.pow_store.mass - AHAPS.solar.mass)/(MTOW + dM)
-    error_current = abs(dryM_frac - dryM_frac_target)/dryM_frac_target
-
-    # Note: dry mass fraction is the current optimization target
-    grad = (error_current - error)/dM
-
-    MTOW -= gradient_damping * grad
+    MTOW = (AHAPS.pow_store.mass + AHAPS.solar.mass)/powM_frac_target
 
     iterations += 1
-    error = error_current
+
     print("Iteration:", iterations)
-    print("Current error:", error_current)
-    print("Grad:", grad)
+    print("Current error:", error)
     print("Current MTOW estimate:", MTOW)
-    print("Current dry mass fraction estimate:", dryM_frac)
+    print("Current power system mass fraction estimate:", powM_frac)
     print("___________________________________")
 
-print("Final MTOW:", MTOW)
+print("Final MTOW:", AHAPS.MTOW)
+print("Final surface area:", AHAPS.wing.S, AHAPS)
