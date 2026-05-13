@@ -1,8 +1,10 @@
 from py3dbp import Packer, Bin, Item
 import plotly.graph_objects as go
+import numpy as np
 import plotly.io as pio
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
+from mpl_toolkits.mplot3d import Axes3D
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
@@ -31,36 +33,7 @@ def get_packet(subsystem_mass, subsystem_density):
 def assess_packing_feasibility(packets, visualize=False):
     """Assess the packing feasibility of the container, by comparing the used volume and mass with the container's capacity.
     Additionally, assess the packing feasibility of the container by comparing the dimensions of the packets with the container's door dimensions.
-    Returns:
-        bool: True if the packing is feasible, False otherwise.
     """
-    """container_volume_capacity = Constants.container_volume_capacity
-    container_door_dimensions = Constants.container_door_dimensions
-    container_mass_capacity = Constants.container_mass_capacity
-    container_packing_efficiency = Constants.container_packing_efficiency
-    feasibility_volume = False
-    feasibility_mass = False
-    feasibility_dimensions = False
-
-    # Calculate volume and mass used
-    container_volume_used = 0.0
-    container_mass_used = 0.0
-    for packet in packets.items():
-        container_volume_used += packet['volume']
-        container_mass_used += packet['mass']
-    
-    # Check volume feasibility
-    if container_volume_used <= container_volume_capacity * container_packing_efficiency:
-        feasibility_volume = True
-    # Check mass feasibility
-    if container_mass_used <= container_mass_capacity:
-        feasibility_mass = True
-    
-    # Check if all packets fit through the door
-    packets = sorted(packets.items(), key=lambda x: min(x[1]['dimensions']))
-    for packet in packets:
-        if min(packet[1]['dimensions']) > min(container_door_dimensions):
-            feasibility_dimensions = False"""
     constants = Constants()
     packer = Packer()
 
@@ -96,6 +69,7 @@ def assess_packing_feasibility(packets, visualize=False):
 
     # Visualization (optional)
     if visualize == True:
+        print("PLOTTING STARTED")
         """fig = go.Figure()
 
         W = constants.container_inner_width
@@ -136,57 +110,97 @@ def assess_packing_feasibility(packets, visualize=False):
                 title='Container Packing Visualization'
             )
         fig.show()"""
-        def plot_cube(ax, x, y, z, w, h, d, color):
-            vertices = [(x, y, z), (x+w, y, z), (x+w, y+h, z), (x, y+h, z), (x, y, z+d), (x+w, y, z+d), (x+w, y+h, z+d), (x, y+h, z+d)]
+        
+        # Container
+        vertices = np.array([
+            [0, 0, 0],
+            [constants.container_inner_width, 0, 0],
+            [constants.container_inner_width, constants.container_inner_height, 0],
+            [0, constants.container_inner_height, 0],
+            [0, 0, constants.container_inner_length],
+            [constants.container_inner_width, 0, constants.container_inner_length],
+            [constants.container_inner_width, constants.container_inner_height, constants.container_inner_length],
+            [0, constants.container_inner_height, constants.container_inner_length]
+        ])
+
+        # Container faces
+        faces = [
+            [vertices[0], vertices[1], vertices[2], vertices[3]],
+            [vertices[4], vertices[5], vertices[6], vertices[7]],
+            [vertices[0], vertices[1], vertices[5], vertices[4]],
+            [vertices[2], vertices[3], vertices[7], vertices[6]],
+            [vertices[1], vertices[2], vertices[6], vertices[5]],
+            [vertices[4], vertices[7], vertices[3], vertices[0]]
+        ]
+
+        def plot_box(ax, x, y, z, w, h, d, color):
+            vertices = np.array([
+                [x, y, z],
+                [x+w, y, z],
+                [x+w, y+h, z],
+                [x, y+h, z],
+                [x, y, z+d],
+                [x+w, y, z+d],
+                [x+w, y+h, z+d],
+                [x, y+h, z+d]
+            ])
+
             faces = [
-                [vertices[0], vertices[1], vertices[2], vertices[3]],  # back
-                [vertices[4], vertices[5], vertices[6], vertices[7]],  # front
-                [vertices[0], vertices[1], vertices[5], vertices[4]],  # bottom
-                [vertices[2], vertices[3], vertices[7], vertices[6]],  # top
-                [vertices[1], vertices[2], vertices[6], vertices[5]],  # right
-                [vertices[0], vertices[3], vertices[7], vertices[4]]   # left
+                [vertices[0], vertices[1], vertices[2], vertices[3]], # back face
+                [vertices[4], vertices[5], vertices[6], vertices[7]], # front face
+                [vertices[0], vertices[1], vertices[5], vertices[4]], # bottom face
+                [vertices[2], vertices[3], vertices[7], vertices[6]], # top face
+                [vertices[1], vertices[2], vertices[6], vertices[5]], # right face
+                [vertices[4], vertices[7], vertices[3], vertices[0]]  # left face
             ]
-            cube = Poly3DCollection(faces, alpha=0.5, facecolors=color)
-            ax.add_collection3d(cube)
-        fig = plt.figure(figsize=(12, 8))
+
+            box = Poly3DCollection(faces, facecolors=color, edgecolors='black', linewidths=1, alpha=0.6)
+            ax.add_collection3d(box)
+
+        # Create figure
+        fig = plt.figure(figsize=(8,8))
         ax = fig.add_subplot(111, projection='3d')
 
         # Plot container
-        ax.plot([0,constants.container_inner_width],[0,0],[0,0], color='black')
-        ax.plot([0,0],[0,constants.container_inner_height],[0,0], color='black')
-        ax.plot([0,0],[0,0],[0,constants.container_inner_length], color='black')
-        ax.plot([constants.container_inner_width,constants.container_inner_width],[0,constants.container_inner_height],[0,0], color='black')
-        ax.plot([0,constants.container_inner_width],[constants.container_inner_height,constants.container_inner_height],[0,0], color='black')
-        ax.plot([0,constants.container_inner_width],[0,0],[constants.container_inner_length,constants.container_inner_length], color='black')
+        cube = Poly3DCollection(
+            faces,
+            facecolors='cyan',
+            edgecolors='black',
+            linewidths=1,
+            alpha=0.3
+        )
+
+        ax.add_collection3d(cube)
 
         # Plot items
-        colors = ['red', 'blue', 'green', 'yellow', 'cyan', 'magenta', 'orange', 'purple']
-        for idx, item in enumerate(b.items):
+        colors = ['red', 'green', 'blue', 'yellow', 'magenta', 'orange', 'purple', 'brown', 'pink', 'gray']
+        for i, item in enumerate(b.items):
             x, y, z = item.position
             w, h, d = item.width, item.height, item.depth
-            color = colors[idx % len(colors)]
-            plot_cube(ax, x, y, z, w, h, d, color)
-            ax.text(x + w/2, y + h/2, z + d/2, item.name, color='black', ha='center', va='center')
+            color = colors[i % len(colors)]
+            plot_box(ax, x, y, z, w, h, d, color)
+
+        # Set limits
+        ax.set_xlim([0, constants.container_inner_width])
+        ax.set_ylim([0, constants.container_inner_height])
+        ax.set_zlim([0, constants.container_inner_length])
 
         # Labels
-        ax.set_xlabel('Width (m)')
-        ax.set_ylabel('Height (m)')
-        ax.set_zlabel('Depth (m)')
-        
-        # aspect ratio
-        ax.set_box_aspect((constants.container_inner_width, constants.container_inner_height, constants.container_inner_length))
+        ax.set_xlabel("X")
+        ax.set_ylabel("Y")
+        ax.set_zlabel("Z")
 
-        plt.title('Container Packing Visualization')
-        plt.tight_layout()
         plt.show()
 
 
 def main():
     # Example usage
-    subsystem_mass = 1000         # kg
-    subsystem_density = 500  # kg/m^3
-    packet = get_packet(subsystem_mass, subsystem_density)
-    packets = {'Test system': packet}
+    subsytem_masses = [1000] # kg
+    subsystem_densities = [500] # kg/m^
+    packets = {}
+    for subsystem_mass, subsystem_density in zip(subsytem_masses, subsystem_densities):
+        packet = get_packet(subsystem_mass, subsystem_density)
+        packets[f"Subsystem {subsystem_mass}"] = packet
     assess_packing_feasibility(packets, visualize=True)
 
     

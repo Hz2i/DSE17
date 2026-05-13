@@ -97,8 +97,6 @@ class Endurance:
             Energy_capacity[i+1] = self.reduced_capacity_frac(cycle)*0.9 * 100
             Energy_capacity_min[i+1] = self.reduced_capacity_frac(cycle)*0.1 * 100
 
-            print(Energy_capacity[i+1])
-
             if Energy[i+1] >= self.init_bat_capacity * self.reduced_capacity_frac(cycle)*0.9:
                 Energy[i+1] = self.init_bat_capacity * self.reduced_capacity_frac(cycle)*0.9
             elif Energy[i+1] <= self.init_bat_capacity * self.reduced_capacity_frac(cycle)*0.1:

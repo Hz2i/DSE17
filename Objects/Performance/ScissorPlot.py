@@ -38,15 +38,22 @@ class ScissorPlot:
 
     def controllability_min_Sh_S(self,x_cg):
         return (x_cg - self.x_ac + self.Cm_ac/self.CL_Ah) / (self.CL_h/self.CL_Ah * self.lh/self.MAC * self.Vh2)
+    
+    def minimum_Sh_S(self,x_cg_min=0.2,x_cg_max=0.4): ## iterate for CG and Sh size
+        Sh_S_stability = self.stability_min_Sh_S(x_cg_max,margin=0.05)
+        Sh_S_controllability = self.controllability_min_Sh_S(x_cg_min)
+
+        Sh_S = np.maximum(Sh_S_stability,Sh_S_controllability)
+        return Sh_S
 
     def plot_scissor_plot(self,x_cg_min=0.2,x_cg_max=0.4):
         x_cg = np.arange(-0.1,0.8+0.1,0.1)
+
+        Sh_S = self.Sh/self.S
         
         y_control = self.controllability_min_Sh_S(x_cg)
         y_stab_margin = self.stability_min_Sh_S(x_cg,margin=0.05)
         y_stab = self.stability_min_Sh_S(x_cg,margin=0.0)
-
-        Sh_S = self.Sh/self.S
 
         plt.hlines(Sh_S,x_cg_min,x_cg_max,colors=['black'],label="CG range")
 
