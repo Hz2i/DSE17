@@ -169,18 +169,19 @@ class PropulsionSystem:
 if __name__ == "__main__":
     #Example Inputs
     velocity = 25.0  # m/s, cruise airspeed
-    alt = 15000 # m, altitude
+    alt = 18000 # m, altitude
     propeller_diameter = 2.5  # m
     rpm = 1000
     torque = 4  # Nm, torque of the motor
     motor_temp = -40  # °C, motor temperature
     gamma = 0  # degrees, flight path angle
-    W = 1000  # N, weight of the aircraft
+    W = 1500  # N, weight of the aircraft
     CD = 0.04 # Drag coefficient
     S = 36.0  # m², reference area for drag calculation
+    Thrust = 30 # N
 
     # Example usage
-    propulsion_system = PropulsionSystem(plotdata=True, gamma=gamma, W=W, velocity=velocity, alt=alt, rpm=rpm, torque=torque, motor_temp=motor_temp, CD=CD, S=S, propeller_diameter=propeller_diameter)
+    propulsion_system = PropulsionSystem(plotdata=True, velocity=velocity, alt=alt, rpm=rpm, torque=torque, motor_temp=motor_temp, propeller_diameter=propeller_diameter)
     
     # Print calculated efficiencies
     print("Propulsion System Characteristics:")
@@ -197,7 +198,7 @@ if __name__ == "__main__":
     efficiencies = []
     for alt in altitudes:
         propulsion_system.alt = alt
-        propulsion_system.T = propulsion_system.calc_Thrust()
+        propulsion_system.T = Thrust
         propulsion_system.propeller_eff = propulsion_system.calc_propeller_eff()
         propulsion_system.overall_eff = propulsion_system.calc_overall_eff()
         power_req = propulsion_system.Calc_Power_Req()
@@ -224,7 +225,7 @@ if __name__ == "__main__":
     efficiencies = []
     for velocity in velocities:
         propulsion_system.velocity = velocity
-        propulsion_system.T = propulsion_system.calc_Thrust()
+        propulsion_system.T = Thrust
         propulsion_system.propeller_eff = propulsion_system.calc_propeller_eff()
         propulsion_system.overall_eff = propulsion_system.calc_overall_eff()
         power_req = propulsion_system.Calc_Power_Req()
