@@ -1,7 +1,5 @@
 from mimetypes import init
-
 import numpy as np
-
 from Objects.Characteristics.Airframe import wing, fuselage, empennage
 
 
@@ -9,7 +7,7 @@ def test_compute_CL_grad():
     # Order of magnitude test
     test_wing_1 = wing(A=10**6)
     test_wing_1.compute_CL_grad()
-    assert test_wing_1.CL_grad < 2*np.pi
+    assert 0. < test_wing_1.CL_grad < 2*np.pi
 
     # Sensitivity test
     test_wing_2 = wing(A=10**0)
@@ -33,7 +31,7 @@ def test_zero_lift_drag_wing():
     # Order of magnitude test
     test_wing_5 = wing(qc_sweep=10)
     test_wing_5.zero_lift_drag()
-    assert test_wing_5.CD0 < 0.1
+    assert 0. < test_wing_5.CD0 < 0.1
 
     # Sensitivity test
     test_wing_6 = wing(qc_sweep=0)
