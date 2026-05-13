@@ -19,7 +19,7 @@ day_margin = 30
 DoD = 0.8
 night_time = 0.0
 
-wing_geo = wing(A=26.5, qc_sweep=0.0, taper=0.45, dihedral=5.0*np.pi/180.0)
+wing_geo = wing(A=26.5, qc_sweep=0.0, taper=1.0, dihedral=5.0*np.pi/180.0)
 fus_geo = fuselage()
 emp_geo = empennage()
 
@@ -34,7 +34,7 @@ emp_geo = empennage()
 
 MTOW = MTOW_initial
 dM = 0.1
-gradient_damping = 0.0025
+gradient_damping = 0.0001
 iterations = 0
 
 # Compute intial error:
@@ -54,7 +54,7 @@ error = abs(dryM_frac - dryM_frac_target)/dryM_frac_target
 
 # while error > 1e-3 and iterations < 1e3:
 while error > 1e-3:
-    dM = 0.01*MTOW
+    # dM = 0.01*MTOW
     AHAPS = Aircraft(MTOW_guess=(MTOW+dM), TAS=TAS_initial, gamma=gamma, lat=lat, day_margin=day_margin, DoD=DoD, wing=wing_geo, fus=fus_geo, emp=emp_geo)
 
     dryM_frac = (MTOW + dM - AHAPS.pow_store.mass - AHAPS.solar.mass)/(MTOW + dM)

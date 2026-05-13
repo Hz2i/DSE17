@@ -55,15 +55,22 @@ class Aircraft:
             self.emp.zero_lift_drag(rho_cruise=am.Atmosphere(self.h).density[0], V_cruise=self.TAS, M=0.1)
 
 
-            CL = (3.0 * self.wing.CD0 * np.pi * self.wing.AR * self.wing.e)**0.5
             CD0 = (self.fus.CD0 + self.wing.CD0 + self.emp.CD0)/self.wing.S
+            CL = (3.0 * CD0 * np.pi * self.wing.AR * self.wing.e)**0.5
+
+            print("Oswald efficiency:", self.wing.e)
+            print("CD0:", CD0)
+            print("CL:", CL)
+
             CD = CD0 + CL**2/(np.pi*self.wing.AR*self.wing.e)
+            print("CD:", CD)
             CL_CD = CL/CD
             self.CL_CD = CL_CD
+            print("CL/CD:", CL_CD)
 
             self.T_req = self.MTOW*self.const.g/self.CL_CD + self.MTOW*self.const.g * np.sin(np.radians(self.gamma))
             self.prop = PropulsionSystem(T=self.T_req, velocity=self.TAS, alt=self.h, rpm=1000.0, torque=4.0, motor_temp=-40.0)
-            # print("Propulsive efficiency:", self.prop.overall_eff)
+            print("Propulsive efficiency:", self.prop.overall_eff)
 
             self.Pow_motor = self.prop.power_required
             self.Pow_req = self.compute_subsys_pow() + self.Pow_motor
