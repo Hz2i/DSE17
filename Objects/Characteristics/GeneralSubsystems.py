@@ -116,6 +116,8 @@ class PayloadSystem:
         self.mass_mounting = 0.05 * self.mass_payload #kg, 5% of payload mass
         self.mass = self.compute_payload_system()
 
+        self.compute_payload_system()
+
     def compute_payload_system(self):     
         self.PS_mass = self.mass_connector + self.mass_cables + self.mass_mounting
         self.PS_volume = self.volume
@@ -139,9 +141,25 @@ class ControlSystem:
         self.mass_pushrod = self.volume_pushrod * self.aluminum_density #kg, mass of the pushrod
         self.joints_mass_ratio = 0.5 #Estimated mass ratio of the joints compared to the pushrod mass
 
+        self.compute_control_system()
+
 
     def compute_control_system(self): #Assumed a total of 4 actuators (ailerons, elevator, rudder), so all characteristics are multiplied by 4
         self.CS_mass = (self.actuator_mass + self.mass_cables + self.mass_pushrod + self.joints_mass_ratio * self.mass_pushrod) * 4
         self.CS_volume = (self.actuator_volume + self.mass_cables + self.volume_pushrod) * 4
         self.CS_power_required = (self.actuator_power + self.power_loss_cable) * 4
         return self.CS_mass, self.CS_volume, self.CS_power_required
+
+
+if __name__ == "__main__":
+    cs = ComputerSystem()
+    comms = CommunicationSystem()
+    fcs = FlightConditionsSystem()
+    payload = PayloadSystem()
+    control = ControlSystem()
+
+    print("Computer System Mass:", cs.comp_mass, "kg")
+    print("Communication System Mass:", comms.comms_mass, "kg")
+    print("Flight Conditions System Mass:", fcs.FCS_mass, "kg")
+    print("Payload System Mass:", payload.PS_mass, "kg")
+    print("Control System Mass:", control.CS_mass, "kg")
