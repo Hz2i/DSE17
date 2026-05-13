@@ -132,6 +132,8 @@ class ControlSystem:
         self.actuator_current = 1.5 #A, HS-7955TG servo estimated average current
         self.actuator_power = 6 * self.actuator_current #W, 6V * 1.5A, HS-7955TG servo estimated average power
         self.mass_cables = 0.020 #kg/m AWG16
+        self.diameter_cable = 0.003 #m, estimated diameter of the cables
+        self.volume_cable = np.pi * (self.diameter_cable/2)**2 * 1 #m^3, estimated volume of 1 m of cable
         self.resistance_cable = 0.013 #Ohm/m AWG16
         self.power_loss_cable = self.resistance_cable * self.actuator_current**2 #W, power loss in the cables
         self.length_pushrod = 0.7 #m, estimated length of the pushrod from the actuator to the control surface
@@ -146,20 +148,6 @@ class ControlSystem:
 
     def compute_control_system(self): #Assumed a total of 4 actuators (ailerons, elevator, rudder), so all characteristics are multiplied by 4
         self.CS_mass = (self.actuator_mass + self.mass_cables + self.mass_pushrod + self.joints_mass_ratio * self.mass_pushrod) * 4
-        self.CS_volume = (self.actuator_volume + self.mass_cables + self.volume_pushrod) * 4
+        self.CS_volume = (self.actuator_volume + self.volume_pushrod + self.volume_cable) * 4
         self.CS_power_required = (self.actuator_power + self.power_loss_cable) * 4
         return self.CS_mass, self.CS_volume, self.CS_power_required
-
-
-if __name__ == "__main__":
-    cs = ComputerSystem()
-    comms = CommunicationSystem()
-    fcs = FlightConditionsSystem()
-    payload = PayloadSystem()
-    control = ControlSystem()
-
-    print("Computer System Mass:", cs.comp_mass, "kg")
-    print("Communication System Mass:", comms.comms_mass, "kg")
-    print("Flight Conditions System Mass:", fcs.FCS_mass, "kg")
-    print("Payload System Mass:", payload.PS_mass, "kg")
-    print("Control System Mass:", control.CS_mass, "kg")

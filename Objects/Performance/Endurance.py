@@ -51,28 +51,30 @@ class Endurance:
     def compute_endurance(self,time_step=20,endurance_limit=86400*30):
         Energy = self.init_bat_capacity * self.init_bat_charge/100
         iteration = 0
+        cycle = 0
         time_passed = 0
 
-        while Energy > 0 and time_passed < endurance_limit:
+        while Energy > self.init_bat_capacity * self.reduced_capacity_frac(cycle)*0.1 and time_passed < endurance_limit:
             iteration += 1
             time_passed = iteration * time_step
 
             Energy += -self.power_consumption*time_step + self.P(self.S,self.h,self.lat,self.days_from_solstice_start,time_passed,self.starting_timeofday)*time_step
 
-            cycle = (time_passed-self.starting_timeofday) // 86400
+            cycle = (time_passed-self.starting_timeofday)// 86400
 
-            if Energy > self.init_bat_capacity * self.reduced_capacity_frac(cycle):
-                Energy = self.init_bat_capacity * self.reduced_capacity_frac(cycle)
+            if Energy > self.init_bat_capacity * self.reduced_capacity_frac(cycle)*0.9:
+                Energy = self.init_bat_capacity * self.reduced_capacity_frac(cycle)*0.9
             else:
                 continue
     
 
         if time_passed < endurance_limit:
             print(f'Ran out of battery after {time_passed//86400} days and {(time_passed - (time_passed//86400) * 86400)/(3600):.2f} hours.')
-        if time_passed >= endurance_limit:
+            return False
+        elif time_passed >= endurance_limit:
             print(f'The battery remained sufficiently charged for {time_passed//86400} days and {(time_passed - (time_passed//86400) * 86400)/(3600):.2f} hours.')
+            return True
 
-        return time_passed
 
 
     
@@ -80,19 +82,32 @@ class Endurance:
         t = np.arange(0,total_time+time_step,time_step)
         Energy = np.zeros_like(t)
         Energy[0] = self.init_bat_capacity * self.init_bat_charge/100
+        Energy_capacity = np.zeros_like(t).astype(float)
+        Energy_capacity_min = np.zeros_like(t).astype(float)
+        Energy_capacity[0] = self.reduced_capacity_frac(0)*0.9 * 100
+        Energy_capacity_min[0] = self.reduced_capacity_frac(0)*0.1 * 100
+
 
         for i in range(0,len(t)-1):
             Energy[i+1] = Energy[i] - self.power_consumption*time_step + self.P(self.S,self.h,self.lat,self.days_from_solstice_start,t[i],self.starting_timeofday)*time_step
             
             cycle = (t[i+1]-self.starting_timeofday) // 86400
 
-            if Energy[i+1] > self.init_bat_capacity * self.reduced_capacity_frac(cycle):
-                Energy[i+1] = self.init_bat_capacity * self.reduced_capacity_frac(cycle)
-            elif Energy[i+1] < 0:
-                Energy[i+1] = 0
+
+            Energy_capacity[i+1] = self.reduced_capacity_frac(cycle)*0.9 * 100
+            Energy_capacity_min[i+1] = self.reduced_capacity_frac(cycle)*0.1 * 100
+
+            print(Energy_capacity[i+1])
+
+            if Energy[i+1] >= self.init_bat_capacity * self.reduced_capacity_frac(cycle)*0.9:
+                Energy[i+1] = self.init_bat_capacity * self.reduced_capacity_frac(cycle)*0.9
+            elif Energy[i+1] <= self.init_bat_capacity * self.reduced_capacity_frac(cycle)*0.1:
+                Energy[i+1] = self.init_bat_capacity * self.reduced_capacity_frac(cycle)*0.1
                 break
             else:
                 continue
+        
+
 
         t += self.starting_timeofday
         t = t/86400.0
@@ -100,6 +115,10 @@ class Endurance:
         Energy = Energy/self.init_bat_capacity * 100
 
         plt.plot(t,Energy)
+        plt.plot(t,Energy_capacity,color='r',linestyle='dashed')
+        plt.plot(t,Energy_capacity_min,color='black',linestyle='dashed')
+        plt.fill_between(t,np.ones_like(t)*100,Energy_capacity,color='mistyrose')
+        plt.fill_between(t,np.zeros_like(t),Energy_capacity_min,color='mistyrose')
         plt.xscale
         plt.xlabel(f'Time [days]')
         plt.ylabel(f'Battery level [%]')

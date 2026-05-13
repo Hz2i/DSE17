@@ -25,7 +25,7 @@ def test_power_system_null_values():
     solar.daylight_cycle()
     assert solar.daylight_time > 0.0
 
-    required = power_required(None, mass=0, LD=1, V_cruise=0, payload=0, payload_peak=0, payload_frac=0, margin=0)
+    required = power_required(mass=0, LD=1, V_cruise=0, payload=0, payload_peak=0, payload_frac=0, margin=0)
     assert required == 0.0
 
 # ORDER OF MAGNITUDE TESTS
@@ -46,7 +46,7 @@ def test_power_system_order_of_magnitude():
     solar.daylight_cycle()
     assert 3600 < solar.daylight_time < 86400
 
-    required = power_required(None, mass=120, LD=40, V_cruise=25, payload=100, payload_peak=150, payload_frac=0.1, margin=300)
+    required = power_required(mass=120, LD=40, V_cruise=25, payload=100, payload_peak=150, payload_frac=0.1, margin=300)
     assert 500.0 < required < 2000.0
 
 # ASSUMED CONSTANTS CROSS-VERIFICATION TESTS  - TODO: constant test better in components_materials test file? Or separate constants test file?
@@ -111,7 +111,7 @@ def test_power_system_return_types():
     solar.daylight_cycle()
     assert isinstance(solar.daylight_time, float)
 
-    required = power_required(None, mass=120, LD=40, V_cruise=25, payload=100, payload_peak=150, payload_frac=0.1, margin=300)
+    required = power_required(mass=120, LD=40, V_cruise=25, payload=100, payload_peak=150, payload_frac=0.1, margin=300)
     assert isinstance(required, float)
 
 
