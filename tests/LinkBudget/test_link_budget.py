@@ -1,9 +1,4 @@
-import sys
-from pathlib import Path
-
 import pytest
-
-sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from Objects.LinkBudget.link_budget import link_budget
 
@@ -71,6 +66,8 @@ def test_link_budget_constants():
     assert budget.bandwidth_efficiency['QPSK'] == 2.0
     assert budget.bandwidth_efficiency['16QAM'] == 4.0
     assert budget.bandwidth_efficiency['64QAM'] == 6.0
+
+
 
 # UNIT TESTS
 def test_link_budget_class_initialization():
