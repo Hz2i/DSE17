@@ -105,11 +105,22 @@ class FlightConditionsSystem:
 class PayloadSystem:
     def __init__(self):                                     # Initialise with proper values
         self.mass = self.compute_payload_system()
-        self.volume = 0.0
+        self.volume = 0.01 #m^3 common aerospace values
         self.x_pos = 0.0
+        self.mass_payload = 20 #kg
         self.power_required = 0.0
-    def compute_payload_system(self):                          # Compute all relevant characteristics of the payload system
-        return None
+        self.mass_connector = 0.050 #kg, MIL-DTL 38999 Series III
+        self.mass_cables = 0.020 #kg/m AWG16
+        self.resistance_cable = 0.013 #Ohm/m AWG16
+        self.current_cable = 35 #A, AWG16 maximum current
+        self.power_loss = self.resistance_cable * self.current_cable**2 #W, power loss in the cables
+        self.mass_mounting = 0.05 * self.mass_payload #kg, 5% of payload mass
+
+    def compute_payload_system(self):     
+        self.PS_mass = self.mass_connector + self.mass_cables + self.mass_mounting
+        self.PS_volume = self.volume
+        self.PS_power = self.power_loss
+        return self.PS_mass, self.PS_volume, self.PS_power
 
 class ControlSystem:
     def __init__(self):                                     # Initialise with proper values
