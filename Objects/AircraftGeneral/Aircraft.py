@@ -52,6 +52,7 @@ class Aircraft:
             self.wing.compute_oswald_eff()
             self.wing.zero_lift_drag(rho_cruise=am.Atmosphere(self.h).density[0], V_cruise=self.TAS, M=0.1)
             self.fus.zero_lift_drag(rho_cruise=am.Atmosphere(self.h).density[0], V_cruise=self.TAS)
+            self.emp.zero_lift_drag(rho_cruise=am.Atmosphere(self.h).density[0], V_cruise=self.TAS, M=0.1)
 
 
             CL = (3.0 * self.wing.CD0 * np.pi * self.wing.AR * self.wing.e)**0.5
@@ -59,10 +60,8 @@ class Aircraft:
             CD = CD0 + CL**2/(np.pi*self.wing.AR*self.wing.e)
             CL_CD = CL/CD
             self.CL_CD = CL_CD
-            # print("CL/CD:", CL_CD)
-            # print("S:", self.wing.S)
 
-            self.T_req = self.MTOW*self.const.g/CL_CD + self.MTOW*self.const.g * np.sin(np.radians(self.gamma))
+            self.T_req = self.MTOW*self.const.g/self.CL_CD + self.MTOW*self.const.g * np.sin(np.radians(self.gamma))
             self.prop = PropulsionSystem(T=self.T_req, velocity=self.TAS, alt=self.h, rpm=1000.0, torque=4.0, motor_temp=-40.0)
 
             self.Pow_motor = self.prop.power_required
@@ -72,8 +71,6 @@ class Aircraft:
             self.pow_store.compute_weight_volume()
             self.solar = power_generation(self.Pow_req, latitude=self.lat, days_from_solstice=self.day_margin)
             self.solar.compute_weight_surface()
-
-            # print("S:", self.solar.area)
 
             err = ((self.solar.area - self.wing.S)**2)**0.5 / self.solar.area
             self.wing.S = self.solar.area
