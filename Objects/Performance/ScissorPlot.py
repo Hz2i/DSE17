@@ -39,16 +39,25 @@ class ScissorPlot:
     def controllability_min_Sh_S(self,x_cg):
         return (x_cg - self.x_ac + self.Cm_ac/self.CL_Ah) / (self.CL_h/self.CL_Ah * self.lh/self.MAC * self.Vh2)
 
-    def plot_scissor_plot(self):
-        x_cg = np.arange(-0.5,1.5+0.1,0.1)
+    def plot_scissor_plot(self,x_cg_min=0.2,x_cg_max=0.4):
+        x_cg = np.arange(-0.1,0.8+0.1,0.1)
         
         y_control = self.controllability_min_Sh_S(x_cg)
         y_stab_margin = self.stability_min_Sh_S(x_cg,margin=0.05)
         y_stab = self.stability_min_Sh_S(x_cg,margin=0.0)
 
-        plt.plot(x_cg,y_control,label="Controllability")
-        plt.plot(x_cg,y_stab,label="Stability")
-        plt.plot(x_cg,y_stab_margin,label="Stability with margin")
-        plt.ylim(-0.1,0.5)
+        Sh_S = self.Sh/self.S
+
+        plt.hlines(Sh_S,x_cg_min,x_cg_max,colors=['black'],label="CG range")
+
+        plt.plot(x_cg,y_control,color='blue',label="Controllability")
+        plt.fill_between(x_cg,y_control,-1,color='mistyrose',alpha=1)
+        plt.plot(x_cg,y_stab,color='red',label="Stability")
+        plt.fill_between(x_cg,y_stab,-1,color='mistyrose',alpha=1)
+        plt.plot(x_cg,y_stab_margin,color='green',label="Stability with margin")
+        plt.hlines(0,x_cg[0],x_cg[-1],colors=['black'],linestyles=["dashed"])
+        plt.ylim(-0.05,0.5)
+        plt.xlabel(r"$x_{cg}/MAC$")
+        plt.ylabel(r'$S_h / S $')
         plt.legend()
         plt.show()

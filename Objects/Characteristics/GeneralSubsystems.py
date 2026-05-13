@@ -100,7 +100,7 @@ class FlightConditionsSystem:
         self.FCS_mass = self.mass + self.IMU_mass + self.GNSS_mass + self.pitot_mass
         self.FCS_volume = self.volume + self.IMU_volume + self.GNSS_volume + self.pitot_volume
         self.FCS_power_required = self.power_required + self.IMU_power_required + self.GNSS_power_required + self.pitot_power_required
-        # return self.FCS_mass, self.FCS_volume, self.FCS_power_required
+        return self.FCS_mass, self.FCS_volume, self.FCS_power_required
 
 class PayloadSystem:
     def __init__(self):                                     # Initialise with proper values
@@ -125,6 +125,23 @@ class PayloadSystem:
 class ControlSystem:
     def __init__(self):                                     # Initialise with proper values
         self.power_required = 0.0
+        self.actuator_mass = 0.065 #kg, HS-7955TG servo
+        self.actuator_volume = 0.040 * 0.020 * 0.037 #m^3, HS-7955TG servo
+        self.actuator_current = 1.5 #A, HS-7955TG servo estimated average current
+        self.actuator_power = 6 * self.actuator_current #W, 6V * 1.5A, HS-7955TG servo estimated average power
+        self.mass_cables = 0.020 #kg/m AWG16
+        self.resistance_cable = 0.013 #Ohm/m AWG16
+        self.power_loss_cable = self.resistance_cable * self.actuator_current**2 #W, power loss in the cables
+        self.length_pushrod = 0.7 #m, estimated length of the pushrod from the actuator to the control surface
+        self.diameter_pushrod = 0.005 #m, estimated diameter of the pushrod
+        self.volume_pushrod = np.pi * (self.diameter_pushrod/2)**2 * self.length_pushrod #m^3, volume of the pushrod
+        self.aluminum_density = 2700 #kg/m^3, density of aluminum
+        self.mass_pushrod = self.volume_pushrod * self.aluminum_density #kg, mass of the pushrod
+        self.joints_mass_ratio = 0.5 #Estimated mass ratio of the joints compared to the pushrod mass
 
-    def compute_control_system(self):                          # Compute all relevant characteristics of the control system
-        return None
+
+    def compute_control_system(self): #Assumed a total of 4 actuators (ailerons, elevator, rudder), so all characteristics are multiplied by 4
+        self.CS_mass = (self.actuator_mass + self.mass_cables + self.mass_pushrod + self.joints_mass_ratio * self.mass_pushrod) * 4
+        self.CS_volume = (self.actuator_volume + self.mass_cables + self.volume_pushrod) * 4
+        self.CS_power_required = (self.actuator_power + self.power_loss_cable) * 4
+        return self.CS_mass, self.CS_volume, self.CS_power_required

@@ -114,7 +114,7 @@ class fuselage:
 
 
 class empennage:
-    def __init__(self,S_h = 1.5, S_v = 1, h_AR = 4.0, v_AR = 1.5, lh = 3, vh = 0.0, taper_h = 1.0, taper_v = 1.0, airfoilh=airfoil_NACA0012(),airfoilv=airfoil_NACA0012(), qcsweep_h = 0.0, qcsweep_v = 0.0 ): # average values taken from Roelof Vos' ADSEE book
+    def __init__(self,S_h = 6, S_v = 4, h_AR = 4.0, v_AR = 1.5, lh = 3, vh = 0.0, taper_h = 1.0, taper_v = 1.0, airfoilh=airfoil_NACA0012(),airfoilv=airfoil_NACA0012(), qcsweep_h = 0.0, qcsweep_v = 0.0 ): # average values taken from Roelof Vos' ADSEE book
         self.foil_h = airfoilh
         self.foil_v = airfoilv
         self.AR_h = h_AR         # Currently initialised with 0
