@@ -175,8 +175,10 @@ def assess_packing_feasibility(packets, visualize=False):
         # Plot items
         colors = ['red', 'green', 'blue', 'yellow', 'magenta', 'orange', 'purple', 'brown', 'pink', 'gray']
         for i, item in enumerate(b.items):
-            x, y, z = item.position
-            w, h, d = item.width, item.height, item.depth
+            # ensure numeric types are native floats (py3dbp may use Decimal)
+            pos = item.position
+            x, y, z = float(pos[0]), float(pos[1]), float(pos[2])
+            w, h, d = float(item.width), float(item.height), float(item.depth)
             color = colors[i % len(colors)]
             plot_box(ax, x, y, z, w, h, d, color)
 
@@ -189,6 +191,9 @@ def assess_packing_feasibility(packets, visualize=False):
         ax.set_xlabel("X")
         ax.set_ylabel("Y")
         ax.set_zlabel("Z")
+
+        # aspect ratio
+        ax.set_box_aspect([constants.container_inner_width, constants.container_inner_height, constants.container_inner_length])
 
         plt.show()
 
