@@ -35,8 +35,10 @@ def calculate_co2_emissions_Solarpanels(energy_consumption, solar_panel_type):
         co2_emission = energy_consumption * 0.06
     if solar_panel_type == "perovskite":
         co2_emission = energy_consumption * 0.06
+    if solar_panel_type == "Heterojunction_silicon":
+        co2_emission = energy_consumption * 0.02
     else:
-        raise ValueError("Invalid solar panel type. Please choose from 'GaAs', 'SC-Si', or 'perovskite'.")
+        raise ValueError("Invalid solar panel type. Please choose from 'GaAs', 'SC-Si', 'Heterojunction_silicon', or 'perovskite'.")
     return co2_emission
 
 
