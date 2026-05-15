@@ -107,7 +107,7 @@ class fuselage:
 
         Cf = f_l*Cf_l + (1-f_l)*Cf_t
 
-        f = 1/self.D
+        f = (self.L1+self.L2+self.L3)/self.D
 
         self.CD0 = self.Sw * (Cf*(1+60/f**3+f/400)) ## 1/S needs to be applied externally
 

@@ -33,6 +33,7 @@ class Aircraft:
         self.DoD = DoD
         self.gamma = gamma
 
+        self.e = None
         self.CL_CD = None
         self.CD0 = None
         self.CL_opt = None
@@ -67,17 +68,19 @@ class Aircraft:
             self.emp.zero_lift_drag(rho_cruise=am.Atmosphere(self.h).density[0], V_cruise=self.TAS, M=0.1)
 
             self.CD0 = (self.fus.CD0 + self.wing.CD0 + self.emp.CD0)/self.wing.S
-            self.CL_opt = (3.0 * self.CD0 * np.pi * self.wing.AR * self.wing.e)**0.5
+            self.e = 1/(0.38*self.CD0*np.pi*self.wing.AR + 1/(self.wing.e*(1-2*(self.fus.D/self.wing.b)**2)))
+
+            self.CL_opt = (self.CD0 * np.pi * self.wing.AR * self.e)**0.5
 
             TAS_opt = (self.MTOW*self.const.g / (0.5 * am.Atmosphere(self.h).density[0] * self.wing.S * self.CL_opt))**0.5
 
             if TAS_opt > self.TAS:
                 CL_current = self.CL_opt
-                CD_current = self.CD0 + CL_current**2/(np.pi*self.wing.AR*self.wing.e)
+                CD_current = self.CD0 + CL_current**2/(np.pi*self.wing.AR*self.e)
                 self.CL_CD = CL_current/CD_current
             else:
                 CL_current = self.MTOW*self.const.g / (0.5 * am.Atmosphere(self.h).density[0] * self.TAS**2 * self.wing.S)
-                CD_current = self.CD0 + CL_current**2/(np.pi*self.wing.AR*self.wing.e)
+                CD_current = self.CD0 + CL_current**2/(np.pi*self.wing.AR*self.e)
                 self.CL_CD = CL_current/CD_current
 
             self.T_req = self.MTOW*self.const.g/self.CL_CD + self.MTOW*self.const.g * np.sin(np.radians(self.gamma))
@@ -101,8 +104,9 @@ class Aircraft:
 
         print("Optimal CL:", self.CL_opt)
         print("CL:", CL_current)
+        print("CD0:", self.CD0)
         print("CL/CD:", self.CL_CD)
-        print("Oswald efficiency:", self.wing.e)
+        print("Oswald efficiency:", self.e)
         print("Propulsive efficiency:", self.prop.overall_eff)
 
 
