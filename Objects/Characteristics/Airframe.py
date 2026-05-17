@@ -55,7 +55,7 @@ class wing:
         Reynolds = np.minimum(rho_cruise*V_cruise*chord/mu,38.21*(chord/k)**1.053)
 
         Cf_l = 1.328/np.sqrt(Reynolds)
-        Cf_t = 0.455/(np.log(Reynolds)**2.58)
+        Cf_t = 0.455/(np.log10(Reynolds)**2.58)
 
         f_l = 0.1
 
@@ -103,7 +103,7 @@ class fuselage:
         Reynolds = np.minimum(rho_cruise*V_cruise*length/mu,38.21*(length/k)**1.053)
 
         Cf_l = 1.328/np.sqrt(Reynolds)
-        Cf_t = 0.455/(np.log(Reynolds)**2.58)
+        Cf_t = 0.455/(np.log10(Reynolds)**2.58)
 
         f_l = 0.0
 
@@ -164,10 +164,10 @@ class empennage:
         Reynolds_v = np.minimum(rho_cruise*V_cruise*chord_v/mu,38.21*(chord_v/k)**1.053)
 
         Cf_l_h = 1.328/np.sqrt(Reynolds_h)
-        Cf_t_h = 0.455/(np.log(Reynolds_h)**2.58)
+        Cf_t_h = 0.455/(np.log10(Reynolds_h)**2.58)
 
         Cf_l_v = 1.328/np.sqrt(Reynolds_v)
-        Cf_t_v = 0.455/(np.log(Reynolds_v)**2.58)
+        Cf_t_v = 0.455/(np.log10(Reynolds_v)**2.58)
 
         f_l = 0.1 # laminar fraction
 
@@ -178,3 +178,35 @@ class empennage:
         FF_v = (1+0.6/self.foil_v.thickness_pos * self.foil_v.max_thickness + 100 * self.foil_v.max_thickness**4)*(1.34*M**0.18*(np.cos(self.qc_sweep_v))**0.28)
 
         self.CD0 = (Cf_h * FF_h * S_wet_h + Cf_v * FF_v * S_wet_v) ## 1/S needs to be applied externally
+
+
+class nacelles:
+    def __init__(self,nr_of_engines = 4,diameter = 0.5, length = 1):
+        self.nr_of_engines = nr_of_engines
+        self.D = diameter
+        self.L = length
+
+        
+    def zero_lift_drag(self, rho_cruise, V_cruise):
+        self.Sw = np.pi*self.D/4 * (1/(3*self.L**2)*((4*self.L**2+self.D**2/4)**1.5))
+
+
+        mu = 1.4216e-5 # at 60,000 ft (18,500 m)
+        k = 0.405e-5 # surface roughness of metal sheets
+
+        Reynolds = np.minimum(rho_cruise*V_cruise*self.L/mu,38.21*(self.L/k)**1.053)
+
+        Cf_l = 1.328/np.sqrt(Reynolds)
+        Cf_t = 0.455/(np.log10(Reynolds)**2.58)
+
+        f_l = 0.0
+
+        Cf = f_l*Cf_l + (1-f_l)*Cf_t
+
+        if self.D == 0:
+            f = 1
+        else:
+            f = (self.L)/self.D
+
+        self.CD0 = self.nr_of_engines*self.Sw * (Cf*(1+0.35/f)) ## 1/S needs to be applied externally
+

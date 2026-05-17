@@ -2,7 +2,7 @@ import numpy as np
 import ambiance as am
 
 
-from Objects.Characteristics.Airframe import wing, fuselage, empennage
+from Objects.Characteristics.Airframe import wing, fuselage, empennage, nacelles
 from Objects.Characteristics.GeneralSubsystems import ComputerSystem, CommunicationSystem, FlightConditionsSystem, PayloadSystem, ControlSystem
 from Objects.Characteristics.PowerSystem_sizing import power_storage, power_generation
 from Objects.Characteristics.PropulsionSystem import PropulsionSystem
@@ -10,13 +10,14 @@ from Objects.Constants import Constants
 
 
 class Aircraft:
-    def __init__(self, MTOW_guess=100.0, TAS=20.0, h=18000.0, gamma=0.0, lat=50.0, day_margin=0, DoD=0.8, wing=wing(), fus=fuselage(), emp=empennage(), comp=ComputerSystem(), comms=CommunicationSystem(), flight_con=FlightConditionsSystem(), payload=PayloadSystem(), ctrls=ControlSystem()):
+    def __init__(self, MTOW_guess=100.0, TAS=20.0, h=18000.0, gamma=0.0, lat=50.0, day_margin=0, DoD=0.8, wing=wing(), fus=fuselage(), emp=empennage(), nac=nacelles(), comp=ComputerSystem(), comms=CommunicationSystem(), flight_con=FlightConditionsSystem(), payload=PayloadSystem(), ctrls=ControlSystem()):
         self.MTOW = MTOW_guess
         self.const = Constants()
 
         self.wing = wing
         self.fus = fus
         self.emp = emp
+        self.nac = nac
         self.comp = comp
         self.comms = comms
         self.flight_con = flight_con
@@ -68,11 +69,12 @@ class Aircraft:
             self.wing.zero_lift_drag(rho_cruise=am.Atmosphere(self.h).density[0], V_cruise=self.TAS, M=0.1)
             self.fus.zero_lift_drag(rho_cruise=am.Atmosphere(self.h).density[0], V_cruise=self.TAS)
             self.emp.zero_lift_drag(rho_cruise=am.Atmosphere(self.h).density[0], V_cruise=self.TAS, M=0.1)
+            self.nac.zero_lift_drag(rho_cruise=am.Atmosphere(self.h).density[0], V_cruise=self.TAS)
 
-            self.CD0 = (self.fus.CD0 + self.wing.CD0 + self.emp.CD0)/self.wing.S
+            self.CD0 = (self.fus.CD0 + self.wing.CD0 + self.emp.CD0 + self.nac.CD0)/self.wing.S
             self.e = 1/(0.38*self.CD0*np.pi*self.wing.AR + 1/(self.wing.e*(1-2*(self.fus.D/self.wing.b)**2)))
 
-            self.CL_opt = (self.CD0 * np.pi * self.wing.AR * self.e)**0.5
+            self.CL_opt = (3* self.CD0 * np.pi * self.wing.AR * self.e)**0.5
 
             TAS_opt = (self.MTOW*self.const.g / (0.5 * am.Atmosphere(self.h).density[0] * self.wing.S * self.CL_opt))**0.5
 
