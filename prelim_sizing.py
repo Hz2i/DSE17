@@ -9,7 +9,7 @@ from Objects.Constants import Constants
 from Objects.AircraftGeneral.Aircraft import Aircraft
 
 
-powM_frac_target = 0.7     # From the NASA paper (mass fraction of the power system)
+powM_frac_target = 0.65     # From the NASA paper (mass fraction of the power system)
 MTOW_initial = 120.0
 TAS_initial = 25.0
 gamma = 0.0
@@ -22,7 +22,7 @@ night_time = 0.0
 wing_geo = wing(A=26.5, qc_sweep=0.0*np.pi/180, taper=1.0, dihedral=5.0*np.pi/180.0)
 fus_geo = fuselage()
 emp_geo = empennage()
-nac_geo = nacelles(nr_of_engines=0)
+nac_geo = nacelles(nr_of_engines=4)
 
 # General subsystem parameters may be changed using the following (commented) code block; Sensible defaults should already be implemented
 

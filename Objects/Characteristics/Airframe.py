@@ -43,21 +43,21 @@ class wing:
         taper_adjusted = self.taper - (-0.357 + 0.45*np.exp(0.0375*self.qc_sweep))
         f_lambda = 0.0524*taper_adjusted**4 - 0.15*taper_adjusted**3 + 0.1659*taper_adjusted**2 - 0.0706*taper_adjusted + 0.0119
         k_WL = 2.83
-        k_e_dihedral = (1+1/k_WL * (1/np.cos(self.dihedral)-1))**2
-        self.e =  1/(1+f_lambda*self.AR) * k_e_dihedral
+        self.k_e_dihedral = (1+1/k_WL * (1/np.cos(self.dihedral)-1))**2
+        self.e =  1/(1+f_lambda*self.AR)
 
     def zero_lift_drag(self,rho_cruise,V_cruise, M): # ADSEE 2 lectures; Requires cruise rho, cruise V, cruise M; Assumes average chord length based on surface area and AR.
         S_wet_w = 1.07*2*self.S
         chord = self.MAC
         mu = 1.4216e-5 # at 60,000 ft (18,500 m)
-        k = 0.405e-5 # surface roughness of metal sheets
+        k = 0.152e-5 # surface roughness of polished sheet metal
 
         Reynolds = np.minimum(rho_cruise*V_cruise*chord/mu,38.21*(chord/k)**1.053)
 
         Cf_l = 1.328/np.sqrt(Reynolds)
         Cf_t = 0.455/(np.log10(Reynolds)**2.58)
 
-        f_l = 0.1
+        f_l = 0.35
 
         Cf = f_l*Cf_l + (1-f_l)*Cf_t
 
@@ -98,14 +98,14 @@ class fuselage:
 
         length = self.L1+self.L2+self.L3
         mu = 1.4216e-5 # at 60,000 ft (18,500 m)
-        k = 0.405e-5 # surface roughness of metal sheets
+        k = 0.152e-5 # surface roughness of polished sheet metal
 
         Reynolds = np.minimum(rho_cruise*V_cruise*length/mu,38.21*(length/k)**1.053)
 
         Cf_l = 1.328/np.sqrt(Reynolds)
         Cf_t = 0.455/(np.log10(Reynolds)**2.58)
 
-        f_l = 0.0
+        f_l = 0.1
 
         Cf = f_l*Cf_l + (1-f_l)*Cf_t
 
@@ -158,7 +158,7 @@ class empennage:
         chord_h = self.MAC_h
         chord_v = self.MAC_v
         mu = 1.4216e-5 # at 60,000 ft (18,500 m)
-        k = 0.405e-5 # surface roughness of metal sheets
+        k = 0.152e-5 # surface roughness of polished sheet metal
 
         Reynolds_h = np.minimum(rho_cruise*V_cruise*chord_h/mu,38.21*(chord_h/k)**1.053)
         Reynolds_v = np.minimum(rho_cruise*V_cruise*chord_v/mu,38.21*(chord_v/k)**1.053)
@@ -169,7 +169,7 @@ class empennage:
         Cf_l_v = 1.328/np.sqrt(Reynolds_v)
         Cf_t_v = 0.455/(np.log10(Reynolds_v)**2.58)
 
-        f_l = 0.1 # laminar fraction
+        f_l = 0.35 # laminar fraction
 
         Cf_h = f_l*Cf_l_h + (1-f_l)*Cf_t_h # coefficient of friction
         Cf_v = f_l*Cf_l_v + (1-f_l)*Cf_t_v # coefficient of friction
@@ -192,14 +192,14 @@ class nacelles:
 
 
         mu = 1.4216e-5 # at 60,000 ft (18,500 m)
-        k = 0.405e-5 # surface roughness of metal sheets
+        k = 0.152e-5 # surface roughness of polished sheet metal
 
         Reynolds = np.minimum(rho_cruise*V_cruise*self.L/mu,38.21*(self.L/k)**1.053)
 
         Cf_l = 1.328/np.sqrt(Reynolds)
         Cf_t = 0.455/(np.log10(Reynolds)**2.58)
 
-        f_l = 0.0
+        f_l = 0.1
 
         Cf = f_l*Cf_l + (1-f_l)*Cf_t
 
