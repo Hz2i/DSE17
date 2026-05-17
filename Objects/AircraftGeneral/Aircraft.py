@@ -73,7 +73,7 @@ class Aircraft:
 
             self.CD0 = (self.fus.CD0 + self.wing.CD0 + self.emp.CD0 + self.nac.CD0)/self.wing.S
 
-            K = 0.25 # factor for viscous induced drag; For DC-8/9 family K=0.38, for sailplanes such as HAPS is likely lower
+            K = 0.38 # factor for viscous induced drag; For DC-8/9 family K=0.38, for sailplanes such as HAPS is likely lower
 
             self.e = 1/(K*self.CD0*np.pi*self.wing.AR + 1/(self.wing.e*(1-2*(self.fus.D/self.wing.b)**2))) * self.wing.k_e_dihedral
 
