@@ -163,6 +163,11 @@ class empennage:
         Reynolds_h = np.minimum(rho_cruise*V_cruise*chord_h/mu,38.21*(chord_h/k)**1.053)
         Reynolds_v = np.minimum(rho_cruise*V_cruise*chord_v/mu,38.21*(chord_v/k)**1.053)
 
+        if Reynolds_h <= 0:
+            Reynolds_h = 10
+        if Reynolds_v <= 0:
+            Reynolds_v = 10
+
         Cf_l_h = 1.328/np.sqrt(Reynolds_h)
         Cf_t_h = 0.455/(np.log10(Reynolds_h)**2.58)
 
