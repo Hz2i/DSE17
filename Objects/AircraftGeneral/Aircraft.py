@@ -62,6 +62,8 @@ class Aircraft:
         CD_current = None
 
         while surface_check:
+            self.wing.compute_required_coefficients()
+            self.emp.compute_required_coefficients()
             self.wing.compute_oswald_eff()
             self.wing.zero_lift_drag(rho_cruise=am.Atmosphere(self.h).density[0], V_cruise=self.TAS, M=0.1)
             self.fus.zero_lift_drag(rho_cruise=am.Atmosphere(self.h).density[0], V_cruise=self.TAS)

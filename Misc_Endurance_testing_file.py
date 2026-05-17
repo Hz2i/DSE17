@@ -9,5 +9,6 @@ from Objects.Performance.ScissorPlot import *
 
 
 scissorplot = ScissorPlot()
+scissorplot.compute_required_coefs()
 
-scissorplot.minimum_Sh_S(x_cg_min=0.2,x_cg_max=0.4)
+scissorplot.plot_scissor_plot(x_cg_min=0.2,x_cg_max=0.4)
