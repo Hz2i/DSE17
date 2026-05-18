@@ -10,9 +10,9 @@ from Objects.Performance.ScissorPlot import ScissorPlot
 from Objects.AircraftGeneral.Aircraft import Aircraft
 
 
-powM_frac_target = 0.56    # From the NASA paper (mass fraction of the power system)
+powM_frac_target = 0.60    # From the NASA paper (mass fraction of the power system)
 MTOW_initial = 120.0
-TAS_initial = 10.0
+TAS_initial = 25.0
 gamma = 0.0
 h_cruise = 18500.0
 lat = 30.0
@@ -76,4 +76,4 @@ scissorplot.compute_required_coefs()
 print("Sh/S sufficient: ", Sh_S > scissorplot.minimum_Sh_S(x_cg_min=0.2,x_cg_max=0.4))
 
 
-#scissorplot.plot_scissor_plot(x_cg_min=0.2,x_cg_max=0.4)
+scissorplot.plot_scissor_plot(x_cg_min=0.2,x_cg_max=0.4)

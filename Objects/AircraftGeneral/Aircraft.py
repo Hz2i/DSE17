@@ -30,6 +30,7 @@ class Aircraft:
         self.Sh_S = Sh_S
         self.Sv_S = Sv_S
         self.TAS = TAS
+        self.TAS_cruise = TAS
         self.h = h
         self.lat = lat
         self.day_margin = day_margin
@@ -92,13 +93,15 @@ class Aircraft:
                 CL_current = self.CL_opt
                 CD_current = self.CD0 + CL_current**2/(np.pi*self.wing.AR*self.e)
                 self.CL_CD = CL_current/CD_current
+                self.TAS_cruise = TAS_opt
             else:
                 CL_current = self.MTOW*self.const.g / (0.5 * am.Atmosphere(self.h).density[0] * self.TAS**2 * self.wing.S)
                 CD_current = self.CD0 + CL_current**2/(np.pi*self.wing.AR*self.e)
                 self.CL_CD = CL_current/CD_current
+                self.TAS_cruise = self.TAS
 
             self.T_req = (self.MTOW*self.const.g/self.CL_CD + self.MTOW*self.const.g * np.sin(np.radians(self.gamma)))/self.nac.nr_of_engines
-            self.prop = PropulsionSystem(T=self.T_req, velocity=self.TAS, alt=self.h, rpm=1000.0, torque=4.0, motor_temp=-40.0,propeller_diameter=1.5)
+            self.prop = PropulsionSystem(T=self.T_req, velocity=self.TAS_cruise, alt=self.h, rpm=1000.0, torque=4.0, motor_temp=-40.0,propeller_diameter=1.5)
 
             self.Pow_motor = self.prop.power_required * self.nac.nr_of_engines
             self.Pow_req = self.compute_subsys_pow() + self.Pow_motor
