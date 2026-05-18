@@ -14,9 +14,9 @@ MTOW_initial = 120.0
 TAS_initial = 25.0
 gamma = 0.0
 h_cruise = 18000.0
-lat = 40.0
+lat = 30.0
 day_margin = 0
-DoD = 0.8
+DoD = 0.7
 night_time = 0.0
 
 wing_geo = wing(A=26.5, qc_sweep=0.0, taper=1.0, dihedral=5.0*np.pi/180.0)
