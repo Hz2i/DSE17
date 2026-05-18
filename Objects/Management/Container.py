@@ -26,7 +26,7 @@ def get_packet(subsystem_mass, subsystem_density):
     packet_mass = subsystem_mass * constants.container_packet_mass_factor
     packet_volume = packet_mass / subsystem_density
     #packet_dimensions = (packet_volume ** (1/3), packet_volume ** (1/3), packet_volume ** (1/3)) # Assuming cubic packets for simplicity
-    packet_dimensions = (5.14, packet_volume / (5.14 * 1.46), 1.46) # Assuming a fixed width and height, and calculating the depth based on the volume
+    packet_dimensions = (1.46, packet_volume / (5.14 * 1.46), 5.14) # Assuming a fixed width and height, and calculating the depth based on the volume
     packet = {'mass': packet_mass, 'volume': packet_volume, 'dimensions': packet_dimensions}
     print(packet)
     return packet
@@ -47,7 +47,7 @@ def assess_packing_feasibility(packets, visualize=False):
     
     # Add packets as items to be packed
     for subsystem, packet in packets.items():
-        dimensions = sorted(packet['dimensions'], reverse=True) # Works for tuples and lists
+        dimensions = packet['dimensions']
         packer.add_item(Item(subsystem,
                     dimensions[0],  # width, m
                     dimensions[1],  # height, m
@@ -62,7 +62,7 @@ def assess_packing_feasibility(packets, visualize=False):
 
         print("\nPacked items:")
         for item in b.items:
-            print(item.name, item.position, item.width, item.height, item.depth)
+            print(item.name, item.position, item.get_dimension())
 
         print("\nUnfitted items:")
         for item in b.unfitted_items:
@@ -130,7 +130,7 @@ def assess_packing_feasibility(packets, visualize=False):
             # ensure numeric types are native floats (py3dbp may use Decimal)
             pos = item.position
             x, y, z = float(pos[0]), float(pos[1]), float(pos[2])
-            w, h, d = float(item.width), float(item.height), float(item.depth)
+            w, h, d = [float(value) for value in item.get_dimension()]
             color = colors[i % len(colors)]
             plot_box(ax, x, y, z, w, h, d, color)
 
