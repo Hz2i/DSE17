@@ -463,7 +463,7 @@ if __name__ == "__main__":
     solar_area = 30
     days = np.arange(1, 366)
 
-    lats = [-30, -15, 0, 15, 30]
+    lats = [-60, -45, -30, -15, 0, 15, 30, 45, 60]
     horizons = [1]  # only show 1-day lookback
 
     nrows = len(lats)
