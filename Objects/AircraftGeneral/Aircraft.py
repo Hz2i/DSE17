@@ -10,7 +10,7 @@ from Objects.Constants import Constants
 
 
 class Aircraft:
-    def __init__(self, MTOW_guess=100.0, TAS=20.0, h=18000.0, gamma=0.0, lat=50.0, day_margin=0, DoD=0.8, wing=wing(), fus=fuselage(), emp=empennage(), nac=nacelles(), comp=ComputerSystem(), comms=CommunicationSystem(), flight_con=FlightConditionsSystem(), payload=PayloadSystem(), ctrls=ControlSystem()):
+    def __init__(self, MTOW_guess=100.0, TAS=20.0, h=18000.0, gamma=0.0, lat=50.0, day_margin=0, DoD=0.8, Sh_S = 0.15, Sv_S = 0.1, wing=wing(), fus=fuselage(), emp=empennage(), nac=nacelles(), comp=ComputerSystem(), comms=CommunicationSystem(), flight_con=FlightConditionsSystem(), payload=PayloadSystem(), ctrls=ControlSystem()):
         self.MTOW = MTOW_guess
         self.const = Constants()
 
@@ -27,6 +27,8 @@ class Aircraft:
         self.solar = None
         self.prop = None
 
+        self.Sh_S = Sh_S
+        self.Sv_S = Sv_S
         self.TAS = TAS
         self.h = h
         self.lat = lat
@@ -63,6 +65,8 @@ class Aircraft:
         CD_current = None
 
         while surface_check:
+            self.emp.Sh = self.wing.S * self.Sh_S
+            self.emp.Sv = self.wing.S * self.Sv_S
             self.wing.compute_required_coefficients()
             self.emp.compute_required_coefficients()
             self.wing.compute_oswald_eff()
@@ -80,6 +84,7 @@ class Aircraft:
             self.e = 0.85
 
             self.CL_opt = (3* self.CD0 * np.pi * self.wing.AR * self.e)**0.5
+            #self.CL_opt = (self.CD0 * np.pi * self.wing.AR * self.e)**0.5
 
             TAS_opt = (self.MTOW*self.const.g / (0.5 * am.Atmosphere(self.h).density[0] * self.wing.S * self.CL_opt))**0.5
 
@@ -103,7 +108,7 @@ class Aircraft:
             self.solar = power_generation(self.Pow_req, latitude=self.lat, days_from_solstice=self.day_margin)
             self.solar.compute_weight_surface()
 
-            if self.solar.area < self.wing.S:
+            if self.solar.area < self.wing.S/1.1:
                 surface_check = False
             else:
                 self.wing.S += np.maximum(0.1, damping * (self.solar.area - self.wing.S))
