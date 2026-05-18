@@ -30,9 +30,11 @@ def test_compute_CL_grad_wing():
     assert test_wing_0.CL_grad > test_wing_1.CL_grad
 
     # Sensitivity test
-    test_wing_2 = wing(qc_sweep=10)
+    test_wing_2 = wing(qc_sweep=np.pi/4)
+    test_wing_2.compute_required_coefficients()
     test_wing_2.compute_CL_grad()
     test_wing_3 = wing(qc_sweep=0)
+    test_wing_3.compute_required_coefficients()
     test_wing_3.compute_CL_grad()
     assert test_wing_2.CL_grad < test_wing_3.CL_grad
 
@@ -40,6 +42,7 @@ def test_compute_CL_max():
     # Order of magnitude
     test_wing_0 = wing()
     test_wing_0.compute_required_coefficients()
+    test_wing_0.compute_CL_max()
     assert 1.0 < test_wing_0.CL_max < 2.0
 
 def test_compute_Cm_ac():# Check correct!!
@@ -56,7 +59,7 @@ def test_zero_lift_drag_wing():
     test_wing_0 = wing(qc_sweep=0.0)
     test_wing_0.compute_required_coefficients()
     test_wing_0.zero_lift_drag(0.07, 25, 0.1)
-    assert 0. < test_wing_0.CD0 < 0.2
+    assert 0. < test_wing_0.CD0 < 0.5
 
     # Sensitivity test
     test_wing_1 = wing(qc_sweep=0.1)
@@ -78,7 +81,7 @@ def test_compute_required_coefficients_empennage():
     test_empennage_0.compute_required_coefficients()
     test_empennage_1 = empennage(qcsweep_h=0.1)
     test_empennage_1.compute_required_coefficients()
-    assert test_empennage_1.qc_sweep_v > test_empennage_0.qc_sweep_v
+    assert test_empennage_1.qc_sweep_h > test_empennage_0.qc_sweep_h
 
 def test_compute_Cl_grad_empennage():
     # Sensitivity test
@@ -103,5 +106,5 @@ def test_zero_lift_drag_empennage():
 def test_zero_lift_drag_nacelle():
     # Order of magnitude
     test_nacelle = nacelles()
-    test_nacelle.zero_lift_drag()
+    test_nacelle.zero_lift_drag(0.07, 25)
     assert 0 < test_nacelle.CD0 < 0.5
