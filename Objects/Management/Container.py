@@ -25,7 +25,8 @@ def get_packet(subsystem_mass, subsystem_density):
     constants = Constants()
     packet_mass = subsystem_mass * constants.container_packet_mass_factor
     packet_volume = packet_mass / subsystem_density
-    packet_dimensions = (packet_volume ** (1/3), packet_volume ** (1/3), packet_volume ** (1/3)) # Assuming cubic packets for simplicity
+    #packet_dimensions = (packet_volume ** (1/3), packet_volume ** (1/3), packet_volume ** (1/3)) # Assuming cubic packets for simplicity
+    packet_dimensions = (5.14, packet_volume / (5.14 * 1.46), 1.46) # Assuming a fixed width and height, and calculating the depth based on the volume
     packet = {'mass': packet_mass, 'volume': packet_volume, 'dimensions': packet_dimensions}
     print(packet)
     return packet
@@ -147,7 +148,6 @@ def assess_packing_feasibility(packets, visualize=False):
         ax.set_box_aspect([constants.container_inner_width, constants.container_inner_height, constants.container_inner_length])
 
         plt.show()
-
 
 def main():
     # Example usage
