@@ -8,7 +8,7 @@ class power_storage:
         daylight_analysis.daylight_cycle()
         self.power_req = power_req
         self.daylight_time = daylight_analysis.daylight_time
-        self.DOD = DOD*0.95 # depth of discharge
+        self.DOD = DOD # depth of discharge
         self.batteries_used = batteries_used
         self.bat = battery_input
         self.f_c = fuel_cell_input
@@ -55,6 +55,6 @@ class solar_incidence:
         self.night_time = 86400-self.daylight_time                                                                              # in seconds
 
 
-def power_required(mass=120, LD=40, prop_eff=0.8,V_cruise=25, payload=100,payload_peak=150, payload_frac=0.1,margin=300):
+def power_required(self, mass=120, LD=40, prop_eff=0.8,V_cruise=25, payload=100,payload_peak=150, payload_frac=0.1,margin=300):
     output = mass*9.81/LD*V_cruise/prop_eff + payload + payload_peak*payload_frac + margin
     return output
