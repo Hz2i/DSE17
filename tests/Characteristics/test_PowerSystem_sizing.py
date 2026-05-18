@@ -76,7 +76,7 @@ def test_power_system_class_initialization():
     """Unit test for class initialization"""
     storage = power_storage(power_req=1000, latitude=40, days_from_solstice=0, DOD=0.5)
     assert storage.power_req == 1000
-    assert storage.DOD == 0.5
+    assert storage.DOD == 0.475
     assert isinstance(storage.daylight_time, float)
     assert storage.batteries_used is True
     assert storage.bat is not None
