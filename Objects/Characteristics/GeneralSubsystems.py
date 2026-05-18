@@ -31,6 +31,8 @@ class ComputerSystem:
         self.comp_volume = self.computing_power_required * self.volume_density
         self.cable_mass = self.cable_mass_density * self.cable_length * self.connected_subsystems # kg, mass of the cables connecting the computer system to the subsystems     
         self.cable_volume = np.pi * (self.cable_diameter/2)**2 * self.cable_length * self.connected_subsystems # m^3, volume of the cables connecting the computer system to the subsystems
+        self.comp_total_mass = self.comp_mass + self.cable_mass
+        self.comp_total_volume = self.comp_volume + self.cable_volume
         self.comp_x_pos = 0.0  # Needs implementation
         # return self.comp_electrical_power_required, self.comp_mass, self.comp_volume, self.comp_x_pos
 
