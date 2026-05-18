@@ -192,7 +192,7 @@ class MultiDayDeployWindowBoundsFast:
         mission: MissionProfile,
         soc_takeoff: float = 1.0,
         soc_target_at_sunset: float = 0.90,
-        dt_minutes: float = 10.0,
+        dt_minutes: float = 0.25,
     ):
         self.light = light_data
         self.solar = solar_power
@@ -384,6 +384,77 @@ class MultiDayDeployWindowBoundsFast:
         ax.set_title(title)
         ax.grid(True, alpha=0.3)
 
+    def plot_climb_overlay_on_axes(
+        self,
+        ax,
+        takeoff_abs_s_1y,          # array (N,) or scalar: takeoff time in 1y seconds
+        feasible_day=None,         # optional mask (N,)
+        color="tab:purple",
+        alpha=0.25,
+        linewidth=0.8,
+        label="Climb",
+    ):
+        """
+        Draw the climb interval [takeoff, takeoff + t_climb] on the same (day vs 0..24h) axes.
+
+        - If climb crosses midnight, it is wrapped (split into two pieces).
+        - takeoff_abs_s_1y can be:
+            * scalar: same takeoff time for all days (rare), OR
+            * array of length N: one takeoff time per day (recommended).
+        """
+        N = self.N
+        days = self.days.astype(float)
+
+        if np.isscalar(takeoff_abs_s_1y):
+            takeoff_abs_s_1y = np.full(N, float(takeoff_abs_s_1y), dtype=float)
+        else:
+            takeoff_abs_s_1y = np.asarray(takeoff_abs_s_1y, dtype=float)
+
+        if feasible_day is None:
+            feasible_day = np.isfinite(takeoff_abs_s_1y)
+        else:
+            feasible_day = np.asarray(feasible_day, dtype=bool) & np.isfinite(takeoff_abs_s_1y)
+
+        t_climb_s = float(self.mission.t_climb)
+
+        # Convert takeoff and end-of-climb to "hours of day" (wrapped 0..24)
+        y0 = np.full(N, np.nan, dtype=float)   # takeoff hour
+        y1 = np.full(N, np.nan, dtype=float)   # end-of-climb hour
+        wraps = np.zeros(N, dtype=bool)
+
+        for i in range(N):
+            if not feasible_day[i]:
+                continue
+
+            day_start_s = i * 24.0 * 3600.0
+
+            # relative seconds into day (can be negative/positive if time is wrapped in [0,year) already)
+            t0_rel_s = (takeoff_abs_s_1y[i] - day_start_s)
+            t1_rel_s = t0_rel_s + t_climb_s
+
+            y0_i = (t0_rel_s / 3600.0) % 24.0
+            y1_i = (t1_rel_s / 3600.0) % 24.0
+
+            y0[i] = y0_i
+            y1[i] = y1_i
+            wraps[i] = y1_i < y0_i  # crossed midnight
+
+        # Plot as short vertical-ish segments (actually filled band at fixed x)
+        # Using fill_between for a “band” look:
+        ok = feasible_day & np.isfinite(y0) & np.isfinite(y1)
+
+        ok_nowrap = ok & (~wraps)
+        if np.any(ok_nowrap):
+            ax.vlines(days[ok_nowrap], y0[ok_nowrap], y1[ok_nowrap],
+                    colors=color, alpha=alpha, linewidth=linewidth, label=label)
+
+        ok_wrap = ok & wraps
+        if np.any(ok_wrap):
+            # two pieces: [y0, 24] and [0, y1]
+            ax.vlines(days[ok_wrap], y0[ok_wrap], 24.0,
+                    colors=color, alpha=alpha, linewidth=linewidth, label=label)
+            ax.vlines(days[ok_wrap], 0.0, y1[ok_wrap],
+                    colors=color, alpha=alpha, linewidth=linewidth, label=label)
 
 # -----------------------------
 # Example usage: subplots over latitude range, dual horizon
@@ -392,13 +463,19 @@ if __name__ == "__main__":
     solar_area = 30
     days = np.arange(1, 366)
 
-    lats = [-60, -45, -30, -15, 0, 15, 30, 45, 60]
-    horizons = [1,2]  # dual horizon
+    lats = [-30, -15, 0, 15, 30]
+    horizons = [1]  # only show 1-day lookback
 
     nrows = len(lats)
     ncols = len(horizons)
 
-    fig, axes = plt.subplots(nrows=nrows, ncols=ncols, figsize=(16, 2.4 * nrows), sharex=True, sharey=True)
+    fig, axes = plt.subplots(
+        nrows=nrows,
+        ncols=ncols,
+        figsize=(16, 2.4 * nrows),
+        sharex=True,
+        sharey=True,
+    )
 
     for r, lat in enumerate(lats):
         light = LightData(latitude_deg=lat, days=days)
@@ -411,12 +488,14 @@ if __name__ == "__main__":
             mission=mission,
             soc_takeoff=1.0,
             soc_target_at_sunset=0.90,
-            dt_minutes=2.0,  # faster plots
+            dt_minutes=2.0,
         )
 
         for c, H in enumerate(horizons):
-            ax = axes[r, c] if nrows > 1 else axes[c]
+            ax = axes[r] if ncols == 1 else axes[r, c]
+
             lower, upper, feas = grid.compute_bounds_periodic(horizon_days=H)
+
             grid.plot_bounds_wrapped_0_24_on_axes(
                 ax,
                 lower,
@@ -424,14 +503,37 @@ if __name__ == "__main__":
                 feas,
                 title=f"lat={lat:+.0f}°, lookback={H}d",
             )
-            if r == 0:
-                ax.set_xlabel("")
+
+            # ---- NEW: climb overlay ----
+            # Visualize the climb interval starting at the latest feasible takeoff time each day
+            takeoff = upper.copy()
+            takeoff[~feas] = np.nan
+
+            grid.plot_climb_overlay_on_axes(
+                ax,
+                takeoff_abs_s_1y=takeoff,
+                feasible_day=feas,
+                color="tab:purple",
+                alpha=0.5,
+                linewidth=1.0,
+                label="Climb",
+            )
+
             if c == 0:
                 ax.set_ylabel("Takeoff time (solar hours)")
 
-    # One legend for the whole figure
-    handles, labels = axes[0, 0].get_legend_handles_labels()
-    fig.legend(handles, labels, loc="upper right", bbox_to_anchor=(0.98, 0.98))
-    fig.suptitle(f"Deploy windows (grid, wrapped; area={solar_area} m²)", y=0.995)
+    # Legend
+    handles, labels = (axes[0].get_legend_handles_labels() if ncols == 1
+                       else axes[0, 0].get_legend_handles_labels())
+
+    # Optional: de-duplicate legend labels (since climb overlay adds repeated entries)
+    dedup = {}
+    for h, lab in zip(handles, labels):
+        dedup.setdefault(lab, h)
+
+    fig.legend(list(dedup.values()), list(dedup.keys()),
+               loc="upper right", bbox_to_anchor=(0.98, 0.98))
+
+    fig.suptitle(f"Deploy windows + climb overlay (area={solar_area} m²)", y=0.995)
     plt.tight_layout(rect=[0, 0, 0.98, 0.985])
     plt.show()
