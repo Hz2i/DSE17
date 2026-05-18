@@ -58,3 +58,15 @@ class solar_incidence:
 def power_required(self, mass=120, LD=40, prop_eff=0.8,V_cruise=25, payload=100,payload_peak=150, payload_frac=0.1,margin=300):
     output = mass*9.81/LD*V_cruise/prop_eff + payload + payload_peak*payload_frac + margin
     return output
+
+class power_required:
+    def __init__(self, mass=120, LD=40, prop_eff=0.8,V_cruise=25, payload=100,payload_peak=150, payload_frac=0.1,margin=300):
+        self.propulsive_power = mass*9.81/LD*V_cruise/prop_eff
+        self.payload_power = payload + payload_peak*payload_frac
+
+        self.T_int =
+        self.T_ext =
+
+
+    def thermal_power(self):
+
