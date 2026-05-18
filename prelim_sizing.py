@@ -9,7 +9,7 @@ from Objects.Constants import Constants
 from Objects.AircraftGeneral.Aircraft import Aircraft
 
 
-powM_frac_target = 0.65     # From the NASA paper (mass fraction of the power system)
+powM_frac_target = 0.6     # From the NASA paper (mass fraction of the power system)
 MTOW_initial = 120.0
 TAS_initial = 25.0
 gamma = 0.0
@@ -19,10 +19,10 @@ day_margin = 0
 DoD = 0.8
 night_time = 0.0
 
-wing_geo = wing(A=26.5, qc_sweep=0.0*np.pi/180, taper=1.0, dihedral=5.0*np.pi/180.0)
+wing_geo = wing(A=30, qc_sweep=0.0*np.pi/180, taper=1.0, dihedral=5.0*np.pi/180.0)
 fus_geo = fuselage()
 emp_geo = empennage()
-nac_geo = nacelles(nr_of_engines=4)
+nac_geo = nacelles(nr_of_engines=2)
 
 # General subsystem parameters may be changed using the following (commented) code block; Sensible defaults should already be implemented
 
@@ -63,3 +63,4 @@ print("Final surface area:", AHAPS.wing.S, AHAPS)
 print("Final solar panel area:", AHAPS.solar.area)
 print("Final battery mass:", AHAPS.pow_store.mass)
 print("Final battery volume:", AHAPS.pow_store.volume)
+print("Final remaining mass (MTOW - Power System Mass - Payload Mass):", AHAPS.MTOW * (1 - powM_frac) - AHAPS.payload.mass_payload )
