@@ -135,14 +135,14 @@ def assess_packing_feasibility(packets, visualize=False):
             plot_box(ax, x, y, z, w, h, d, color)
 
         # Set limits
-        ax.set_xlim([0, constants.container_inner_width])
-        ax.set_ylim([0, constants.container_inner_height])
-        ax.set_zlim([0, constants.container_inner_length])
+        #ax.set_xlim([0, constants.container_inner_width])
+        #ax.set_ylim([0, constants.container_inner_height])
+        #ax.set_zlim([0, constants.container_inner_length])
 
         # Labels
-        ax.set_xlabel("X")
-        ax.set_ylabel("Y")
-        ax.set_zlabel("Z")
+        ax.set_xlabel("Height (m)")
+        ax.set_ylabel("Width (m)")
+        ax.set_zlabel("Length (m)")
 
         # aspect ratio
         ax.set_box_aspect([constants.container_inner_width, constants.container_inner_height, constants.container_inner_length])
