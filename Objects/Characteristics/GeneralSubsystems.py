@@ -1,17 +1,26 @@
 import numpy as np
 
 class ComputerSystem:
-    def __init__(self, required_flops=1e9, computing_efficiency = 2 * 10**9, mass_density = 2.5 * 10**(-12), volume_density = 95.2 * 10**(-6)):                                     # Initialise with proper values
+    def __init__(self, required_flops=1e9, computing_efficiency = 2 * 10**9, mass_density = 2.5 * 10**(-12), 
+                 volume_density = 95.2 * 10**(-6), cable_mass_density = 0.047, cable_diameter = 0.0059, connected_subsystems = 7, 
+                 cable_length = 1.0):                                     # Initialise with proper values
         """required_flops: conservative estimate of the required computing power, in FLOPS
             computing_efficiency: from Raspberry Pi 5, in FLOPS/W
             mass_density: from Raspberry Pi 5, in kg/FLOPS
             volume_density: from Raspberry Pi 5, in m^3/FLOPS
+            cable_mass_density: from Prysmian cat5.e SF/UTP, in kg/m
+            cable_diameter: from Prysmian cat5.e SF/UTP, in m
+            connected_subsystems: number of subsystems connected to the computer system
+            cable_length: assumed average distance between computer system and connected subsystems, in m
             """
         self.computing_power_required = required_flops      # FLOPS, order of 10^9 - 10^10 probably
         self.computing_efficiency = computing_efficiency    # FLOPS/W, Raspberry Pi 5
         self.mass_density = mass_density                    # kg/FLOPS, Raspberry Pi 5
         self.volume_density = volume_density                # m^3/FLOPS, Raspberry Pi 5
-
+        self.cable_mass_density = cable_mass_density        # kg/m, Prysmian cat5.e SF/UTP
+        self.cable_diameter = cable_diameter                # m, Prysmian cat5.e SF/UTP
+        self.connected_subsystems = connected_subsystems    # Number of subsystems connected to the computer system
+        self.cable_length = cable_length                    # m, assumed average distance between computer system and connected subsystems
         self.compute_computer_system()
      
     def compute_computer_system(self):
@@ -19,7 +28,9 @@ class ComputerSystem:
         by simple multiplication of the required computing power with the efficiency, mass density and volume density"""
         self.comp_electrical_power_required = self.computing_power_required / self.computing_efficiency # W
         self.comp_mass = self.computing_power_required * self.mass_density               
-        self.comp_volume = self.computing_power_required * self.volume_density     
+        self.comp_volume = self.computing_power_required * self.volume_density
+        self.cable_mass = self.cable_mass_density * self.cable_length * self.connected_subsystems # kg, mass of the cables connecting the computer system to the subsystems     
+        self.cable_volume = np.pi * (self.cable_diameter/2)**2 * self.cable_length * self.connected_subsystems # m^3, volume of the cables connecting the computer system to the subsystems
         self.comp_x_pos = 0.0  # Needs implementation
         # return self.comp_electrical_power_required, self.comp_mass, self.comp_volume, self.comp_x_pos
 
@@ -74,7 +85,7 @@ class CommunicationSystem:
         plus the contribution from the transmit power""" 
         self.comms_mass = self.adsb_mass + self.elt_mass + self.ssr_mass + self.comms_mass_density * self.transmit_power
         self.comms_volume = self.adsb_volume + self.elt_volume + self.ssr_volume + self.comms_volume_density * self.transmit_power
-        self.comms_x_pos = self.comms_x_pos  # Needs implementation
+        self.comms_x_pos = 0.0  # Needs implementation
         self.comms_electrical_power_required = self.adsb_power + self.elt_power + self.ssr_power + self.transmit_power * self.transmit_efficiency
         # return self.comms_mass
 
