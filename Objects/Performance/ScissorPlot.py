@@ -5,7 +5,7 @@ class ScissorPlot:
     def __init__(self,wing=wing(),empennage=empennage(),fuselage=fuselage()):
         self.wing = wing
         self.empennage = empennage
-        self.fuselage = fuselage                                 # Initialise with required values (add inputs after self, as per necessity
+        self.fuselage = fuselage     # Initialise with required values (add inputs after self, as per necessity
         self.Vh2 = 0.85     # SEAD Lecture 7 slide 42
 
     def compute_required_coefs(self):
@@ -66,7 +66,3 @@ class ScissorPlot:
         plt.ylabel(r'$S_h / S $')
         plt.legend()
         plt.show()
-
-scissor_plot = ScissorPlot()
-scissor_plot.compute_required_coefs()
-scissor_plot.plot_scissor_plot()

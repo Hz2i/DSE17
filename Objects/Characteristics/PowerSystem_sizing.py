@@ -46,7 +46,6 @@ class solar_incidence:
         self.lat = latitude/180*np.pi             # Latitude in Radians
         self.day = days_from_solstice   # Days away from winter solstice
 
-
     def daylight_cycle(self):               # Compute incidence and daylight hours based on given parameters
         self.eq_inclination = self.axial_tilt * np.sin(2*np.pi/365*(274+self.day)) #radians
         self.max_incidence = np.pi/2 + self.eq_inclination - self.lat #max incidence angle in radians
@@ -58,3 +57,15 @@ class solar_incidence:
 def power_required(mass=120, LD=40, prop_eff=0.8,V_cruise=25, payload=100,payload_peak=150, payload_frac=0.1,margin=300):
     output = mass*9.81/LD*V_cruise/prop_eff + payload + payload_peak*payload_frac + margin
     return output
+
+class power_required:
+    def __init__(self, mass=120, LD=40, prop_eff=0.8,V_cruise=25, payload=100,payload_peak=150, payload_frac=0.1,margin=300):
+        self.propulsive_power = mass*9.81/LD*V_cruise/prop_eff
+        self.payload_power = payload + payload_peak*payload_frac
+
+        self.T_int =
+        self.T_ext =
+
+
+    def thermal_power(self):
+
