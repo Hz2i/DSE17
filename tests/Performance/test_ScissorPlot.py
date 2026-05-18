@@ -6,13 +6,18 @@ from Objects.Performance.ScissorPlot import ScissorPlot
 # CODE VERIFICATION TESTS
 # ==============================
 
-def __init__(self):
-    self.MAC = 2.0
-    self.Cm_ac = -0.05
-    self.CL_max = 1.2
-    self.S = 20.0
-    self.AR = 10.0
-    self.b = 14.0
-    self.x_ac = 0.25
+def test_compute_required_coefs():
+    # Order of magnitude
+    test_Scissorplot = ScissorPlot()
+    test_Scissorplot.compute_required_coefs()
+    assert test_Scissorplot.depsilon_dalpha > 0.
+    # assert test_Scissorplot.x_ac - test_Scissorplot.wing.x_ac > 0
+
+
+
+
+
+
+
     
     

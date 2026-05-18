@@ -66,3 +66,7 @@ class ScissorPlot:
         plt.ylabel(r'$S_h / S $')
         plt.legend()
         plt.show()
+
+scissor_plot = ScissorPlot()
+scissor_plot.compute_required_coefs()
+scissor_plot.plot_scissor_plot()
