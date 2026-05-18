@@ -57,7 +57,7 @@ class wing:
         Cf_l = 1.328/np.sqrt(Reynolds)
         Cf_t = 0.455/(np.log10(Reynolds)**2.58)
 
-        f_l = 0.35
+        f_l = 0.7
 
         Cf = f_l*Cf_l + (1-f_l)*Cf_t
 
@@ -105,7 +105,7 @@ class fuselage:
         Cf_l = 1.328/np.sqrt(Reynolds)
         Cf_t = 0.455/(np.log10(Reynolds)**2.58)
 
-        f_l = 0.1
+        f_l = 0.35
 
         Cf = f_l*Cf_l + (1-f_l)*Cf_t
 
@@ -174,7 +174,7 @@ class empennage:
         Cf_l_v = 1.328/np.sqrt(Reynolds_v)
         Cf_t_v = 0.455/(np.log10(Reynolds_v)**2.58)
 
-        f_l = 0.35 # laminar fraction
+        f_l = 0.7 # laminar fraction
 
         Cf_h = f_l*Cf_l_h + (1-f_l)*Cf_t_h # coefficient of friction
         Cf_v = f_l*Cf_l_v + (1-f_l)*Cf_t_v # coefficient of friction
@@ -204,7 +204,7 @@ class nacelles:
         Cf_l = 1.328/np.sqrt(Reynolds)
         Cf_t = 0.455/(np.log10(Reynolds)**2.58)
 
-        f_l = 0.1
+        f_l = 0.35
 
         Cf = f_l*Cf_l + (1-f_l)*Cf_t
 

@@ -5,13 +5,14 @@ from Objects.Characteristics.GeneralSubsystems import ComputerSystem, Communicat
 from Objects.Characteristics.PropulsionSystem import PropulsionSystem
 from Objects.Characteristics.ReferenceGeometries import *
 from Objects.Constants import Constants
+from Objects.Performance.ScissorPlot import ScissorPlot
 
 from Objects.AircraftGeneral.Aircraft import Aircraft
 
 
-powM_frac_target = 0.6     # From the NASA paper (mass fraction of the power system)
+powM_frac_target = 0.56    # From the NASA paper (mass fraction of the power system)
 MTOW_initial = 120.0
-TAS_initial = 25.0
+TAS_initial = 10.0
 gamma = 0.0
 h_cruise = 18500.0
 lat = 30.0
@@ -19,10 +20,14 @@ day_margin = 0
 DoD = 0.7
 night_time = 0.0
 
-wing_geo = wing(A=30, qc_sweep=0.0*np.pi/180, taper=1.0, dihedral=5.0*np.pi/180.0)
+S = 36.0
+Sh_S = 0.15
+Sv_S = 0.1
+
+wing_geo = wing(S=S,A=25.0, qc_sweep=0.0*np.pi/180, taper=1.0, dihedral=0.0*np.pi/180.0)
 fus_geo = fuselage()
-emp_geo = empennage()
-nac_geo = nacelles(nr_of_engines=2)
+emp_geo = empennage(S_h = S*Sh_S, S_v = S*Sv_S)
+nac_geo = nacelles(nr_of_engines=4)
 
 # General subsystem parameters may be changed using the following (commented) code block; Sensible defaults should already be implemented
 
@@ -35,15 +40,15 @@ nac_geo = nacelles(nr_of_engines=2)
 
 MTOW = MTOW_initial
 
-# Compute intial error:
-AHAPS = Aircraft(MTOW_guess=MTOW, TAS=TAS_initial, gamma=gamma, lat=lat, day_margin=day_margin, DoD=DoD, wing=wing_geo, fus=fus_geo, emp=emp_geo, nac=nac_geo)
+# Compute initial error:
+AHAPS = Aircraft(MTOW_guess=MTOW, TAS=TAS_initial, gamma=gamma, lat=lat, day_margin=day_margin, DoD=DoD, Sh_S = Sh_S, Sv_S = Sv_S, wing=wing_geo, fus=fus_geo, emp=emp_geo, nac=nac_geo)
 powM_frac = (AHAPS.pow_store.mass + AHAPS.solar.mass)/MTOW
 error = abs(powM_frac - powM_frac_target)/powM_frac_target
 
 
 iterations = 0
 while error > 1e-3:
-    AHAPS = Aircraft(MTOW_guess=MTOW, TAS=TAS_initial, gamma=gamma, lat=lat, day_margin=day_margin, DoD=DoD, wing=wing_geo, fus=fus_geo, emp=emp_geo, nac=nac_geo)
+    AHAPS = Aircraft(MTOW_guess=MTOW, TAS=TAS_initial, gamma=gamma, lat=lat, day_margin=day_margin, DoD=DoD,Sh_S = Sh_S, Sv_S = Sv_S, wing=wing_geo, fus=fus_geo, emp=emp_geo, nac=nac_geo)
     powM_frac = (AHAPS.pow_store.mass + AHAPS.solar.mass)/MTOW
     error = abs(powM_frac - powM_frac_target)/powM_frac_target
 
@@ -64,3 +69,11 @@ print("Final solar panel area:", AHAPS.solar.area)
 print("Final battery mass:", AHAPS.pow_store.mass)
 print("Final battery volume:", AHAPS.pow_store.volume)
 print("Final remaining mass (MTOW - Power System Mass - Payload Mass):", AHAPS.MTOW * (1 - powM_frac) - AHAPS.payload.mass_payload )
+print("Lambda Advance Ratio:", AHAPS.prop.lambda_adv)
+
+scissorplot = ScissorPlot(wing=AHAPS.wing,empennage=AHAPS.emp,fuselage=AHAPS.fus)
+scissorplot.compute_required_coefs()
+print("Sh/S sufficient: ", Sh_S > scissorplot.minimum_Sh_S(x_cg_min=0.2,x_cg_max=0.4))
+
+
+#scissorplot.plot_scissor_plot(x_cg_min=0.2,x_cg_max=0.4)

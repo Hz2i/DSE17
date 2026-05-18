@@ -48,7 +48,7 @@ class SolarPower:
         self.days = np.arange(1, 366) if days is None else np.asarray(days, dtype=int)
         self.solar_area_m2 = float(solar_area_m2)
 
-        self.efficiency = 0.31
+        self.efficiency = 0.2
         self.I0 = 1378.0
         self.powLimS = 250.0
 
@@ -97,33 +97,29 @@ class SolarPower:
 # Mission profile
 # -----------------------------
 class MissionProfile:
-    def __init__(self, time_daylight_cruise, time_night):
-        # guesses
-        self.m_solar_guess = 0
-        self.m_battery_guess = 58.6
-        self.m_prop_guess = 0
-        self.gamma_guess = 5
-        self.S_guess = 28.1
+    def __init__(self, time_daylight_cruise, time_night, solar_area=30, MTOW=150.0, M_battery=58.6):
+        self.m_battery_guess = M_battery
+        self.gamma_guess = 2
+        self.S_guess = 1.1 * solar_area
 
         self.E_battery_guess = self.m_battery_guess * 400 * 3600  # J
 
         # given
-        self.mass_subsys = 70
         self.g = 9.81
         self.alt = 60000 * 0.3048
-        self.CD0 = 0.010
-        self.AR = 24
-        self.e = 0.9
+        self.CD0 = 0.0109
+        self.AR = 25.0
+        self.e = 0.85
         self.Pavg_climb_subsys = 300
         self.Pavg_cruise_subsys = 425
-        self.eta_prop = 0.8
-        self.LD = 40
+        self.eta_prop = 0.7133
+        self.LD = 37.7
         self.V_cruise = 25
         self.t_daylight_cruise = time_daylight_cruise
         self.t_night = time_night
 
         # derived
-        self.m_total_guess = self.m_solar_guess + self.m_battery_guess + self.m_prop_guess + self.mass_subsys
+        self.m_total_guess = MTOW
         self.density_climb = self.Calc_Density_Climb()
         self.Cl_opt_climb = self.Calc_Cl_opt_climb()
         self.CD_total_climb = self.Calc_CD_total(self.Cl_opt_climb)
@@ -460,7 +456,10 @@ class MultiDayDeployWindowBoundsFast:
 # Example usage: subplots over latitude range, dual horizon
 # -----------------------------
 if __name__ == "__main__":
-    solar_area = 30
+    solar_area = 31.24
+    MTOW = 150.0
+    M_battery = 65.43
+    
     days = np.arange(1, 366)
 
     lats = [-60, -45, -30, -15, 0, 15, 30, 45, 60]
@@ -480,7 +479,7 @@ if __name__ == "__main__":
     for r, lat in enumerate(lats):
         light = LightData(latitude_deg=lat, days=days)
         solar = SolarPower(latitude_deg=lat, solar_area_m2=solar_area, days=days)
-        mission = MissionProfile(time_daylight_cruise=3600 * 5, time_night=3600 * 19)
+        mission = MissionProfile(time_daylight_cruise=3600 * 5, time_night=3600 * 19, solar_area=solar_area, MTOW=MTOW, M_battery=M_battery)
 
         grid = MultiDayDeployWindowBoundsFast(
             light_data=light,
