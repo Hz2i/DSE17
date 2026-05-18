@@ -2,7 +2,7 @@ import numpy as np
 import ambiance as am
 
 
-from Objects.Characteristics.Airframe import wing, fuselage, empennage
+from Objects.Characteristics.Airframe import wing, fuselage, empennage, nacelles
 from Objects.Characteristics.GeneralSubsystems import ComputerSystem, CommunicationSystem, FlightConditionsSystem, PayloadSystem, ControlSystem
 from Objects.Characteristics.PowerSystem_sizing import power_storage, power_generation
 from Objects.Characteristics.PropulsionSystem import PropulsionSystem
@@ -10,13 +10,14 @@ from Objects.Constants import Constants
 
 
 class Aircraft:
-    def __init__(self, MTOW_guess=100.0, TAS=20.0, h=18000.0, gamma=0.0, lat=50.0, day_margin=0, DoD=0.8, wing=wing(), fus=fuselage(), emp=empennage(), comp=ComputerSystem(), comms=CommunicationSystem(), flight_con=FlightConditionsSystem(), payload=PayloadSystem(), ctrls=ControlSystem()):
+    def __init__(self, MTOW_guess=100.0, TAS=20.0, h=18000.0, gamma=0.0, lat=50.0, day_margin=0, DoD=0.8, wing=wing(), fus=fuselage(), emp=empennage(), nac=nacelles(), comp=ComputerSystem(), comms=CommunicationSystem(), flight_con=FlightConditionsSystem(), payload=PayloadSystem(), ctrls=ControlSystem()):
         self.MTOW = MTOW_guess
         self.const = Constants()
 
         self.wing = wing
         self.fus = fus
         self.emp = emp
+        self.nac = nac
         self.comp = comp
         self.comms = comms
         self.flight_con = flight_con
@@ -33,6 +34,7 @@ class Aircraft:
         self.DoD = DoD
         self.gamma = gamma
 
+        self.e = None
         self.CL_CD = None
         self.CD0 = None
         self.CL_opt = None
@@ -61,23 +63,31 @@ class Aircraft:
         CD_current = None
 
         while surface_check:
+            self.wing.compute_required_coefficients()
+            self.emp.compute_required_coefficients()
             self.wing.compute_oswald_eff()
             self.wing.zero_lift_drag(rho_cruise=am.Atmosphere(self.h).density[0], V_cruise=self.TAS, M=0.1)
             self.fus.zero_lift_drag(rho_cruise=am.Atmosphere(self.h).density[0], V_cruise=self.TAS)
             self.emp.zero_lift_drag(rho_cruise=am.Atmosphere(self.h).density[0], V_cruise=self.TAS, M=0.1)
+            self.nac.zero_lift_drag(rho_cruise=am.Atmosphere(self.h).density[0], V_cruise=self.TAS)
 
-            self.CD0 = (self.fus.CD0 + self.wing.CD0 + self.emp.CD0)/self.wing.S
-            self.CL_opt = (3.0 * self.CD0 * np.pi * self.wing.AR * self.wing.e)**0.5
+            self.CD0 = (self.fus.CD0 + self.wing.CD0 + self.emp.CD0 + self.nac.CD0)/self.wing.S
+
+            K = 0.38 # factor for viscous induced drag; For DC-8/9 family K=0.38, for sailplanes such as HAPS is likely lower
+
+            self.e = 1/(K*self.CD0*np.pi*self.wing.AR + 1/(self.wing.e*(1-2*(self.fus.D/self.wing.b)**2))) * self.wing.k_e_dihedral
+
+            self.CL_opt = (3* self.CD0 * np.pi * self.wing.AR * self.e)**0.5
 
             TAS_opt = (self.MTOW*self.const.g / (0.5 * am.Atmosphere(self.h).density[0] * self.wing.S * self.CL_opt))**0.5
 
             if TAS_opt > self.TAS:
                 CL_current = self.CL_opt
-                CD_current = self.CD0 + CL_current**2/(np.pi*self.wing.AR*self.wing.e)
+                CD_current = self.CD0 + CL_current**2/(np.pi*self.wing.AR*self.e)
                 self.CL_CD = CL_current/CD_current
             else:
                 CL_current = self.MTOW*self.const.g / (0.5 * am.Atmosphere(self.h).density[0] * self.TAS**2 * self.wing.S)
-                CD_current = self.CD0 + CL_current**2/(np.pi*self.wing.AR*self.wing.e)
+                CD_current = self.CD0 + CL_current**2/(np.pi*self.wing.AR*self.e)
                 self.CL_CD = CL_current/CD_current
 
             self.T_req = self.MTOW*self.const.g/self.CL_CD + self.MTOW*self.const.g * np.sin(np.radians(self.gamma))
@@ -101,8 +111,9 @@ class Aircraft:
 
         print("Optimal CL:", self.CL_opt)
         print("CL:", CL_current)
+        print("CD0:", self.CD0)
         print("CL/CD:", self.CL_CD)
-        print("Oswald efficiency:", self.wing.e)
+        print("Oswald efficiency:", self.e)
         print("Propulsive efficiency:", self.prop.overall_eff)
 
 

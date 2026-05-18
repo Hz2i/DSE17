@@ -8,7 +8,7 @@ class power_storage:
         daylight_analysis.daylight_cycle()
         self.power_req = power_req
         self.daylight_time = daylight_analysis.daylight_time
-        self.DOD = DOD*0.8 # depth of discharge
+        self.DOD = DOD*0.95 # depth of discharge
         self.batteries_used = batteries_used
         self.bat = battery_input
         self.f_c = fuel_cell_input

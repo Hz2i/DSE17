@@ -49,7 +49,7 @@ def test_power_system_order_of_magnitude():
     required = power_required(mass=120, LD=40, V_cruise=25, payload=100, payload_peak=150, payload_frac=0.1, margin=300)
     assert 500.0 < required < 2000.0
 
-# ASSUMED CONSTANTS CROSS-VERIFICATION TESTS  - TODO: constant test better in components_materials test file? Or separate constants test file?
+# ASSUMED CONSTANTS CROSS-VERIFICATION TESTS
 def test_power_system_constants():
     """Test that constants used in calculations are as expected"""
 
@@ -76,7 +76,7 @@ def test_power_system_class_initialization():
     """Unit test for class initialization"""
     storage = power_storage(power_req=1000, latitude=40, days_from_solstice=0, DOD=0.5)
     assert storage.power_req == 1000
-    assert storage.DOD == 0.5
+    assert storage.DOD == 0.475
     assert isinstance(storage.daylight_time, float)
     assert storage.batteries_used is True
     assert storage.bat is not None

@@ -34,7 +34,7 @@ class power_generation:
 
 class solar_incidence:
     def __init__(self, latitude, days_from_solstice = 0):                     # Initialise known/computed values and constants
-        self.axial_tilt = 23.43585/180*np.pi      # Solar Inclination Winter Solstice in Radians
+        self.axial_tilt = 23.45/180*np.pi      # Solar Inclination Winter Solstice in Radians
         self.lat = latitude/180*np.pi             # Latitude in Radians
         self.day = days_from_solstice   # Days away from winter solstice
 
@@ -65,7 +65,7 @@ bat = battery()
 solar_c = solar_panel(0.2,0.665,200,300) #
 
 power_req = power_required(mass,LD,prop_eff,V_cruise,payload,payload_peak,payload_frac,margin)
-latitude = 30 # deg
+latitude = 40 # deg
 days_from_solstice = 0 # days
 DoD = 0.8 # depth of discharge
 

@@ -33,7 +33,7 @@ class Endurance:
         sunset_time = sunrise_time + daylight_time
 
         if sunrise_time < time_of_day and time_of_day < sunset_time:
-            current_incidence = np.pi/2 - daylight_analysis.max_incidence*np.sin((time_of_day-sunrise_time) * np.pi / (daylight_time))
+            current_incidence = np.arccos(np.cos(lat/180*np.pi)*np.cos(15*np.pi/180*(daylight_time/2-(time_of_day-sunrise_time))/3600)*np.cos(daylight_analysis.eq_inclination)+np.sin(lat/180*np.pi)*np.sin(daylight_analysis.eq_inclination))
         else:
             current_incidence = np.pi/2
 
@@ -69,7 +69,7 @@ class Endurance:
     
 
         if time_passed < endurance_limit:
-            print(f'Ran out of battery after {time_passed//86400} days and {(time_passed - (time_passed//86400) * 86400)/(3600):.2f} hours.')
+            print(f'Battery dropped below 10% capacity after {time_passed//86400} days and {(time_passed - (time_passed//86400) * 86400)/(3600):.2f} hours.')
             return False
         elif time_passed >= endurance_limit:
             print(f'The battery remained sufficiently charged for {time_passed//86400} days and {(time_passed - (time_passed//86400) * 86400)/(3600):.2f} hours.')
@@ -86,10 +86,11 @@ class Endurance:
         Energy_capacity_min = np.zeros_like(t).astype(float)
         Energy_capacity[0] = self.reduced_capacity_frac(0)*0.9 * 100
         Energy_capacity_min[0] = self.reduced_capacity_frac(0)*0.1 * 100
+        battery_empty = 1
 
 
         for i in range(0,len(t)-1):
-            Energy[i+1] = Energy[i] - self.power_consumption*time_step + self.P(self.S,self.h,self.lat,self.days_from_solstice_start,t[i],self.starting_timeofday)*time_step
+            Energy[i+1] = Energy[i] - battery_empty * (self.power_consumption*time_step - self.P(self.S,self.h,self.lat,self.days_from_solstice_start,t[i],self.starting_timeofday)*time_step)
             
             cycle = (t[i+1]-self.starting_timeofday) // 86400
 
@@ -99,9 +100,12 @@ class Endurance:
 
             if Energy[i+1] >= self.init_bat_capacity * self.reduced_capacity_frac(cycle)*0.9:
                 Energy[i+1] = self.init_bat_capacity * self.reduced_capacity_frac(cycle)*0.9
-            elif Energy[i+1] <= self.init_bat_capacity * self.reduced_capacity_frac(cycle)*0.1:
-                Energy[i+1] = self.init_bat_capacity * self.reduced_capacity_frac(cycle)*0.1
-                break
+            #elif Energy[i+1] <= self.init_bat_capacity * self.reduced_capacity_frac(cycle)*0.1:
+                #Energy[i+1] = self.init_bat_capacity * self.reduced_capacity_frac(cycle)*0.1
+                #battery_empty = 0
+                #continue
+            elif Energy[i+1] <= 0:
+                battery_empty = 0
             else:
                 continue
         
@@ -123,4 +127,14 @@ class Endurance:
         plt.hlines(100,t[0],t[-1],colors=['r'],linestyles=['dashed'])
         plt.hlines(0,t[0],t[-1],colors=['black'],linestyles=['dashed'])
         plt.ylim(-10,110)
+        plt.show()
+
+    def plot_daylight(self,total_time,time_step):
+        t = np.arange(0,total_time+time_step,time_step)
+        y = np.zeros_like(t).astype(float)
+
+        for i in range(len(t)):
+            y[i] = self.P(self.S,self.h,self.lat,self.days_from_solstice_start,t[i],self.starting_timeofday)
+
+        plt.plot(t,y)
         plt.show()

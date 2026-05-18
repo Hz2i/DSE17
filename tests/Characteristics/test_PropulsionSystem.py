@@ -72,3 +72,42 @@ def test_propulsion_system_constants():
 
 # UNIT TEST 
 # TODO, unit tests when finalized
+def test_propulsion_system_initialization():
+    """Unit test for class initialization"""
+    propulsion = PropulsionSystem(
+        plotdata=False,
+        T=100,
+        velocity=25,
+        alt=5000,
+        rpm=1000,
+        torque=4,
+        motor_temp=20,
+        propeller_diameter=2.5,
+    )
+
+    assert propulsion.T == 100
+    assert propulsion.velocity == 25
+    assert propulsion.alt == 5000
+    assert propulsion.rpm_out == 1000
+    assert propulsion.motor_temp == 20
+    assert propulsion.propeller_diameter == 2.5
+
+def test_propulsion_system_return_types():
+    """Unit test to check return types of methods"""
+    propulsion = PropulsionSystem(
+        plotdata=False,
+        T=100,
+        velocity=25,
+        alt=5000,
+        rpm=1000,
+        torque=4,
+        motor_temp=20,
+        propeller_diameter=2.5,
+    )
+
+    assert isinstance(propulsion.motor_eff, float)
+    # assert isinstance(propulsion.calc_gearbox_eff(), float)
+    assert isinstance(propulsion.propeller_eff, float)
+    # assert isinstance(propulsion.overall_eff, float)
+    assert isinstance(propulsion.power_required, float)
+    # assert isinstance(propulsion.lambda_adv, float)
