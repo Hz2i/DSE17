@@ -10,8 +10,8 @@ from Objects.Performance.ScissorPlot import ScissorPlot
 from Objects.AircraftGeneral.Aircraft import Aircraft
 
 
-powM_frac_target = 0.6    # From the NASA paper (mass fraction of the power system)
-payload_apprx_frac = 0.1
+powM_frac_target = 0.55    # From the NASA paper (mass fraction of the power system): 0.30 for the fuel cells, 0.55 or 0.6 for batteries
+payload_apprx_frac = 0.2
 
 MTOW_initial = 120.0
 TAS_initial = 25.0
@@ -55,7 +55,7 @@ error = abs(powM_frac - powM_frac_target)/powM_frac_target + abs(payload_frac - 
 # error = abs(powM_frac - powM_frac_target)/powM_frac_target
 
 error_vec = np.ones(10) * error
-monitoring_var = np.linalg.norm(error_vec - np.mean(error_vec))
+monitoring_var = np.linalg.norm(abs(error_vec - np.mean(error_vec)))
 
 iterations = 0
 while monitoring_var > 5e-3 or iterations < 10:
@@ -75,7 +75,7 @@ while monitoring_var > 5e-3 or iterations < 10:
     iterations += 1
     error_vec = np.roll(error_vec, 1)
     error_vec[0] = error
-    monitoring_var = np.linalg.norm(error_vec - np.mean(error_vec))
+    monitoring_var = np.linalg.norm(abs(error_vec - np.mean(error_vec)))
 
     print("Iteration:", iterations)
     print("Monitoring variable:", monitoring_var)

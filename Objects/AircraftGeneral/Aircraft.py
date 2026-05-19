@@ -76,6 +76,7 @@ class Aircraft:
             self.wing.compute_required_coefficients()
             self.emp.compute_required_coefficients()
             self.wing.compute_oswald_eff()
+            self.wing.compute_CL_max()
             self.wing.zero_lift_drag(rho_cruise=am.Atmosphere(self.h).density[0], V_cruise=self.TAS, M=0.1)
             self.fus.zero_lift_drag(rho_cruise=am.Atmosphere(self.h).density[0], V_cruise=self.TAS)
             self.emp.zero_lift_drag(rho_cruise=am.Atmosphere(self.h).density[0], V_cruise=self.TAS, M=0.1)
@@ -104,6 +105,12 @@ class Aircraft:
                 CD_current = self.CD0 + CL_current**2/(np.pi*self.wing.AR*self.e)
                 self.CL_CD = CL_current/CD_current
                 self.TAS_cruise = self.TAS
+
+            if CL_current > 0.8* self.wing.CL_max:
+                CL_current = 0.8* self.wing.CL_max
+                CD_current = self.CD0 + CL_current**2/(np.pi*self.wing.AR*self.e)
+                self.CL_CD = CL_current/CD_current
+                self.TAS_cruise = (self.MTOW*self.const.g / (0.5 * am.Atmosphere(self.h).density[0] * self.wing.S * CL_current))**0.5
 
             self.T_req = (self.MTOW*self.const.g/self.CL_CD + self.MTOW*self.const.g * np.sin(np.radians(self.gamma)))/self.nac.nr_of_engines
             self.prop = PropulsionSystem(T=self.T_req, velocity=self.TAS_cruise, alt=self.h, rpm=1000.0, torque=4.0, motor_temp=-40.0,propeller_diameter=1.5)
