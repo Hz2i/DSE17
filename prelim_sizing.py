@@ -17,6 +17,7 @@ gamma = 0.0
 h_cruise = 18500.0
 lat = 30.0
 day_margin = 0
+use_batt = False
 DoD = 0.7
 night_time = 0.0
 
@@ -41,14 +42,14 @@ nac_geo = nacelles(nr_of_engines=4)
 MTOW = MTOW_initial
 
 # Compute initial error:
-AHAPS = Aircraft(MTOW_guess=MTOW, TAS=TAS_initial, gamma=gamma, lat=lat, day_margin=day_margin, DoD=DoD, Sh_S = Sh_S, Sv_S = Sv_S, wing=wing_geo, fus=fus_geo, emp=emp_geo, nac=nac_geo)
+AHAPS = Aircraft(MTOW_guess=MTOW, TAS=TAS_initial, gamma=gamma, lat=lat, day_margin=day_margin, DoD=DoD, Sh_S = Sh_S, Sv_S = Sv_S, wing=wing_geo, fus=fus_geo, emp=emp_geo, nac=nac_geo, use_batt=use_batt)
 powM_frac = (AHAPS.pow_store.mass + AHAPS.solar.mass)/MTOW
 error = abs(powM_frac - powM_frac_target)/powM_frac_target
 
 
 iterations = 0
 while error > 1e-3:
-    AHAPS = Aircraft(MTOW_guess=MTOW, TAS=TAS_initial, gamma=gamma, lat=lat, day_margin=day_margin, DoD=DoD,Sh_S = Sh_S, Sv_S = Sv_S, wing=wing_geo, fus=fus_geo, emp=emp_geo, nac=nac_geo)
+    AHAPS = Aircraft(MTOW_guess=MTOW, TAS=TAS_initial, gamma=gamma, lat=lat, day_margin=day_margin, DoD=DoD,Sh_S = Sh_S, Sv_S = Sv_S, wing=wing_geo, fus=fus_geo, emp=emp_geo, nac=nac_geo, use_batt=use_batt)
     powM_frac = (AHAPS.pow_store.mass + AHAPS.solar.mass)/MTOW
     error = abs(powM_frac - powM_frac_target)/powM_frac_target
 
@@ -66,8 +67,8 @@ print("Final MTOW:", AHAPS.MTOW)
 print("Final power consumption:", AHAPS.Pow_req)
 print("Final surface area:", AHAPS.wing.S, AHAPS)
 print("Final solar panel area:", AHAPS.solar.area)
-print("Final battery mass:", AHAPS.pow_store.mass)
-print("Final battery volume:", AHAPS.pow_store.volume)
+print("Final energy storage system mass:", AHAPS.pow_store.mass)
+print("Final energy storage system volume:", AHAPS.pow_store.volume)
 print("Final remaining mass (MTOW - Power System Mass - Payload Mass):", AHAPS.MTOW * (1 - powM_frac) - AHAPS.payload.mass_payload )
 print("Lambda Advance Ratio:", AHAPS.prop.lambda_adv)
 
