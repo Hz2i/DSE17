@@ -147,8 +147,8 @@ class PropulsionSystem:
         # Denominator: 1 + √(1 + T/(q·A) - 2·λ²·ln(...))
         # Disc loading: T/(q·A) [Pa]
         disc_loading = self.T / (q * self.propeller_area) if q > 0 else 0.0
-        inner = 1.0 + disc_loading - 2.0 * self.lambda_adv ** 2 * ln_term     
-        denominator = 1.0 + np.sqrt(inner)
+        inner = np.sqrt(1.0 + disc_loading) - 2.0 * self.lambda_adv ** 2 * ln_term
+        denominator = 1.0 + inner
         
         eta_prop = numerator / denominator
         
@@ -165,7 +165,7 @@ class PropulsionSystem:
     def Calc_Power_Req(self):
         # Implement method to calculate power required based on thrust and velocity
         return float(self.T * self.velocity / self.overall_eff)
-    
+
 if __name__ == "__main__":
     #Example Inputs
     velocity = 25.0  # m/s, cruise airspeed
@@ -174,7 +174,7 @@ if __name__ == "__main__":
     rpm = 1000
     torque = 4  # Nm, torque of the motor
     motor_temp = -40  # °C, motor temperature
-    gamma = 0  # degrees, flight path angle
+    gamma = 2.5  # degrees, flight path angle
     W = 1500  # N, weight of the aircraft
     CD = 0.04 # Drag coefficient
     S = 36.0  # m², reference area for drag calculation
@@ -245,4 +245,3 @@ if __name__ == "__main__":
     plt.title('Propeller Efficiency vs Velocity at Constant Altitude')
     plt.grid()
     plt.show()
-
