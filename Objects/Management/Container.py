@@ -33,7 +33,8 @@ def get_packet(subsystem_mass, subsystem_density):
 
 def assess_packing_feasibility(packets, visualize=False):
     """Assess the packing feasibility of the container, by comparing the used volume and mass with the container's capacity.
-    Additionally, assess the packing feasibility of the container by comparing the dimensions of the packets with the container's door dimensions.
+    Inputs: list of packets, each with dimensions and mass
+    Outputs: list of packed and unpacked packets, their location in the container, and a visualization of the packing arrangement (optional).
     """
     constants = Constants()
     packer = Packer()
