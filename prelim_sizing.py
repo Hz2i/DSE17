@@ -10,7 +10,7 @@ from Objects.Performance.ScissorPlot import ScissorPlot
 from Objects.AircraftGeneral.Aircraft import Aircraft
 
 
-powM_frac_target = 0.60    # From the NASA paper (mass fraction of the power system)
+powM_frac_target = 0.25    # From the NASA paper (mass fraction of the power system)
 MTOW_initial = 120.0
 TAS_initial = 25.0
 gamma = 0.0
