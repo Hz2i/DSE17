@@ -147,7 +147,7 @@ class PropulsionSystem:
         # Denominator: 1 + √(1 + T/(q·A) - 2·λ²·ln(...))
         # Disc loading: T/(q·A) [Pa]
         disc_loading = self.T / (q * self.propeller_area) if q > 0 else 0.0
-        inner = np.sqrt(1.0 + disc_loading) - (2.0 * self.lambda_adv ** 2 * ln_term)
+        inner = np.sqrt(1.0 + disc_loading) - 2.0 * self.lambda_adv ** 2 * ln_term
         denominator = 1.0 + inner
         
         eta_prop = numerator / denominator
