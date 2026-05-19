@@ -10,14 +10,16 @@ from Objects.Performance.ScissorPlot import ScissorPlot
 from Objects.AircraftGeneral.Aircraft import Aircraft
 
 
-powM_frac_target = 0.25    # From the NASA paper (mass fraction of the power system)
-MTOW_initial = 120.0
+powM_frac_target = 0.725    # From the NASA paper (mass fraction of the power system)
+payload_apprx_frac = 0.1
+
+MTOW_initial = 220.0
 TAS_initial = 25.0
 gamma = 0.0
 h_cruise = 18500.0
 lat = 30.0
 day_margin = 0
-use_batt = False
+use_batt = True
 energy_delta = 0.0
 DoD = 0.7
 night_time = 0.0
@@ -43,18 +45,22 @@ nac_geo = nacelles(nr_of_engines=4)
 MTOW = MTOW_initial
 
 # Compute initial error:
-AHAPS = Aircraft(MTOW_guess=MTOW, TAS=TAS_initial, gamma=gamma, lat=lat, day_margin=day_margin, DoD=DoD, Sh_S = Sh_S, Sv_S = Sv_S, wing=wing_geo, fus=fus_geo, emp=emp_geo, nac=nac_geo, use_batt=use_batt)
+AHAPS = Aircraft(MTOW_guess=MTOW, TAS=TAS_initial, gamma=gamma, lat=lat, day_margin=day_margin, DoD=DoD, Sh_S = Sh_S, Sv_S = Sv_S, wing=wing_geo, fus=fus_geo, emp=emp_geo, nac=nac_geo, use_batt=use_batt, energy_delta=energy_delta)
+
 powM_frac = (AHAPS.pow_store.mass + AHAPS.solar.mass)/MTOW
-error = abs(powM_frac - powM_frac_target)/powM_frac_target
+payload_frac = AHAPS.payload.mass_payload / MTOW
+error = abs(powM_frac - powM_frac_target)/powM_frac_target + abs(payload_frac - payload_apprx_frac)/payload_apprx_frac
 
 
 iterations = 0
 while error > 1e-3:
-    AHAPS = Aircraft(MTOW_guess=MTOW, TAS=TAS_initial, gamma=gamma, lat=lat, day_margin=day_margin, DoD=DoD,Sh_S = Sh_S, Sv_S = Sv_S, wing=wing_geo, fus=fus_geo, emp=emp_geo, nac=nac_geo, use_batt=use_batt)
-    powM_frac = (AHAPS.pow_store.mass + AHAPS.solar.mass)/MTOW
-    error = abs(powM_frac - powM_frac_target)/powM_frac_target
+    AHAPS = Aircraft(MTOW_guess=MTOW, TAS=TAS_initial, gamma=gamma, lat=lat, day_margin=day_margin, DoD=DoD,Sh_S = Sh_S, Sv_S = Sv_S, wing=wing_geo, fus=fus_geo, emp=emp_geo, nac=nac_geo, use_batt=use_batt, energy_delta=energy_delta)
 
-    MTOW = (AHAPS.pow_store.mass + AHAPS.solar.mass)/powM_frac_target
+    powM_frac = (AHAPS.pow_store.mass + AHAPS.solar.mass)/MTOW
+    payload_frac = AHAPS.payload.mass_payload / MTOW
+    error = abs(powM_frac - powM_frac_target)/powM_frac_target + abs(payload_frac - payload_apprx_frac)/payload_apprx_frac
+
+    MTOW = (AHAPS.pow_store.mass + AHAPS.solar.mass + AHAPS.payload.mass_payload)/(powM_frac_target + payload_apprx_frac)
 
     iterations += 1
 
@@ -63,22 +69,6 @@ while error > 1e-3:
     print("Current MTOW estimate:", MTOW)
     print("Current power system mass fraction estimate:", powM_frac)
     print("___________________________________")
-
-print("Final MTOW:", AHAPS.MTOW)
-print("Final power consumption:", AHAPS.Pow_req)
-print("Final surface area:", AHAPS.wing.S)
-print("Final solar panel area:", AHAPS.solar.area)
-print("Final energy storage system mass:", AHAPS.pow_store.mass)
-print("Final energy storage system volume:", AHAPS.pow_store.volume)
-print("Final remaining mass (MTOW - Power System Mass - Payload Mass):", AHAPS.MTOW * (1 - powM_frac) - AHAPS.payload.mass_payload )
-print("Lambda Advance Ratio:", AHAPS.prop.lambda_adv)
-
-scissorplot = ScissorPlot(wing=AHAPS.wing,empennage=AHAPS.emp,fuselage=AHAPS.fus)
-scissorplot.compute_required_coefs()
-print("Sh/S sufficient: ", Sh_S > scissorplot.minimum_Sh_S(x_cg_min=0.2,x_cg_max=0.4))
-
-
-scissorplot.plot_scissor_plot(x_cg_min=0.2,x_cg_max=0.4)
 
 
 AHAPS_ID = "1"
@@ -93,3 +83,14 @@ print("Final energy storage system mass:", AHAPS.pow_store.mass, file=out_file)
 print("Final energy storage system volume:", AHAPS.pow_store.volume, file=out_file)
 print("Final remaining mass (MTOW - Power System Mass - Payload Mass):", AHAPS.MTOW * (1 - powM_frac) - AHAPS.payload.mass_payload, file=out_file)
 print("Lambda Advance Ratio:", AHAPS.prop.lambda_adv, file=out_file)
+
+print(out_file.read())
+
+
+
+scissorplot = ScissorPlot(wing=AHAPS.wing,empennage=AHAPS.emp,fuselage=AHAPS.fus)
+scissorplot.compute_required_coefs()
+print("Sh/S sufficient: ", Sh_S > scissorplot.minimum_Sh_S(x_cg_min=0.2,x_cg_max=0.4))
+
+
+scissorplot.plot_scissor_plot(x_cg_min=0.2,x_cg_max=0.4)
