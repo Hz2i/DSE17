@@ -11,13 +11,13 @@ def calculate_co2_emissions_MaterialWeight(material_lst, weight_lst):
     for i in range(len(material_lst)):
         if material_lst[i] == "Carbon fiber":
             co2_emission = weight_lst[i] * 67.79
-        if material_lst[i] == "Zylon":
+        elif material_lst[i] == "Zylon":
             co2_emission = weight_lst[i] * 27.0
-        if material_lst[i] == "Kevlar":
+        elif material_lst[i] == "Kevlar":
             co2_emission = weight_lst[i] * 15.22
-        if material_lst[i] == "Mylar":
+        elif material_lst[i] == "Mylar":
             co2_emission = weight_lst[i] * 3.0
-        if material_lst[i] == "Polymer":   
+        elif material_lst[i] == "Polymer":
             co2_emission = weight_lst[i] * 5.3
         else:
             raise ValueError("Invalid material type. Please choose from 'Carbon fiber', 'Zylon', 'Kevlar', 'Mylar', or 'Polymer'.")
@@ -30,11 +30,11 @@ def calculate_co2_emissions_Solarpanels(energy_consumption, solar_panel_type):
     #  the CO2 emissions for the solar panels. The output is in CO2 kgeq.
     if solar_panel_type == "GaAs":
         co2_emission = energy_consumption * 0.07
-    if solar_panel_type == "SC-Si":
+    elif solar_panel_type == "SC-Si":
         co2_emission = energy_consumption * 0.06
-    if solar_panel_type == "perovskite":
+    elif solar_panel_type == "perovskite":
         co2_emission = energy_consumption * 0.06
-    if solar_panel_type == "Heterojunction_silicon":
+    elif solar_panel_type == "Heterojunction_silicon":
         co2_emission = energy_consumption * 0.02
     else:
         raise ValueError("Invalid solar panel type. Please choose from 'GaAs', 'SC-Si', 'Heterojunction_silicon', or 'perovskite'.")
@@ -47,8 +47,10 @@ def calculate_co2_emissions_power(battery_fuelcell, consumption):
     #  is in kWh for battery, but in KG H2 for fuel cell. The output is in CO2 kgeq.
     if battery_fuelcell == "battery":
         co2_emission = 120.0 * consumption
-    if battery_fuelcell == "fuelcell":
+    elif battery_fuelcell == "fuelcell":
         co2_emission = 22.0 * consumption
+    else:
+        raise ValueError("Invalid power source. Please choose from 'battery' or 'fuelcell'.")
     return co2_emission
 
 def calculate_co2_emissions_computer(weight_computer_system):
