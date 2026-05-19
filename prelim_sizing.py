@@ -18,6 +18,7 @@ h_cruise = 18500.0
 lat = 30.0
 day_margin = 0
 use_batt = False
+energy_delta = 0.0
 DoD = 0.7
 night_time = 0.0
 
@@ -65,7 +66,7 @@ while error > 1e-3:
 
 print("Final MTOW:", AHAPS.MTOW)
 print("Final power consumption:", AHAPS.Pow_req)
-print("Final surface area:", AHAPS.wing.S, AHAPS)
+print("Final surface area:", AHAPS.wing.S)
 print("Final solar panel area:", AHAPS.solar.area)
 print("Final energy storage system mass:", AHAPS.pow_store.mass)
 print("Final energy storage system volume:", AHAPS.pow_store.volume)
@@ -78,3 +79,17 @@ print("Sh/S sufficient: ", Sh_S > scissorplot.minimum_Sh_S(x_cg_min=0.2,x_cg_max
 
 
 scissorplot.plot_scissor_plot(x_cg_min=0.2,x_cg_max=0.4)
+
+
+AHAPS_ID = "1"
+FILE_ID = "outputs/prelim_concept_" + AHAPS_ID + ".txt"
+out_file = open(FILE_ID, "w")
+
+print("Final MTOW:", AHAPS.MTOW, file=out_file)
+print("Final power consumption:", AHAPS.Pow_req, file=out_file)
+print("Final surface area:", AHAPS.wing.S, file=out_file)
+print("Final solar panel area:", AHAPS.solar.area, file=out_file)
+print("Final energy storage system mass:", AHAPS.pow_store.mass, file=out_file)
+print("Final energy storage system volume:", AHAPS.pow_store.volume, file=out_file)
+print("Final remaining mass (MTOW - Power System Mass - Payload Mass):", AHAPS.MTOW * (1 - powM_frac) - AHAPS.payload.mass_payload, file=out_file)
+print("Lambda Advance Ratio:", AHAPS.prop.lambda_adv, file=out_file)
