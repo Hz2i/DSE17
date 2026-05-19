@@ -10,7 +10,7 @@ from Objects.Constants import Constants
 
 
 class Aircraft:
-    def __init__(self, MTOW_guess=100.0, TAS=20.0, h=18000.0, gamma=0.0, lat=50.0, day_margin=0, DoD=0.8, wing=wing(), fus=fuselage(), emp=empennage(), nac=nacelles(), comp=ComputerSystem(), comms=CommunicationSystem(), flight_con=FlightConditionsSystem(), payload=PayloadSystem(), ctrls=ControlSystem()):
+    def __init__(self, MTOW_guess=100.0, TAS=20.0, h=18000.0, gamma=0.0, lat=50.0, day_margin=0, DoD=0.8, Sh_S = 0.15, Sv_S = 0.1, wing=wing(), fus=fuselage(), emp=empennage(), nac=nacelles(), comp=ComputerSystem(), comms=CommunicationSystem(), flight_con=FlightConditionsSystem(), payload=PayloadSystem(), ctrls=ControlSystem()):
         self.MTOW = MTOW_guess
         self.const = Constants()
 
@@ -27,7 +27,10 @@ class Aircraft:
         self.solar = None
         self.prop = None
 
+        self.Sh_S = Sh_S
+        self.Sv_S = Sv_S
         self.TAS = TAS
+        self.TAS_cruise = TAS
         self.h = h
         self.lat = lat
         self.day_margin = day_margin
@@ -63,6 +66,8 @@ class Aircraft:
         CD_current = None
 
         while surface_check:
+            self.emp.Sh = self.wing.S * self.Sh_S
+            self.emp.Sv = self.wing.S * self.Sv_S
             self.wing.compute_required_coefficients()
             self.emp.compute_required_coefficients()
             self.wing.compute_oswald_eff()
@@ -80,6 +85,7 @@ class Aircraft:
             self.e = 0.85
 
             self.CL_opt = (3* self.CD0 * np.pi * self.wing.AR * self.e)**0.5
+            #self.CL_opt = (self.CD0 * np.pi * self.wing.AR * self.e)**0.5
 
             TAS_opt = (self.MTOW*self.const.g / (0.5 * am.Atmosphere(self.h).density[0] * self.wing.S * self.CL_opt))**0.5
 
@@ -87,13 +93,15 @@ class Aircraft:
                 CL_current = self.CL_opt
                 CD_current = self.CD0 + CL_current**2/(np.pi*self.wing.AR*self.e)
                 self.CL_CD = CL_current/CD_current
+                self.TAS_cruise = TAS_opt
             else:
                 CL_current = self.MTOW*self.const.g / (0.5 * am.Atmosphere(self.h).density[0] * self.TAS**2 * self.wing.S)
                 CD_current = self.CD0 + CL_current**2/(np.pi*self.wing.AR*self.e)
                 self.CL_CD = CL_current/CD_current
+                self.TAS_cruise = self.TAS
 
             self.T_req = (self.MTOW*self.const.g/self.CL_CD + self.MTOW*self.const.g * np.sin(np.radians(self.gamma)))/self.nac.nr_of_engines
-            self.prop = PropulsionSystem(T=self.T_req, velocity=self.TAS, alt=self.h, rpm=1000.0, torque=4.0, motor_temp=-40.0,propeller_diameter=1.5)
+            self.prop = PropulsionSystem(T=self.T_req, velocity=self.TAS_cruise, alt=self.h, rpm=1000.0, torque=4.0, motor_temp=-40.0,propeller_diameter=1.5)
 
             self.Pow_motor = self.prop.power_required * self.nac.nr_of_engines
             self.Pow_req = self.compute_subsys_pow() + self.Pow_motor
@@ -103,7 +111,7 @@ class Aircraft:
             self.solar = power_generation(self.Pow_req, latitude=self.lat, days_from_solstice=self.day_margin)
             self.solar.compute_weight_surface()
 
-            if self.solar.area < self.wing.S:
+            if self.solar.area < self.wing.S/1.1:
                 surface_check = False
             else:
                 self.wing.S += np.maximum(0.1, damping * (self.solar.area - self.wing.S))

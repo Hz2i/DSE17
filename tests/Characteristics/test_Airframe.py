@@ -45,11 +45,22 @@ def test_compute_CL_max():
     test_wing_0.compute_CL_max()
     assert 1.0 < test_wing_0.CL_max < 2.0
 
+    # Null-value
+    test_wing_0.foil.clmax = 0
+    test_wing_0.compute_CL_max()
+    assert test_wing_0.CL_max == 0.
+
 def test_compute_Cm_ac():# Check correct!!
     # Order of magnitude
     test_wing_0 = wing()
     test_wing_0.compute_required_coefficients()
-    assert -1.0 < test_wing_0.CL_max < 1.0
+    test_wing_0.compute_Cm_ac()
+    assert -1.0 < test_wing_0.Cm_ac < 1.0
+
+    # Null-value
+    test_wing_0.foil.cm_0 = 0
+    test_wing_0.compute_Cm_ac()
+    assert test_wing_0.Cm_ac == 0.
 
 # def test_compute_oswald_eff():
     # static test

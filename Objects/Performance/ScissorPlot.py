@@ -66,3 +66,19 @@ class ScissorPlot:
         plt.ylabel(r'$S_h / S $')
         plt.legend()
         plt.show()
+
+class StabFlyingWing:
+    def __init__(self, wing=wing()):
+        self.wing = wing
+    
+    def neutral_point(self):
+        MAC = 2/3 * (1+self.wing.taper+self.wing.taper**2)/(1+self.wing.taper) * self.wing.root_chord
+
+        y = self.wing.b/2 * (self.wing.root_chord - MAC)/(self.wing.root_chord - self.wing.root_chord*self.wing.taper)
+        
+        if self.wing.taper > 0.375:
+            x = self.wing.root_chord/4 + 2*self.wing.b/(3*np.pi)*np.tan(self.wing.qc_sweep)
+        else:
+            x = self.wing.root_chord/4 + self.wing.b*(1+2*self.wing.taper)/(6*(1+self.wing.taper)) * np.tan(self.wing.qc_sweep)
+
+        return x
