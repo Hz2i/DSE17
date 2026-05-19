@@ -10,7 +10,7 @@ from Objects.Performance.ScissorPlot import ScissorPlot
 from Objects.AircraftGeneral.Aircraft import Aircraft
 
 
-powM_frac_target = 0.45    # From the NASA paper (mass fraction of the power system)
+powM_frac_target = 0.6    # From the NASA paper (mass fraction of the power system)
 payload_apprx_frac = 0.1
 
 MTOW_initial = 120.0
@@ -58,7 +58,7 @@ error_vec = np.ones(10) * error
 monitoring_var = np.linalg.norm(error_vec - np.mean(error_vec))
 
 iterations = 0
-while monitoring_var > 1e-5 and iterations < 10:
+while monitoring_var > 5e-3 or iterations < 10:
     AHAPS = Aircraft(MTOW_guess=MTOW, TAS=TAS_initial, gamma=gamma, lat=lat, day_margin=day_margin, DoD=DoD,Sh_S = Sh_S, Sv_S = Sv_S, wing=wing_geo, fus=fus_geo, emp=emp_geo, nac=nac_geo, use_batt=use_batt, energy_delta=energy_delta)
 
     powM_frac = (AHAPS.pow_store.mass + AHAPS.solar.mass)/MTOW
@@ -78,10 +78,21 @@ while monitoring_var > 1e-5 and iterations < 10:
     monitoring_var = np.linalg.norm(error_vec - np.mean(error_vec))
 
     print("Iteration:", iterations)
+    print("Monitoring variable:", monitoring_var)
     print("Current error:", error)
     print("Current MTOW estimate:", MTOW)
     print("Current power system mass fraction estimate:", powM_frac)
     print("___________________________________")
+
+
+print("Final MTOW:", AHAPS.MTOW)
+print("Final power consumption:", AHAPS.Pow_req)
+print("Final surface area:", AHAPS.wing.S)
+print("Final solar panel area:", AHAPS.solar.area)
+print("Final energy storage system mass:", AHAPS.pow_store.mass)
+print("Final energy storage system volume:", AHAPS.pow_store.volume)
+print("Final remaining mass (MTOW - Power System Mass - Payload Mass):", AHAPS.MTOW * (1 - powM_frac) - AHAPS.payload.mass_payload)
+print("Lambda Advance Ratio:", AHAPS.prop.lambda_adv)
 
 
 AHAPS_ID = "1"
@@ -97,8 +108,7 @@ print("Final energy storage system volume:", AHAPS.pow_store.volume, file=out_fi
 print("Final remaining mass (MTOW - Power System Mass - Payload Mass):", AHAPS.MTOW * (1 - powM_frac) - AHAPS.payload.mass_payload, file=out_file)
 print("Lambda Advance Ratio:", AHAPS.prop.lambda_adv, file=out_file)
 
-with open(FILE_ID) as f:
-    print(f.read())
+
 
 
 scissorplot = ScissorPlot(wing=AHAPS.wing,empennage=AHAPS.emp,fuselage=AHAPS.fus)
