@@ -19,7 +19,8 @@ class LightData:
     @staticmethod
     def solar_declination(day_of_year):
         day_of_year = np.asarray(day_of_year, dtype=float)
-        return 23.45 * np.sin(np.deg2rad((360.0 / 365.0) * (day_of_year + 10.0)))
+        #return 23.43585 * np.sin(np.deg2rad((360.0 / 365.0) * (day_of_year + 10.0)))
+        return 23.43585 * np.sin(np.deg2rad((360.0 / 365.0) * (day_of_year + 284.0)))
 
     def compute_daylight_hours(self, day_of_year):
         day_of_year = np.asarray(day_of_year, dtype=float)

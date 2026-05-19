@@ -60,7 +60,7 @@ class link_budget:
 
 '''
 # test
-distance = 1000 * np.sqrt(16**2 + 400**2)  # example for max distance
+distance = 1000 * np.sqrt(18**2 + 400**2)  # example for max distance
 
 lb = link_budget(distance=distance)
 
