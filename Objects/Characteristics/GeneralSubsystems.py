@@ -119,7 +119,7 @@ class PayloadSystem:
     def __init__(self):                                     # Initialise with proper values
         self.volume = 0.01 #m^3 common aerospace values
         self.x_pos = 0.0
-        self.mass_payload = 20 #kg
+        self.mass_payload = 20.0 #kg
         self.power_required = 0.0
         self.mass_connector = 0.050 #kg, MIL-DTL 38999 Series III
         self.mass_cables = 0.020 #kg/m AWG16

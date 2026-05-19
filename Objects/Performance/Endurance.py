@@ -1,5 +1,8 @@
 import numpy as np
 from matplotlib import pyplot as plt
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from Objects.Characteristics.PowerSystem_sizing import solar_incidence
 from Objects.Characteristics.Components_Materials import solar_panel, battery, fuel_cell
 from Objects.Constants import Constants
