@@ -120,7 +120,7 @@ class PayloadSystem:
         self.volume = 0.01 #m^3 common aerospace values
         self.x_pos = 0.0
         self.mass_payload = 20.0 #kg
-        self.power_required = 0.0
+        self.power_required = 100.0
         self.mass_connector = 0.050 #kg, MIL-DTL 38999 Series III
         self.mass_cables = 0.020 #kg/m AWG16
         self.resistance_cable = 0.013 #Ohm/m AWG16

@@ -1,8 +1,8 @@
-Final MTOW: 6.989555589948106
-Final power consumption: 177.47460110248753
-Final surface area: 1.8714067177158713
-Final solar panel area: 1.6295024587291447
-Final energy storage system mass: 2.0605468227988224
-Final energy storage system volume: 0.012210647838807836
-Final remaining mass (MTOW - Power System Mass - Payload Mass): -16.154610367905597
-Lambda Advance Ratio: 0.3183098861837907
+Final MTOW: 120.0
+Final power consumption: 1455.1257429569034
+Final surface area: 14.718455421585896
+Final solar panel area: 13.360396142201067
+Final energy storage system mass: 72.40524336914976
+Final energy storage system volume: 0.03321341438951824
+Final remaining mass (MTOW - Power System Mass - Payload Mass): 18.710093196286543
+Lambda Advance Ratio: 0.3539823383912361
