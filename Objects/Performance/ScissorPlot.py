@@ -1,5 +1,8 @@
 import numpy as np
 from matplotlib import pyplot as plt
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from Objects.Characteristics.Airframe import wing, empennage, fuselage
 class ScissorPlot:
     def __init__(self,wing=wing(),empennage=empennage(),fuselage=fuselage()):
