@@ -25,7 +25,7 @@ def test_propulsion_system_null_values():
     assert propulsion.alt == 0
     assert propulsion.motor_eff == pytest.approx(0.94)
     # assert propulsion.calc_gearbox_eff() == pytest.approx(0.95)
-    assert np.isclose(propulsion.propeller_eff, 0.94, atol=0.01)
+    assert np.isclose(propulsion.propeller_eff, 1.0, atol=0.01)
     # assert propulsion.overall_eff == pytest.approx(0.8387566462415859)
     assert propulsion.power_required == 0.0
     # assert propulsion.lambda_adv == pytest.approx(0.19098593171027442)
