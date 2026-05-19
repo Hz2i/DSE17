@@ -1,6 +1,8 @@
 import numpy as np
 import ambiance as am
-
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from Objects.Characteristics.Airframe import wing, fuselage, empennage, nacelles
 from Objects.Characteristics.GeneralSubsystems import ComputerSystem, CommunicationSystem, FlightConditionsSystem, PayloadSystem, ControlSystem
@@ -10,7 +12,7 @@ from Objects.Constants import Constants
 
 
 class Aircraft:
-    def __init__(self, MTOW_guess=100.0, TAS=20.0, h=18000.0, gamma=0.0, lat=50.0, day_margin=0, DoD=0.8, Sh_S = 0.15, Sv_S = 0.1, wing=wing(), fus=fuselage(), emp=empennage(), nac=nacelles(), comp=ComputerSystem(), comms=CommunicationSystem(), flight_con=FlightConditionsSystem(), payload=PayloadSystem(), ctrls=ControlSystem()):
+    def __init__(self, MTOW_guess=100.0, TAS=20.0, h=18000.0, gamma=0.0, lat=50.0, day_margin=0, DoD=0.8, Sh_S = 0.15, Sv_S = 0.1, wing=wing(), fus=fuselage(), emp=empennage(), nac=nacelles(), comp=ComputerSystem(), comms=CommunicationSystem(), flight_con=FlightConditionsSystem(), payload=PayloadSystem(), ctrls=ControlSystem(), use_batt=True, energy_delta=False):
         self.MTOW = MTOW_guess
         self.const = Constants()
 
@@ -23,7 +25,9 @@ class Aircraft:
         self.flight_con = flight_con
         self.payload = payload
         self.ctrls = ctrls
+
         self.pow_store = None
+        self.use_batt = use_batt
         self.solar = None
         self.prop = None
 
@@ -106,7 +110,7 @@ class Aircraft:
             self.Pow_motor = self.prop.power_required * self.nac.nr_of_engines
             self.Pow_req = self.compute_subsys_pow() + self.Pow_motor
 
-            self.pow_store = power_storage(self.Pow_req, latitude=self.lat, days_from_solstice=self.day_margin, DOD=self.DoD)
+            self.pow_store = power_storage(self.Pow_req, latitude=self.lat, days_from_solstice=self.day_margin, DOD=self.DoD, batteries_used=self.use_batt)
             self.pow_store.compute_weight_volume()
             self.solar = power_generation(self.Pow_req, latitude=self.lat, days_from_solstice=self.day_margin)
             self.solar.compute_weight_surface()
