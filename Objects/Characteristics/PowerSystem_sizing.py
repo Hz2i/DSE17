@@ -1,4 +1,7 @@
 import numpy as np
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from Objects.Characteristics.Components_Materials import solar_panel, battery, fuel_cell
 
 
