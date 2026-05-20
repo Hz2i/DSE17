@@ -1,6 +1,7 @@
 GENERAL AIRCRAFT PARAMETERS:
  - Final MTOW: 200.34855250150133
  - CL/CD at cruise: 33.95333925979881
+ - CD0: 0.014467885555453917
  - Final power consumption: 2595.0513128342704
  - Final surface area: 24.556821036310737
  - Final remaining mass (MTOW - Power System Mass - Payload Mass): 100.22745379565906
