@@ -10,7 +10,7 @@ from Objects.Performance.ScissorPlot import ScissorPlot
 from Objects.AircraftGeneral.Aircraft import Aircraft
 
 
-powM_frac_target = 0.55    # From the NASA paper (mass fraction of the power system): 0.30 for the fuel cells, 0.55 or 0.6 for batteries
+powM_frac_target = 0.15    # From the NASA paper (mass fraction of the power system): 0.15 for the fuel cells, 0.55 or 0.6 for batteries
 payload_apprx_frac = 0.2
 
 MTOW_initial = 120.0
@@ -19,7 +19,7 @@ gamma = 0.0
 h_cruise = 18500.0
 lat = 30.0
 day_margin = 0
-use_batt = True
+use_batt = False
 energy_delta = 0.0
 DoD = 0.7
 night_time = 0.0
@@ -95,18 +95,39 @@ print("Final remaining mass (MTOW - Power System Mass - Payload Mass):", AHAPS.M
 print("Lambda Advance Ratio:", AHAPS.prop.lambda_adv)
 
 
-AHAPS_ID = "1"
-FILE_ID = "outputs/prelim_concept_" + AHAPS_ID + ".txt"
-out_file = open(FILE_ID, "w")
+save_bool = input("Save results? (Y/N)")
 
-print("Final MTOW:", AHAPS.MTOW, file=out_file)
-print("Final power consumption:", AHAPS.Pow_req, file=out_file)
-print("Final surface area:", AHAPS.wing.S, file=out_file)
-print("Final solar panel area:", AHAPS.solar.area, file=out_file)
-print("Final energy storage system mass:", AHAPS.pow_store.mass, file=out_file)
-print("Final energy storage system volume:", AHAPS.pow_store.volume, file=out_file)
-print("Final remaining mass (MTOW - Power System Mass - Payload Mass):", AHAPS.MTOW * (1 - powM_frac) - AHAPS.payload.mass_payload, file=out_file)
-print("Lambda Advance Ratio:", AHAPS.prop.lambda_adv, file=out_file)
+if save_bool == "Y":
+    AHAPS_ID = input("Please input the ID of the preliminary design:")
+    FILE_ID = "outputs/prelim_concept_" + AHAPS_ID + ".txt"
+    out_file = open(FILE_ID, "w")
+
+    print("GENERAL AIRCRAFT PARAMETERS:", file=out_file)
+    print(" - Final MTOW:", AHAPS.MTOW, file=out_file)
+    print(" - CL/CD at cruise:", AHAPS.CL_CD, file=out_file)
+    print(" - Final power consumption:", AHAPS.Pow_req, file=out_file)
+    print(" - Final surface area:", AHAPS.wing.S, file=out_file)
+    print(" - Final remaining mass (MTOW - Power System Mass - Payload Mass):", AHAPS.MTOW * (1 - powM_frac) - AHAPS.payload.mass_payload, file=out_file)
+    print("___________________________________", file=out_file)
+    print("POWER SYSTEM PARAMETERS:", file=out_file)
+    print(" - Final solar panel area:", AHAPS.solar.area, file=out_file)
+    print(" - Final solar panel mass:", AHAPS.solar.mass, file=out_file)
+    print(" - Final energy storage system mass:", AHAPS.pow_store.mass, file=out_file)
+    print(" - Final energy storage system volume:", AHAPS.pow_store.volume, file=out_file)
+    print("___________________________________", file=out_file)
+    print("PROPULSION SYSTEM PARAMETERS:", file=out_file)
+    print(" - Thrust required at cruise:", AHAPS.T_req, file=out_file)
+    print(" - TAS at cruise:", AHAPS.TAS_cruise, file = out_file)
+    print(" - Lambda Advance Ratio:", AHAPS.prop.lambda_adv, file=out_file)
+    print("___________________________________", file=out_file)
+    print("WING AND EMPENNAGE PARAMETERS:", file=out_file)
+    print(" - Wing surface area:", AHAPS.wing.S, file=out_file)
+    print(" - Wing aspect ratio:", AHAPS.wing.AR, file=out_file)
+    print(" - Wing sweep:", AHAPS.wing.qc_sweep, file=out_file)
+    print(" - Wing dihedral:", AHAPS.wing.dihedral, file=out_file)
+    print(" - Wing taper:", AHAPS.wing.taper, file=out_file)
+    print(" - Sh/S:", AHAPS.Sh_S, file=out_file)
+    print(" - Sv/S:", AHAPS.Sv_S, file=out_file)
 
 
 

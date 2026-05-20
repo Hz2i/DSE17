@@ -123,7 +123,7 @@ class Aircraft:
             self.solar = power_generation(self.Pow_req, latitude=self.lat, days_from_solstice=self.day_margin, energy_delta=self.energy_delta)
             self.solar.compute_weight_surface()
 
-            if self.solar.area < self.wing.S/1.1:
+            if self.solar.area < self.wing.S/1.025:
                 surface_check = False
             else:
                 self.wing.S += np.maximum(0.1, damping * (self.solar.area - self.wing.S))
