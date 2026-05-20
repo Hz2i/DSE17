@@ -1,27 +1,27 @@
 GENERAL AIRCRAFT PARAMETERS:
- - Final MTOW: 185.62526276853123
- - CL/CD at cruise: 36.25016066269413
- - CD0: 0.012697280249589965
- - Final power consumption: 2358.7083548362634
- - Final surface area: 22.317553259178695
- - Final remaining mass (MTOW - Power System Mass - Payload Mass): 92.80115174556735
+ - Final MTOW: 157.52946507945344
+ - CL/CD at cruise: 38.267198073445265
+ - CD0: 0.011336295677927209
+ - Final power consumption: 1494.480740862418
+ - Final surface area: 33.65926379428504
+ - Final remaining mass (MTOW - Power System Mass - Payload Mass): 78.76001236322575
 ___________________________________
 POWER SYSTEM PARAMETERS:
- - Final solar panel area: 21.656738709394936
- - Final solar panel mass: 14.401731241747633
- - Final energy storage system mass: 58.422379781216236
- - Final energy storage system volume: 0.1622843882811562
+ - Final solar panel area: 32.71121117128845
+ - Final solar panel mass: 21.75295542890682
+ - Final energy storage system mass: 37.01649728732087
+ - Final energy storage system volume: 0.10282360357589129
 ___________________________________
 PROPULSION SYSTEM PARAMETERS:
- - Thrust required at cruise: 12.558453496961379
- - TAS at cruise: 37.85791620683944
- - Lambda Advance Ratio: 0.48202195995818187
+ - Thrust required at cruise: 10.095879305452806
+ - TAS at cruise: 28.398149922643785
+ - Lambda Advance Ratio: 0.3615764747882787
 ___________________________________
 WING AND EMPENNAGE PARAMETERS:
- - Wing surface area: 22.317553259178695
+ - Wing surface area: 33.65926379428504
  - Wing aspect ratio: 25.0
- - Wing full span: 23.620728851571606
- - Wing chord: 0.9448291540628643
+ - Wing full span: 29.0083021712255
+ - Wing chord: 1.16033208684902
  - Wing sweep: 0.0
  - Wing dihedral: 0.0
  - Wing taper: 1.0
@@ -31,7 +31,7 @@ WING AND EMPENNAGE PARAMETERS:
  - Horizontal tail aspect ratio: 4.0
  - Vertical tail qc sweep: 0.0
  - Horizontal tail qc sweep: 0.0
- - Vertical tail root chord: 1.2197691928989052
- - Horizontal tail root chord: 0.9148268946741788
+ - Vertical tail root chord: 1.4979822828121174
+ - Horizontal tail root chord: 1.1234867121090881
  - Vertical tail taper: 1.0
  - Horizontal tail taper: 1.0
