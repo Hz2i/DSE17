@@ -24,7 +24,7 @@ class battery:
 
 
 class fuel_cell:
-    def __init__(self, E_m=700.0, E_vol=270.0):                 # Provide method to define fuel cell types with certain parameters
+    def __init__(self, E_m=750.0, E_vol=270.0):                 # Provide method to define fuel cell types with certain parameters
         self.massEnergy = E_m*3600.0                        # Mass energy density [J/kg]
         self.volumeEnergy = E_vol*3600.0/0.001              # Volumetric energy density [J/m^3]
         self.massRho = self.volumeEnergy/self.massEnergy    # Mass density [kg/m^3]

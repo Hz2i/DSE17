@@ -31,16 +31,16 @@ Sv_S = 0.1
 # Choose planform type (uncomment the required one):
 
 # Traditional wing planform:
-# wing_geo = wing(S=S,A=25.0, qc_sweep=0.0*np.pi/180, taper=1.0, dihedral=0.0*np.pi/180.0)
-# fus_geo = fuselage()
-# emp_geo = empennage(S_h = S*Sh_S, S_v = S*Sv_S)
-# nac_geo = nacelles(nr_of_engines=4)
+wing_geo = wing(S=S,A=25.0, qc_sweep=0.0*np.pi/180, taper=1.0, dihedral=0.0*np.pi/180.0)
+fus_geo = fuselage()
+emp_geo = empennage(S_h = S*Sh_S, S_v = S*Sv_S)
+nac_geo = nacelles(nr_of_engines=4)
 
 # Flying wing planform:
-wing_geo = wing(S=S,A=25.0, qc_sweep=15.0*np.pi/180, taper=1.0, dihedral=0.0*np.pi/180.0, airfoil=airfoil_e334())
-fus_geo = fuselage(D=0.5, L1=0.2, L2=0.6, L3=0.2)
-emp_geo = empennage(S_h = 0.0, S_v = 0.0)
-nac_geo = nacelles(nr_of_engines=4)
+# wing_geo = wing(S=S,A=25.0, qc_sweep=15.0*np.pi/180, taper=1.0, dihedral=0.0*np.pi/180.0, airfoil=airfoil_e334())
+# fus_geo = fuselage(D=0.5, L1=0.2, L2=0.6, L3=0.2)
+# emp_geo = empennage(S_h = 0.0, S_v = 0.0)
+# nac_geo = nacelles(nr_of_engines=4)
 
 # General subsystem parameters may be changed using the following (commented) code block; Sensible defaults should already be implemented
 
