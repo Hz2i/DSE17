@@ -1,7 +1,7 @@
 from Objects.Performance.Endurance import *
 from Objects.Performance.ScissorPlot import *
 
-Endurance_class = Endurance(power_consumption=963,init_bat_capacity=45*400*3600,S=29,latitude=30,height=18000,days_from_solstice_start=0,startingtimeofday=0)
+Endurance_class = Endurance(power_consumption=2593,init_bat_capacity=129.02*400*3600,S=23.81,latitude=30,height=18500,days_from_solstice_start=0,startingtimeofday=0)
 
 Endurance_class.compute_endurance(time_step=20)
 

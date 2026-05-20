@@ -41,7 +41,8 @@ class power_generation:
     def compute_weight_surface(self):       # Compute weight and surface area required for power generation components
         avg_incidence = np.pi/2 - self.avg_incidence # converting to incidence angle wrt normal
         power_per_m = np.minimum(self.solar.powLimS,self.solar.efficiency*1378.0*np.cos(avg_incidence))
-        self.daylight_power_req = (self.power_req*(86400-self.daylight_time) * self.energy_delta + self.power_req * self.daylight_time)/ self.daylight_time # watts
+        self.daylight_power_req = self.power_req*(86400-self.daylight_time)/(self.daylight_time) * (1-self.energy_delta) + self.power_req * (self.daylight_time)/ (self.daylight_time) # watts
+        print(f"power required during day: {self.daylight_power_req}")
         self.area = self.daylight_power_req/power_per_m # m^2
         self.mass = self.area*self.solar.surfRho # kg
 
