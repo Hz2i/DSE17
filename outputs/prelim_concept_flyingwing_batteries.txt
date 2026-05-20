@@ -1,37 +1,49 @@
 GENERAL AIRCRAFT PARAMETERS:
- - Final MTOW: 206.86338114299326
- - CL/CD at cruise: 37.08560316996779
- - CD0: 0.011960442730958597
- - Final power consumption: 1941.2005864597804
- - Final surface area: 43.610994845969216
- - Final remaining mass (MTOW - Power System Mass - Payload Mass): 62.016460983481636
+ - Final MTOW: 203.31454690243604
+ - CL/CD at cruise: 37.25001139601756
+ - CD0: 0.011840478349630113
+ - Final power consumption: 1902.6329038304707
+ - Final surface area: 42.77671212219725
+ - Final remaining mass (MTOW - Power System Mass - Payload Mass): 60.94807952433436
 ___________________________________
 POWER SYSTEM PARAMETERS:
- - Final solar panel area: 42.489020148142934
- - Final solar panel mass: 28.255198398515052
- - Final energy storage system mass: 96.59172176099658
- - Final energy storage system volume: 0.04430812924816357
+ - Final solar panel area: 41.64485027938533
+ - Final solar panel mass: 27.693825435791247
+ - Final solar panel power generation: 4535.680907821963
+ - Final energy storage system mass: 94.67264194231042
+ - Final energy storage system volume: 0.04342781740472955
+ - Final energy storage system capacity: 136328604.396927
 ___________________________________
 PROPULSION SYSTEM PARAMETERS:
- - Thrust required at cruise: 13.680037504797355
- - TAS at cruise: 27.549449537538383
- - Lambda Advance Ratio: 0.3507704858687971
+ - Thrust required at cruise: 13.386007348484553
+ - TAS at cruise: 27.57716636762679
+ - Lambda Advance Ratio: 0.35112338751002975
+___________________________________
+FUSELAGE PARAMETERS:
+ - Fuselage diameter: 0.5
+ - Fuselage L1: 0.2
+ - Fuselage L2 (main body): 0.6
+ - Fuselage L3: 0.2
 ___________________________________
 WING AND EMPENNAGE PARAMETERS:
- - Wing surface area: 43.610994845969216
+ - Wing surface area: 42.77671212219725
  - Wing aspect ratio: 25.0
- - Wing full span: 33.01931057955678
- - Wing chord: 1.3207724231822713
+ - Wing full span: 32.7019541167639
+ - Wing chord: 1.308078164670556
  - Wing sweep: 0.2617993877991494
  - Wing dihedral: 0.0
  - Wing taper: 1.0
  - Sh/S: 0.15
- - Sv/S: 0.1
+ - Sv/S: 0.07
  - Vertical tail aspect ratio: 1.5
  - Horizontal tail aspect ratio: 4.0
+ - Vertical tail Surface: 2.994369848553808
+ - Horizontal tail Surface: 6.416506818329588
+ - Vertical tail span: 2.119328849619783
+ - Horizontal tail span: 5.066164947306627
  - Vertical tail qc sweep: 0.0
  - Horizontal tail qc sweep: 0.0
- - Vertical tail root chord: 1.7051098663716504
- - Horizontal tail root chord: 1.2788323997787379
+ - Vertical tail root chord: 1.412885899746522
+ - Horizontal tail root chord: 1.2665412368266566
  - Vertical tail taper: 1.0
  - Horizontal tail taper: 1.0

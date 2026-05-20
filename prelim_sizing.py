@@ -26,20 +26,20 @@ night_time = 0.0
 
 S = 36.0
 Sh_S = 0.15
-Sv_S = 0.1
+Sv_S = 0.07
 
 # Choose planform type (uncomment the required one):
 
 # Traditional wing planform:
 # wing_geo = wing(S=S,A=25.0, qc_sweep=0.0*np.pi/180, taper=1.0, dihedral=0.0*np.pi/180.0)
-# fus_geo = fuselage()
+# fus_geo = fuselage(D=0.5, L1=0.25, L2=10, L3=0.25)
 # emp_geo = empennage(S_h = S*Sh_S, S_v = S*Sv_S)
 # nac_geo = nacelles(nr_of_engines=4)
 
 # Flying wing planform:
 wing_geo = wing(S=S,A=25.0, qc_sweep=15.0*np.pi/180, taper=1.0, dihedral=0.0*np.pi/180.0, airfoil=airfoil_e334())
 fus_geo = fuselage(D=0.5, L1=0.2, L2=0.6, L3=0.2)
-emp_geo = empennage(S_h = 0.0, S_v = 0.0)
+emp_geo = empennage(S_h = 0, S_v = 0)
 nac_geo = nacelles(nr_of_engines=4)
 
 # General subsystem parameters may be changed using the following (commented) code block; Sensible defaults should already be implemented
@@ -122,13 +122,21 @@ if save_bool == "Y":
     print("POWER SYSTEM PARAMETERS:", file=out_file)
     print(" - Final solar panel area:", AHAPS.solar.area, file=out_file)
     print(" - Final solar panel mass:", AHAPS.solar.mass, file=out_file)
+    print(" - Final solar panel power generation:", AHAPS.solar.daylight_power_req, file=out_file)
     print(" - Final energy storage system mass:", AHAPS.pow_store.mass, file=out_file)
     print(" - Final energy storage system volume:", AHAPS.pow_store.volume, file=out_file)
+    print(" - Final energy storage system capacity:", AHAPS.pow_store.mass*400*3600, file=out_file)
     print("___________________________________", file=out_file)
     print("PROPULSION SYSTEM PARAMETERS:", file=out_file)
     print(" - Thrust required at cruise:", AHAPS.T_req, file=out_file)
     print(" - TAS at cruise:", AHAPS.TAS_cruise, file = out_file)
     print(" - Lambda Advance Ratio:", AHAPS.prop.lambda_adv, file=out_file)
+    print("___________________________________", file=out_file)
+    print("FUSELAGE PARAMETERS:", file=out_file)
+    print(" - Fuselage diameter:", AHAPS.fus.D, file=out_file)
+    print(" - Fuselage L1:", AHAPS.fus.L1, file=out_file)
+    print(" - Fuselage L2 (main body):", AHAPS.fus.L2, file=out_file)
+    print(" - Fuselage L3:", AHAPS.fus.L3, file=out_file)
     print("___________________________________", file=out_file)
     print("WING AND EMPENNAGE PARAMETERS:", file=out_file)
     print(" - Wing surface area:", AHAPS.wing.S, file=out_file)
@@ -142,7 +150,11 @@ if save_bool == "Y":
     print(" - Sv/S:", AHAPS.Sv_S, file=out_file)
     print(" - Vertical tail aspect ratio:", AHAPS.emp.AR_v, file=out_file)
     print(" - Horizontal tail aspect ratio:", AHAPS.emp.AR_h, file=out_file)
-    print(" - Vertical tail qc sweep:", AHAPS.emp.qc_sweep_v, file=out_file)
+    print(" - Vertical tail Surface:", AHAPS.emp.Sv, file=out_file)
+    print(" - Horizontal tail Surface:", AHAPS.emp.Sh, file=out_file)
+    print(" - Vertical tail span:", AHAPS.emp.Sv/AHAPS.emp.root_chord_v, file=out_file)
+    print(" - Horizontal tail span:", AHAPS.emp.Sh/AHAPS.emp.root_chord_h, file=out_file)
+    print(" - Vertical tail qc sweep:", AHAPS.emp.qc_sweep_v, file=out_file) 
     print(" - Horizontal tail qc sweep:", AHAPS.emp.qc_sweep_h, file=out_file)
     print(" - Vertical tail root chord:", AHAPS.emp.root_chord_v, file=out_file)
     print(" - Horizontal tail root chord:", AHAPS.emp.root_chord_h, file=out_file)

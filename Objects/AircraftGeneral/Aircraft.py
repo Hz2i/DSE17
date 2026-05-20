@@ -122,7 +122,7 @@ class Aircraft:
             self.pow_store.compute_weight_volume()
             self.solar = power_generation(self.Pow_req, latitude=self.lat, days_from_solstice=self.day_margin, energy_delta=self.energy_delta)
             self.solar.compute_weight_surface()
-
+            
             if self.solar.area < self.wing.S/1.025:
                 surface_check = False
             else:
