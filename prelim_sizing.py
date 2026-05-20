@@ -10,7 +10,7 @@ from Objects.Performance.ScissorPlot import ScissorPlot
 from Objects.AircraftGeneral.Aircraft import Aircraft
 
 
-powM_frac_target = 0.15    # From the NASA paper (mass fraction of the power system): 0.15 for the fuel cells, 0.55 or 0.6 for batteries
+powM_frac_target = 0.6    # From the NASA paper (mass fraction of the power system): 0.15 for the fuel cells, 0.55 or 0.6 for batteries
 payload_apprx_frac = 0.2
 
 MTOW_initial = 120.0
@@ -19,7 +19,7 @@ gamma = 0.0
 h_cruise = 18500.0
 lat = 30.0
 day_margin = 0
-use_batt = False
+use_batt = True
 energy_delta = 0.0
 DoD = 0.7
 night_time = 0.0
@@ -28,9 +28,18 @@ S = 36.0
 Sh_S = 0.15
 Sv_S = 0.1
 
-wing_geo = wing(S=S,A=25.0, qc_sweep=0.0*np.pi/180, taper=1.0, dihedral=0.0*np.pi/180.0)
-fus_geo = fuselage()
-emp_geo = empennage(S_h = S*Sh_S, S_v = S*Sv_S)
+# Choose planform type (uncomment the required one):
+
+# Traditional wing planform:
+# wing_geo = wing(S=S,A=25.0, qc_sweep=0.0*np.pi/180, taper=1.0, dihedral=0.0*np.pi/180.0)
+# fus_geo = fuselage()
+# emp_geo = empennage(S_h = S*Sh_S, S_v = S*Sv_S)
+# nac_geo = nacelles(nr_of_engines=4)
+
+# Flying wing planform:
+wing_geo = wing(S=S,A=25.0, qc_sweep=15.0*np.pi/180, taper=1.0, dihedral=0.0*np.pi/180.0, airfoil=airfoil_e334())
+fus_geo = fuselage(D=0.0)
+emp_geo = empennage(S_h = 0.0, S_v = 0.0)
 nac_geo = nacelles(nr_of_engines=4)
 
 # General subsystem parameters may be changed using the following (commented) code block; Sensible defaults should already be implemented
@@ -123,11 +132,21 @@ if save_bool == "Y":
     print("WING AND EMPENNAGE PARAMETERS:", file=out_file)
     print(" - Wing surface area:", AHAPS.wing.S, file=out_file)
     print(" - Wing aspect ratio:", AHAPS.wing.AR, file=out_file)
+    print(" - Wing full span:", AHAPS.wing.b, file=out_file)
+    print(" - Wing chord:", AHAPS.wing.root_chord, file=out_file)
     print(" - Wing sweep:", AHAPS.wing.qc_sweep, file=out_file)
     print(" - Wing dihedral:", AHAPS.wing.dihedral, file=out_file)
     print(" - Wing taper:", AHAPS.wing.taper, file=out_file)
     print(" - Sh/S:", AHAPS.Sh_S, file=out_file)
     print(" - Sv/S:", AHAPS.Sv_S, file=out_file)
+    print(" - Vertical tail aspect ratio:", AHAPS.emp.AR_v, file=out_file)
+    print(" - Horizontal tail aspect ratio:", AHAPS.emp.AR_h, file=out_file)
+    print(" - Vertical tail qc sweep:", AHAPS.emp.qc_sweep_v, file=out_file)
+    print(" - Horizontal tail qc sweep:", AHAPS.emp.qc_sweep_h, file=out_file)
+    print(" - Vertical tail root chord:", AHAPS.emp.root_chord_v, file=out_file)
+    print(" - Horizontal tail root chord:", AHAPS.emp.root_chord_h, file=out_file)
+    print(" - Vertical tail taper:", AHAPS.emp.taper_v, file=out_file)
+    print(" - Horizontal tail taper:", AHAPS.emp.taper_h, file=out_file)
 
 
 

@@ -1,0 +1,36 @@
+GENERAL AIRCRAFT PARAMETERS:
+ - Final MTOW: 158.44077293467583
+ - CL/CD at cruise: 35.59336605291378
+ - Final power consumption: 2001.3281351078788
+ - Final surface area: 18.95248377255447
+ - Final remaining mass (MTOW - Power System Mass - Payload Mass): 102.98495134774775
+___________________________________
+POWER SYSTEM PARAMETERS:
+ - Final solar panel area: 18.37541313868823
+ - Final solar panel mass: 12.219649737227675
+ - Final energy storage system mass: 23.236171849700415
+ - Final energy storage system volume: 0.13769583318340986
+___________________________________
+PROPULSION SYSTEM PARAMETERS:
+ - Thrust required at cruise: 10.917090421979983
+ - TAS at cruise: 36.57375258446938
+ - Lambda Advance Ratio: 0.46567148089906274
+___________________________________
+WING AND EMPENNAGE PARAMETERS:
+ - Wing surface area: 18.95248377255447
+ - Wing aspect ratio: 25.0
+ - Wing full span: 21.767225232304224
+ - Wing chord: 0.870689009292169
+ - Wing sweep: 0.2617993877991494
+ - Wing dihedral: 0.0
+ - Wing taper: 1.0
+ - Sh/S: 0.15
+ - Sv/S: 0.1
+ - Vertical tail aspect ratio: 1.5
+ - Horizontal tail aspect ratio: 4.0
+ - Vertical tail qc sweep: 0.0
+ - Horizontal tail qc sweep: 0.0
+ - Vertical tail root chord: 1.1240546775714686
+ - Horizontal tail root chord: 0.8430410081786014
+ - Vertical tail taper: 1.0
+ - Horizontal tail taper: 1.0

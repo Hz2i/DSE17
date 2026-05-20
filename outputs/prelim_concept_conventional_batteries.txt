@@ -19,8 +19,18 @@ ___________________________________
 WING AND EMPENNAGE PARAMETERS:
  - Wing surface area: 24.417422236537288
  - Wing aspect ratio: 25.0
+ - Wing full span: 24.706994068753733
+ - Wing chord: 0.9882797627501494
  - Wing sweep: 0.0
  - Wing dihedral: 0.0
  - Wing taper: 1.0
  - Sh/S: 0.15
  - Sv/S: 0.1
+ - Vertical tail aspect ratio: 1.5
+ - Horizontal tail aspect ratio: 4.0
+ - Vertical tail qc sweep: 0.0
+ - Horizontal tail qc sweep: 0.0
+ - Vertical tail root chord: 1.275863687508382
+ - Horizontal tail root chord: 0.9568977656312864
+ - Vertical tail taper: 1.0
+ - Horizontal tail taper: 1.0
