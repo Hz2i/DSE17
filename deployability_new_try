@@ -216,8 +216,8 @@ class MissionProfile:
             power_gen, sunrise, sunset, timeofday = self.solarpower.calc_power_per_m2(h[i],h_cloud,cloud_intensity_effect,day_of_year,t[i],0)
             power_gen *= self.S_guess
 
-            print(self.Calc_Pa(h[i],extra_power)[1], self.Pavg_climb_subsys)
-            print(self.Pprop_cruise, self.Pavg_cruise_subsys)
+            #print(self.Calc_Pa(h[i],extra_power)[1], self.Pavg_climb_subsys)
+            #print(self.Pprop_cruise, self.Pavg_cruise_subsys)
 
             if cruise == False:
                 power_req = self.Calc_Pa(h[i],extra_power)[1]
@@ -292,18 +292,18 @@ class MissionProfile:
 
         return Profile_passed, sunrise_time, sunset_time
 
-MTOW = 193.5
+MTOW = 206.74
 TAS_initial = 25.0
 gamma = 0.0
 h_cruise = 60000*0.3048
-lat = 30.0
+lat = 45.0
 day_margin = 0
 use_batt = True
 energy_delta = 0.0
 DoD = 0.7
 night_time = 0.0
 
-S = 40.34
+S = 43.61
 Sh_S = 0.15
 Sv_S = 0.1
 
@@ -312,7 +312,7 @@ Sv_S = 0.1
 # Traditional wing planform:
 wing_geo = wing(S=S,A=25.0, qc_sweep=0.0*np.pi/180, taper=1.0, dihedral=0.0*np.pi/180.0)
 fus_geo = fuselage()
-emp_geo = empennage(S_h = S*Sh_S, S_v = S*Sv_S,lh=5.0)
+emp_geo = empennage(S_h = S*Sh_S, S_v = S*Sv_S,lh=8.0,h_AR=5,v_AR=2)
 nac_geo = nacelles(nr_of_engines=4)
 
 # Flying wing planform:
@@ -321,9 +321,9 @@ nac_geo = nacelles(nr_of_engines=4)
 # emp_geo = empennage(S_h = 0.0, S_v = 0.0)
 # nac_geo = nacelles(nr_of_engines=4)
 
-aircraft_class = Aircraft(MTOW_guess=MTOW, TAS=TAS_initial, gamma=gamma, lat=lat, day_margin=day_margin, DoD=DoD,Sh_S = Sh_S, Sv_S = Sv_S, wing=wing_geo, fus=fus_geo, emp=emp_geo, nac=nac_geo, use_batt=use_batt, energy_delta=energy_delta)
+aircraft_class = Aircraft(MTOW_guess=MTOW, TAS=TAS_initial, gamma=gamma, lat=30, day_margin=day_margin, DoD=DoD,Sh_S = Sh_S, Sv_S = Sv_S, wing=wing_geo, fus=fus_geo, emp=emp_geo, nac=nac_geo, use_batt=use_batt, energy_delta=energy_delta)
 
-mission_profile = MissionProfile(solarpower=SolarPower(latitude_deg=30),Aircraft=aircraft_class)
+mission_profile = MissionProfile(solarpower=SolarPower(latitude_deg=lat),Aircraft=aircraft_class)
 
 #print(mission_profile.Calc_V_Pr_climb(0))
 #print(mission_profile.Calc_Pa(0))
@@ -343,7 +343,7 @@ sunset = np.zeros(len(day_of_year))
 for i in range(len(day_of_year)):
     for j in range(len(time_of_day)):
         print(f"Day {day_of_year[i]}, time {time_of_day[j]/3600} hours")
-        deployability[i][j], sunrise[i], sunset[i] = mission_profile.climb_profile(plot=True,extra_power=300,h_cloud=8000,cloud_intensity_effect = 0.35,day_of_year = day_of_year[i], start_time = time_of_day[j], time_step = dt2)
+        deployability[i][j], sunrise[i], sunset[i] = mission_profile.climb_profile(plot=False,extra_power=300,h_cloud=8000,cloud_intensity_effect = 0.35,day_of_year = day_of_year[i], start_time = time_of_day[j], time_step = dt2)
         print(deployability[i][j])
 
 import numpy as np

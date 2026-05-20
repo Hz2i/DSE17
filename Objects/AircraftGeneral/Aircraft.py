@@ -122,7 +122,7 @@ class Aircraft:
             self.pow_store.compute_weight_volume()
             self.solar = power_generation(self.Pow_req, latitude=self.lat, days_from_solstice=self.day_margin, energy_delta=self.energy_delta)
             self.solar.compute_weight_surface()
-            
+
             if self.solar.area < self.wing.S/1.025:
                 surface_check = False
             else:
@@ -130,13 +130,14 @@ class Aircraft:
                 iterations += 1
                 # print("Inner iteration:", iterations)
                 # print("Surface difference:", self.solar.area - self.wing.S)
-
+        '''
         print("Optimal CL:", self.CL_opt)
         print("CL:", CL_current)
         print("CD0:", self.CD0)
         print("CL/CD:", self.CL_CD)
         print("Oswald efficiency:", self.e)
         print("Propulsive efficiency:", self.prop.overall_eff)
+        '''
 
 
     def compute_subsys_pow(self):
