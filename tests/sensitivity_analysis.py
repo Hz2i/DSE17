@@ -368,3 +368,5 @@ def change_scores_test(score_table, weights, criteria_names, options):
     plt.show()
 
 change_scores_test(Dummy_table, weights, criteria_names, options)
+
+# Equal Weights Test

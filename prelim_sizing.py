@@ -10,7 +10,7 @@ from Objects.Performance.ScissorPlot import ScissorPlot
 from Objects.AircraftGeneral.Aircraft import Aircraft
 
 
-powM_frac_target = 0.15    # From the NASA paper (mass fraction of the power system): 0.15 for the fuel cells, 0.55 or 0.6 for batteries
+powM_frac_target = 0.3    # From the NASA paper (mass fraction of the power system): 0.30 for the fuel cells, 0.55 or 0.6 for batteries
 payload_apprx_frac = 0.2
 
 MTOW_initial = 120.0
@@ -114,6 +114,7 @@ if save_bool == "Y":
     print("GENERAL AIRCRAFT PARAMETERS:", file=out_file)
     print(" - Final MTOW:", AHAPS.MTOW, file=out_file)
     print(" - CL/CD at cruise:", AHAPS.CL_CD, file=out_file)
+    print(" - CD0:", AHAPS.CD0, file=out_file)
     print(" - Final power consumption:", AHAPS.Pow_req, file=out_file)
     print(" - Final surface area:", AHAPS.wing.S, file=out_file)
     print(" - Final remaining mass (MTOW - Power System Mass - Payload Mass):", AHAPS.MTOW * (1 - powM_frac) - AHAPS.payload.mass_payload, file=out_file)

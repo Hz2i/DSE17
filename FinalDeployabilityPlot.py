@@ -1,6 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import ambiance as am
+from Objects.Characteristics.PowerSystem_sizing import solar_incidence
+from Objects.Constants import Constants
 
 
 # -----------------------------
@@ -87,11 +89,32 @@ class SolarPower:
             incidence[i] = np.arccos(np.mean(cos_theta))
         return incidence
 
-    def calc_power_per_m2(self, day_of_year):
-        incidence = self.calc_daily_mean_incidence_angle(day_of_year)
-        cos_inc = np.cos(incidence)
-        raw = self.efficiency * self.I0 * np.maximum(cos_inc, 0.0)
-        return np.minimum(self.powLimS, raw)
+    def calc_power_per_m2(self,A,h,lat,day_of_year,time_passed,starting_timeofday=0):
+        days_passed = (time_passed+starting_timeofday) // (24*60*60)
+        days_from_solstice = day_of_year + 10 + days_passed
+        time_of_day = time_passed + starting_timeofday - days_passed * 24*60*60
+
+        daylight_analysis = solar_incidence(lat,days_from_solstice)
+        daylight_analysis.daylight_cycle()
+        daylight_time = daylight_analysis.daylight_time
+
+        sunrise_time = (24*60*60-daylight_time)/2
+        sunset_time = sunrise_time + daylight_time
+
+        if sunrise_time < time_of_day and time_of_day < sunset_time:
+            current_incidence = np.arccos(np.cos(lat/180*np.pi)*np.cos(15*np.pi/180*(daylight_time/2-(time_of_day-sunrise_time))/3600)*np.cos(daylight_analysis.eq_inclination)+np.sin(lat/180*np.pi)*np.sin(daylight_analysis.eq_inclination))
+        else:
+            current_incidence = np.pi/2
+
+        power = np.minimum(self.powLimS,self.efficiency*Constants().solar_constant*np.cos(current_incidence))
+        # How does efficiency change with height???
+        return power
+
+    #def calc_power_per_m2(self, day_of_year):
+        #incidence = self.calc_daily_mean_incidence_angle(day_of_year)
+        #cos_inc = np.cos(incidence)
+        #raw = self.efficiency * self.I0 * np.maximum(cos_inc, 0.0)
+        #return np.minimum(self.powLimS, raw)
 
 
 # -----------------------------
@@ -166,6 +189,9 @@ class MissionProfile:
         Edrag = self.D_climb * (self.alt / np.sin(self.gamma_rad))
         Esubsys = self.Pavg_climb_subsys * self.t_climb
         return Epot + Edrag + Esubsys
+
+    def Calc_P_climb(self,h):
+        
 
     def Calc_Pprop_cruise(self):
         return ((self.m_total_guess * self.g) / self.LD) * self.V_cruise / self.eta_prop
