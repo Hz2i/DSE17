@@ -67,4 +67,16 @@ def calculate_total_co2_emissions(material_lst, weight_lst, energy_consumption, 
     co2_emissions_power = calculate_co2_emissions_power(battery_fuelcell, consumption)
     co2_emissions_computer = calculate_co2_emissions_computer(weight_computer_system)
     total_co2_emissions = co2_emissions_material + co2_emissions_solarpanels + co2_emissions_power + co2_emissions_computer
-    return total_co2_emissions   
+    return total_co2_emissions
+
+if __name__ == "__main__":
+    material_lst = ["Carbon fiber", "Polymer"]  # structure materials
+    weight_lst = [53.10, 28.59]                 # weights of the structure materials in Kg
+    energy_consumption = 3740.09                # energy production of solar panels in W
+    solar_panel_type = "Heterojunction_silicon" # type of solar panel used   
+    battery_fuelcell = "fuelcell"               # type of power source used
+    consumption = 0.4663                         # capacity of storage system in kWh for battery, or in KG H2 for fuel cell
+    weight_computer_system = 0.0                # neglected because equal for all concepts
+
+    total_co2_emissions = calculate_total_co2_emissions(material_lst, weight_lst, energy_consumption, solar_panel_type, battery_fuelcell, consumption, weight_computer_system)
+    print(f"Total CO2 emissions: {total_co2_emissions} kgeq")
