@@ -10,7 +10,7 @@ from Objects.Performance.ScissorPlot import ScissorPlot
 from Objects.AircraftGeneral.Aircraft import Aircraft
 
 
-powM_frac_target = 0.15    # From the NASA paper (mass fraction of the power system): 0.15 for the fuel cells, 0.55 or 0.6 for batteries
+powM_frac_target = 0.3    # From the NASA paper (mass fraction of the power system): 0.30 for the fuel cells, 0.55 or 0.6 for batteries
 payload_apprx_frac = 0.2
 
 MTOW_initial = 120.0
