@@ -49,10 +49,10 @@ def calculate_degradation_rate(S_wet, S, mass_fraction_airframe, mass_fraction_e
 if __name__ == "__main__":
     # calculate degradation rate
     S_ratio = 2.14                 # Constant 2.14
-    S = 0                          # Wing surface area in m^2
-    MTOW = 0                       # MTOW in kg
-    m_remain = 0                   # remaining mass in kg
-    m_storage = 0                  # mass of energy storage in kg
+    S = 31.44                          # Wing surface area in m^2
+    MTOW = 149.86                       # MTOW in kg
+    m_remain = 74.93                   # remaining mass in kg
+    m_storage = 34.60                  # mass of energy storage in kg
     S_wet = S_ratio * S
     mass_fraction_airframe = m_remain/MTOW
     mass_fraction_energy_storage = m_storage/MTOW
