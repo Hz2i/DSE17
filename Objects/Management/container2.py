@@ -145,6 +145,7 @@ def assess_packing_feasibility(packets, visualize=False):
             ax.text(x + w/2, y + h/2, z + d/2, item.name, fontsize=7, ha='center')
 
         ax.set_xlim([0, cw]); ax.set_ylim([0, ch]); ax.set_zlim([0, cl])
+        ax.set_xticks(np.arange(0, cw+1, 1)); ax.set_yticks(np.arange(0, ch+1, 1)); ax.set_zticks(np.arange(0, cl+1, 1))
         ax.set_xlabel("Width (m)"); ax.set_ylabel("Height (m)"); ax.set_zlabel("Length (m)")
         ax.set_title("ISO 20ft Container Packing")
         ax.set_box_aspect([cw, ch, cl])
