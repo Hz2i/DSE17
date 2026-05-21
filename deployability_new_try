@@ -296,7 +296,7 @@ MTOW = 206.74
 TAS_initial = 25.0
 gamma = 0.0
 h_cruise = 60000*0.3048
-lat = 45.0
+lat = 30
 day_margin = 0
 use_batt = True
 energy_delta = 0.0
@@ -305,13 +305,13 @@ night_time = 0.0
 
 S = 43.61
 Sh_S = 0.15
-Sv_S = 0.1
+Sv_S = 0.07
 
 # Choose planform type (uncomment the required one):
 
 # Traditional wing planform:
 wing_geo = wing(S=S,A=25.0, qc_sweep=0.0*np.pi/180, taper=1.0, dihedral=0.0*np.pi/180.0)
-fus_geo = fuselage()
+fus_geo = fuselage(D=0.5, L1=0.25,L2=10, L3=0.25)
 emp_geo = empennage(S_h = S*Sh_S, S_v = S*Sv_S,lh=8.0,h_AR=5,v_AR=2)
 nac_geo = nacelles(nr_of_engines=4)
 
@@ -331,9 +331,10 @@ mission_profile = MissionProfile(solarpower=SolarPower(latitude_deg=lat),Aircraf
 #mission_profile.climb_profile()
 #print(mission_profile.climb_profile())
 
-dt1 = 3600
-dt2 = 3600
-day_of_year = np.arange(0,360+30,30)
+dt1 = 1800
+dt2 = 1800
+dt3 = 5
+day_of_year = np.arange(0,360+dt3,dt3)
 time_of_day = np.arange(0,86400+dt1,dt1)
 
 deployability = np.zeros((len(day_of_year),len(time_of_day)))
@@ -343,7 +344,7 @@ sunset = np.zeros(len(day_of_year))
 for i in range(len(day_of_year)):
     for j in range(len(time_of_day)):
         print(f"Day {day_of_year[i]}, time {time_of_day[j]/3600} hours")
-        deployability[i][j], sunrise[i], sunset[i] = mission_profile.climb_profile(plot=False,extra_power=300,h_cloud=8000,cloud_intensity_effect = 0.35,day_of_year = day_of_year[i], start_time = time_of_day[j], time_step = dt2)
+        deployability[i][j], sunrise[i], sunset[i] = mission_profile.climb_profile(plot=True,extra_power=500,h_cloud=13000,cloud_intensity_effect = 0.35,day_of_year = day_of_year[i], start_time = time_of_day[j], time_step = dt2)
         print(deployability[i][j])
 
 import numpy as np
@@ -362,16 +363,15 @@ plt.figure(figsize=(10, 5))
 import numpy as np
 
 import numpy as np
-
+'''
 lower = []
 upper = []
 
+
 for row in deployability:
 
-    print(row)
     # indices where NOT viable
     forbidden = np.where(row == 0)[0]
-    print(forbidden)
     # no forbidden hours
     if len(forbidden) == 0:
         lower.append(np.nan)
@@ -387,11 +387,40 @@ for row in deployability:
 
     lower.append(largest[0])
     upper.append(largest[-1])
+'''
+
+from itertools import groupby
+
+def get_windows(row, times):
+    """Return list of (open_time, close_time) for all contiguous 1-runs in a row."""
+    windows = []
+    for val, group in groupby(enumerate(row), key=lambda x: x[1]):
+        if val == 1:
+            indices = [i for i, _ in group]
+            windows.append((times[indices[0]], times[indices[-1]]))
+    return windows  # e.g. [(t_open1, t_close1), (t_open2, t_close2)]
+
+# Inspect how many windows each day has
+for i, day in enumerate(day_of_year):
+    windows = get_windows(deployability[i], time_of_day)
+    for t_open, t_close in windows:
+        plt.fill_between(
+            [day - dt3/2, day + dt3/2],          # span half a day-step either side
+            t_open  / 3600 - dt1/(2*3600),
+            t_close / 3600 + dt1/(2*3600),
+            color="green", alpha=0.4,
+        )
+
+plt.fill_between([0],[-1],[-5],color="green", alpha=0.4, label="Deployable Window")
+
+all_windows = [get_windows(deployability[i], time_of_day) for i in range(len(day_of_year))]
+
+print(all_windows)
 
 
-plt.plot(x,upper,color="red")
-plt.plot(x,lower,color='red')
-plt.fill_between(x,upper,lower,color="red",alpha=0.5,label="Not Deployable")
+#plt.plot(restricted_days,upper_times,color="red")
+#plt.plot(restricted_days,lower_times,color='red')
+#plt.fill_between(restricted_days,upper_times,lower_times,color="green",alpha=0.5,label="Deployable")
 
 
 plt.plot(x,sunrise,linestyle="dashed",color="black",label="Sunrise Time")
@@ -402,6 +431,6 @@ plt.ylim(0,24)
 plt.ylabel("Hour of day")
 plt.xlabel("Day")
 plt.legend()
-plt.title("Launch availability heatmap")
+plt.title("Deployability")
 
 plt.show()
