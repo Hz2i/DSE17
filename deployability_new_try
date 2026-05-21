@@ -58,7 +58,7 @@ class SolarPower:
 
         self.efficiency = 0.2
         self.I0 = 1378.0
-        self.powLimS = 250.0
+        self.powLimS = 200.0
 
         #self.incidence_angle_rad = self.calc_daily_mean_incidence_angle(self.days)
         #self.power_per_m2_W = self.calc_power_per_m2(self.days)
@@ -70,7 +70,7 @@ class SolarPower:
         decl_deg = 23.45 * np.sin(np.deg2rad((360.0 / 365.0) * (day_of_year + 10.0)))
         return np.deg2rad(decl_deg)
 
-    def calc_power_per_m2(self,h,h_cloud=8000,cloud_intensity_effect = 0.35, day_of_year=0,time_passed=0,starting_timeofday=0):
+    def calc_power_per_m2(self,h,h_cloud=8000,cloud_cover = 0.35, day_of_year=0,time_passed=0,starting_timeofday=0):
         lat = self.latitude_rad
         days_passed = (time_passed+starting_timeofday) // (24*60*60)
         days_from_solstice = day_of_year + 10 + days_passed
@@ -91,7 +91,7 @@ class SolarPower:
         power = np.minimum(self.powLimS,self.efficiency*Constants().solar_constant*np.cos(current_incidence))
 
         if h < h_cloud:
-            power *= (1-cloud_intensity_effect)
+            power *= (1-0.75*(cloud_cover/8)**3.4)
 
         return power, sunrise_time, sunset_time, time_of_day
     
@@ -179,7 +179,7 @@ class MissionProfile:
 
     def Calc_Pa(self,h,extra_power):
         V = self.Calc_V_Pr_climb(h)[0]
-        propsystem = PropulsionSystem(T=(self.Pprop_cruise+extra_power)*self.eta_prop/V / self.nr_of_engines, velocity=V, alt=h, rpm=1000.0, torque=4.0, motor_temp=-40.0,propeller_diameter=1.5)
+        propsystem = PropulsionSystem(T=(self.Pprop_cruise*extra_power)*self.eta_prop/V / self.nr_of_engines, velocity=V, alt=h, rpm=1000.0, torque=4.0, motor_temp=-40.0,propeller_diameter=1.5)
 
         return propsystem.power_required*propsystem.overall_eff * self.nr_of_engines,  propsystem.power_required * self.nr_of_engines
     
@@ -189,7 +189,7 @@ class MissionProfile:
 
         return (Pa-Pr)/(self.m_total_guess*9.81)
     
-    def climb_profile(self,plot=False,extra_power = 1000,h_cloud=8000,cloud_intensity_effect = 0.35, day_of_year=0, start_time=0,time_step=3600):
+    def climb_profile(self,plot=False,extra_power = 1.2,h_cloud=8000,cloud_cover = 4, day_of_year=0, start_time=0,time_step=3600):
 
         self.time_cruise_start = 0
 
@@ -206,14 +206,14 @@ class MissionProfile:
         sunset_passed = False
         correctday = True
         
-        power_gen, sunrise, sunset, timeofday = self.solarpower.calc_power_per_m2(h[0],h_cloud,cloud_intensity_effect,day_of_year,t[0],0)
+        power_gen, sunrise, sunset, timeofday = self.solarpower.calc_power_per_m2(h[0],h_cloud,cloud_cover,day_of_year,t[0],0)
 
         sunrise_time = sunrise
         sunset_time = sunset
 
         while timeofday < sunset or cruise == False or correctday == False:
                 
-            power_gen, sunrise, sunset, timeofday = self.solarpower.calc_power_per_m2(h[i],h_cloud,cloud_intensity_effect,day_of_year,t[i],0)
+            power_gen, sunrise, sunset, timeofday = self.solarpower.calc_power_per_m2(h[i],h_cloud,cloud_cover,day_of_year,t[i],0)
             power_gen *= self.S_guess
 
             #print(self.Calc_Pa(h[i],extra_power)[1], self.Pavg_climb_subsys)
@@ -331,9 +331,9 @@ mission_profile = MissionProfile(solarpower=SolarPower(latitude_deg=lat),Aircraf
 #mission_profile.climb_profile()
 #print(mission_profile.climb_profile())
 
-dt1 = 1800
-dt2 = 1800
-dt3 = 5
+dt1 = 3600
+dt2 = 3600
+dt3 = 30
 day_of_year = np.arange(0,360+dt3,dt3)
 time_of_day = np.arange(0,86400+dt1,dt1)
 
@@ -344,7 +344,7 @@ sunset = np.zeros(len(day_of_year))
 for i in range(len(day_of_year)):
     for j in range(len(time_of_day)):
         print(f"Day {day_of_year[i]}, time {time_of_day[j]/3600} hours")
-        deployability[i][j], sunrise[i], sunset[i] = mission_profile.climb_profile(plot=True,extra_power=500,h_cloud=13000,cloud_intensity_effect = 0.35,day_of_year = day_of_year[i], start_time = time_of_day[j], time_step = dt2)
+        deployability[i][j], sunrise[i], sunset[i] = mission_profile.climb_profile(plot=False,extra_power=1.2,h_cloud=18000,cloud_cover = 4,day_of_year = day_of_year[i], start_time = time_of_day[j], time_step = dt2)
         print(deployability[i][j])
 
 import numpy as np
