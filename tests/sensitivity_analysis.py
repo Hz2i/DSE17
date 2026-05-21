@@ -43,6 +43,7 @@ def plot_sensitivity_analysis(score_table, weights, options):
     plt.show()
 
 plot_sensitivity_analysis(score_table, weights, options)
+plot_sensitivity_analysis(score_table, np.ones((5,1))*0.2, options)
 
 def remove_criteria_test(score_table, weights, criteria_names, options):
     n_criteria = len(criteria_names)
