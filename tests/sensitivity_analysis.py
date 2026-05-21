@@ -186,11 +186,11 @@ def change_weights_test2(score_table, weights, criteria_names, options):
     plt.tight_layout(pad=2.0)
     plt.show()
 
-change_weights_test2(score_table, weights, criteria_names, options)
+change_weights_test2(score_table, weights, criteria_names, options2)
 
 # Equal Weights Test
 
-def change_scores_test(score_table, weights, criteria_names, options):
+def change_scores_test(score_table, weights, criteria_names, options, option2):
     n_criteria = len(criteria_names)
     n_options = len(options)
     
@@ -218,7 +218,7 @@ def change_scores_test(score_table, weights, criteria_names, options):
     
     for j in range(n_options):
         ax.plot(range(len(x_labels)), perturbations[:, j],
-                marker='o', label=options[j][0], color=colors[j], linewidth=2)
+                marker='o', label=options2[j][0], color=colors[j], linewidth=2)
     
     ax.axvline(x=0, color='black', linestyle='--', linewidth=1, alpha=0.5, label='Baseline')
     
@@ -232,7 +232,7 @@ def change_scores_test(score_table, weights, criteria_names, options):
     plt.tight_layout(pad=2.0, rect=[0.05, 0, 1, 1])
     plt.show()
 
-change_scores_test(score_table, weights, criteria_names, options)
+change_scores_test(score_table, weights, criteria_names, options, options2)
 
 def change_weights_test2(score_table, weights, criteria_names, options):
     # Normalize weights to ensure they sum to 1
@@ -325,4 +325,4 @@ def change_weights_test2(score_table, weights, criteria_names, options):
     plt.tight_layout(pad=2.0)
     plt.show()
 
-change_weights_test2(score_table, weights, criteria_names, options)
+change_weights_test2(score_table, weights, criteria_names, options2)
