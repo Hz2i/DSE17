@@ -54,7 +54,7 @@ DESIGNS = {
     },
 }
 
-design = "flyingwing_batteries"
+design = "flyingwing_FC"
 
 power_consumption = DESIGNS[design]["endurance"]["power_consumption_W"]
 surface = DESIGNS[design]["endurance"]["S"]
@@ -63,7 +63,7 @@ init_bat_capacity = bat.massEnergy * DESIGNS[design]["endurance"]["storage_mass_
 
 latitudes = [-60,-45,-30,-15,0,15,30,45,60]
 
-
+'''
 FILE_ID = "outputs/endurance_" + design + ".txt"
 out_file = open(FILE_ID, "w")
 
@@ -77,7 +77,10 @@ for latitude in latitudes:
     else:
         print(f'At a latitude of {latitude} degrees, energy storage remained with sufficient capacity for {time_passed//86400} days and {(time_passed - (time_passed//86400) * 86400)/(3600):.2f} hours.', file=out_file)
 
+'''
 
+latitude = 30
 
+Endurance_class = Endurance(power_consumption=power_consumption,init_bat_capacity=init_bat_capacity,S=surface,latitude=latitude,height=18500,solar_panel=solar_panel(), battery=bat,days_from_solstice_start=-14,startingtimeofday=0)
 
-#Endurance_class.plot_endurance(86400*60,50)
+Endurance_class.plot_endurance(86400*60,50)
