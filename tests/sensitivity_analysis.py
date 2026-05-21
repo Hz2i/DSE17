@@ -18,18 +18,23 @@ weights = np.array([[0.3],
                     [0.25],
                     [0.1]])
 
-score_table = np.array([[]]) # 4 by 5 matrix with the scores for each option and each criterion
+score_table = np.array([[2.0, 2.0, 3.0, 2.0, 2.0],
+                         [2.0, 2.0, 2.0, 2.0, 2.0],
+                         [2.0, 2.0, 3.0, 3.0, 3.0],
+                         [2.0, 1.0, 2.0, 3.0, 2.0]]) # 4 by 5 matrix with the scores for each option and each criterion
 
 Dummy_table = np.array([[0.4, 0.6, 0.4, 0.2, 0.7],
                          [0.7, 0.5, 0.8, 0.8, 0.6],
                          [0.6, 0.5, 0.2, 0.7, 0.1],
                          [1.0, 0.3, 0.9, 0.6, 0.4]])
 
+
+
 def calculate_weighted_sum(score_table, weights):
     return score_table @ weights
 
 
-print(calculate_weighted_sum(Dummy_table, weights))
+print(calculate_weighted_sum(score_table, weights))
 
 def plot_sensitivity_analysis(score_table, weights, options):
     weighted_sums = calculate_weighted_sum(score_table, weights)
@@ -37,7 +42,7 @@ def plot_sensitivity_analysis(score_table, weights, options):
     plt.ylabel('Weighted Sum')
     plt.show()
 
-plot_sensitivity_analysis(Dummy_table, weights, options)
+plot_sensitivity_analysis(score_table, weights, options)
 
 def remove_criteria_test(score_table, weights, criteria_names, options):
     n_criteria = len(criteria_names)
@@ -55,7 +60,7 @@ def remove_criteria_test(score_table, weights, criteria_names, options):
     plt.tight_layout()
     plt.show()
 
-remove_criteria_test(Dummy_table, weights, criteria_names, options)
+remove_criteria_test(score_table, weights, criteria_names, options)
 
 def change_weights_test(score_table, weights, criteria_names, options):
     n_criteria = len(criteria_names)
@@ -84,9 +89,12 @@ def change_weights_test(score_table, weights, criteria_names, options):
     plt.tight_layout()
     plt.show()
 
-change_weights_test(Dummy_table, weights, criteria_names, options)
+change_weights_test(score_table, weights, criteria_names, options)
 
 def change_weights_test2(score_table, weights, criteria_names, options):
+    # Normalize weights to ensure they sum to 1
+    weights = weights / weights.sum()
+
     n_criteria = len(criteria_names)
     n_options = len(options)
     
@@ -103,7 +111,7 @@ def change_weights_test2(score_table, weights, criteria_names, options):
     for i in range(n_criteria):
         modified_score_table = np.delete(score_table, i, axis=1)
         modified_weights = np.delete(weights, i, axis=0)
-        modified_weights = modified_weights / (1 - weights[i])
+        modified_weights = modified_weights / modified_weights.sum()  # Normalize after removal
         weighted_sums = calculate_weighted_sum(modified_score_table, modified_weights).flatten()
         removed_scores.append(weighted_sums)
     removed_scores = np.array(removed_scores)
@@ -111,10 +119,10 @@ def change_weights_test2(score_table, weights, criteria_names, options):
     # For each criterion: -5%, removed, +5%
     removed_x_positions = {}
     for i in range(n_criteria):
-        for delta, sign in [(-0.05, '-5%')]:
+        for delta, sign in [(-0.05 * weights[i, 0], '-5%')]:  # Scale delta relative to weight
             modified_weights = weights.copy().astype(float)
             modified_weights[i] += delta
-            modified_weights = modified_weights / modified_weights.sum()
+            modified_weights = modified_weights / modified_weights.sum()  # Normalize after perturbation
             perturbations.append(calculate_weighted_sum(score_table, modified_weights).flatten())
             x_labels.append(f'{criteria_names[i][0]}\n({sign})')
         
@@ -122,10 +130,10 @@ def change_weights_test2(score_table, weights, criteria_names, options):
         perturbations.append(removed_scores[i])
         x_labels.append(f'{criteria_names[i][0]}\n(removed)')
         
-        for delta, sign in [(0.05, '+5%')]:
+        for delta, sign in [(0.05 * weights[i, 0], '+5%')]:  # Scale delta relative to weight
             modified_weights = weights.copy().astype(float)
             modified_weights[i] += delta
-            modified_weights = modified_weights / modified_weights.sum()
+            modified_weights = modified_weights / modified_weights.sum()  # Normalize after perturbation
             perturbations.append(calculate_weighted_sum(score_table, modified_weights).flatten())
             x_labels.append(f'{criteria_names[i][0]}\n({sign})')
     
@@ -164,13 +172,15 @@ def change_weights_test2(score_table, weights, criteria_names, options):
     
     ax.set_ylabel('Weighted Sum')
     ax.legend(loc='lower right')
-    ax.set_ylim(0, 1)
+    
+    # Adjust y-axis limits based on the new scale
+    ax.set_ylim(0, 3.5)
     
     # Extra bottom padding so rotated labels aren't clipped
     plt.tight_layout(pad=2.0)
     plt.show()
 
-change_weights_test2(Dummy_table, weights, criteria_names, options)
+change_weights_test2(score_table, weights, criteria_names, options)
 
 
 
@@ -189,7 +199,7 @@ def change_scores_test(score_table, weights, criteria_names, options):
     
     for i in range(n_criteria):
         for j in range(n_options):
-            for delta, sign in [(-0.5, '-0.5'), (0.5, '+0.5')]:
+            for delta, sign in [(-1.0, '-1.0'), (1.0, '+1.0')]:
                 modified_score_table = score_table.copy().astype(float)
                 modified_score_table[j, i] += delta
                 perturbations.append(calculate_weighted_sum(modified_score_table, weights).flatten())
@@ -212,12 +222,12 @@ def change_scores_test(score_table, weights, criteria_names, options):
     
     ax.set_ylabel('Weighted Sum')
     ax.legend(loc='lower right')
-    ax.set_ylim(0, 1)
+    ax.set_ylim(0, max(perturbations.flatten()) * 1.1)
     
     plt.tight_layout(pad=2.0)
     plt.show()
 
-change_scores_test(Dummy_table, weights, criteria_names, options)
+change_scores_test(score_table, weights, criteria_names, options)
 
 def change_scores_test(score_table, weights, criteria_names, options):
     n_criteria = len(criteria_names)
@@ -233,7 +243,7 @@ def change_scores_test(score_table, weights, criteria_names, options):
     
     for i in range(n_criteria):
         for j in range(n_options):
-            for delta, sign in [(0.5, '+0.5')]:
+            for delta, sign in [(1.0, '+1.0')]:
                 modified_score_table = score_table.copy().astype(float)
                 modified_score_table[j, i] += delta
                 perturbations.append(calculate_weighted_sum(modified_score_table, weights).flatten())
@@ -256,12 +266,12 @@ def change_scores_test(score_table, weights, criteria_names, options):
     
     ax.set_ylabel('Weighted Sum')
     ax.legend(loc='lower right')
-    ax.set_ylim(0, 1)
+    ax.set_ylim(0, max(perturbations.flatten()) * 1.1)
     
     plt.tight_layout(pad=2.0)
     plt.show()
 
-change_scores_test(Dummy_table, weights, criteria_names, options)
+change_scores_test(score_table, weights, criteria_names, options)
 
 def change_scores_test(score_table, weights, criteria_names, options):
     n_criteria = len(criteria_names)
@@ -276,9 +286,9 @@ def change_scores_test(score_table, weights, criteria_names, options):
     for i in range(n_criteria):
         for j in range(n_options):
             modified_plus = score_table.copy().astype(float)
-            modified_plus[j, i] += 0.5
+            modified_plus[j, i] += 1.0
             modified_minus = score_table.copy().astype(float)
-            modified_minus[j, i] -= 0.5
+            modified_minus[j, i] -= 1.0
 
             plus_perturbations.append(calculate_weighted_sum(modified_plus, weights).flatten())
             minus_perturbations.append(calculate_weighted_sum(modified_minus, weights).flatten())
@@ -313,7 +323,7 @@ def change_scores_test(score_table, weights, criteria_names, options):
     for j in range(n_options):
         color = palette[j]
 
-        # Vertical range bars between -0.5 and +0.5 per group
+        # Vertical range bars between -1.0 and +1.0 per group
         for g in range(n_groups):
             ax.plot(
                 [x_groups[g], x_groups[g]],
@@ -328,11 +338,11 @@ def change_scores_test(score_table, weights, criteria_names, options):
         ax.plot(x_line, y_line, color=color, linewidth=2, label=options[j][0],
                 alpha=0.85, zorder=3)
 
-        # +0.5 dots (filled)
+        # +1.0 dots (filled)
         ax.scatter(x_groups, plus_perturbations[:, j],
                    color=color, s=55, zorder=5, edgecolors='white', linewidths=1.2)
 
-        # -0.5 dots (hollow)
+        # -1.0 dots (hollow)
         ax.scatter(x_groups, minus_perturbations[:, j],
                    facecolors='white', edgecolors=color, s=55, zorder=5, linewidths=1.8)
 
@@ -349,7 +359,7 @@ def change_scores_test(score_table, weights, criteria_names, options):
     ax.set_xticklabels(['Baseline'] + group_labels, fontsize=8.5,
                        rotation=40, ha='right', rotation_mode='anchor')
     ax.set_ylabel('Weighted Sum', fontsize=11, labelpad=10)
-    ax.set_ylim(0, 1)
+    ax.set_ylim(0, 3.5)
     ax.set_xlim(-0.5, n_groups + 0.5)
 
     # Legend with a subtle frame
@@ -358,15 +368,15 @@ def change_scores_test(score_table, weights, criteria_names, options):
 
     # Add a small legend hint for filled vs hollow
     ax.scatter([], [], color='grey', s=50, edgecolors='white', linewidths=1.2,
-               label='+0.5', zorder=5)
+               label='+1.0', zorder=5)
     ax.scatter([], [], facecolors='white', edgecolors='grey', s=50, linewidths=1.8,
-               label='−0.5', zorder=5)
+               label='−1.0', zorder=5)
     ax.legend(loc='lower right', framealpha=0.9, edgecolor='#dddddd',
               fontsize=9, title='Options / perturbation', title_fontsize=9)
 
     plt.tight_layout(pad=2.5)
     plt.show()
 
-change_scores_test(Dummy_table, weights, criteria_names, options)
+change_scores_test(score_table, weights, criteria_names, options)
 
 # Equal Weights Test
