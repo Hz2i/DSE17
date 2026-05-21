@@ -403,8 +403,8 @@ mission_profile = MissionProfile(solarpower=SolarPower(latitude_deg=lat),Aircraf
 #print(mission_profile.climb_profile())
 
 dt1 = 3600
-dt2 = 1800
-dt3 = 30
+dt2 = 3600
+dt3 = 15
 day_of_year = np.arange(0,360+dt3,dt3)
 time_of_day = np.arange(0,86400+dt1,dt1)
 
@@ -429,11 +429,9 @@ x = day_of_year
 
 #X,Y = np.meshgrid(x,y)
 
-plt.figure(figsize=(10, 5))
+plt.figure(figsize=(10, 2))
 
-import numpy as np
 
-import numpy as np
 '''
 lower = []
 upper = []
@@ -499,9 +497,13 @@ plt.plot(x,sunset,linestyle="dashdot",color="black",label="Sunset Time")
 #plt.contourf(X,Y, deployability.T, levels=[-0.5, 0.5, 1.5],cmap=ListedColormap(['red', 'green']))
 
 plt.ylim(0,24)
+plt.xticks(day_of_year[::2])
 plt.ylabel("Hour of day")
 plt.xlabel("Day")
-plt.legend()
-plt.title("Deployability")
+#plt.legend()
+plt.title(f"${lat}^\circ$ Latitude")
+plt.tight_layout()
+
+plt.savefig(f"outputs/deployability_{lat}.svg")
 
 plt.show()
