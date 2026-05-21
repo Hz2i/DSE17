@@ -17,6 +17,7 @@ ___________________________________
 PROPULSION SYSTEM PARAMETERS:
  - Thrust required at cruise: 13.233436204824683
  - TAS at cruise: 28.580857313957825
+ - Power consumption at cruise: 1780.2220664549293
  - Lambda Advance Ratio: 0.36390277754564304
 ___________________________________
 FUSELAGE PARAMETERS:

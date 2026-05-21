@@ -73,10 +73,10 @@ class Endurance:
 
         if time_passed < endurance_limit:
             print(f'Battery dropped below 10% capacity after {time_passed//86400} days and {(time_passed - (time_passed//86400) * 86400)/(3600):.2f} hours.')
-            return False
+            return False, time_passed
         elif time_passed >= endurance_limit:
             print(f'The battery remained sufficiently charged for {time_passed//86400} days and {(time_passed - (time_passed//86400) * 86400)/(3600):.2f} hours.')
-            return True
+            return True, time_passed
 
 
 

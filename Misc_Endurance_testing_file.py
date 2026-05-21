@@ -1,12 +1,6 @@
 from Objects.Performance.Endurance import *
 from Objects.Performance.ScissorPlot import *
 
-Endurance_class = Endurance(power_consumption=1610.28,init_bat_capacity=80.126*400*3600,S=35.25,latitude=30,height=18500,solar_panel=solar_panel(), battery=battery(),days_from_solstice_start=-14,startingtimeofday=0)
-
-Endurance_class.compute_endurance(time_step=20)
-
-Endurance_class.plot_endurance(86400*60,50)
-
 
 #scissorplot = ScissorPlot()
 #scissorplot.compute_required_coefs()
@@ -22,6 +16,7 @@ DESIGNS = {
             "S": 43.60930233284505,
             "capacity_J": 138993304.786096,
             "storage_mass_kg": 96.52312832367777,
+            'type': battery()
         },
     },
     "conventional_FC": {
@@ -32,6 +27,7 @@ DESIGNS = {
             "S": 35.83984024899324,
             "capacity_J": 56833098.40319672,
             "storage_mass_kg": 39.46742944666439,
+            'type': fuel_cell()
         },
     },
     "flyingwing_batteries": {
@@ -42,6 +38,7 @@ DESIGNS = {
             "S": 36.18243576930812,
             "capacity_J": 115381325.54686673,
             "storage_mass_kg": 80.12592051865745,
+            'type': battery()
         },
     },
     "flyingwing_FC": {
@@ -52,6 +49,35 @@ DESIGNS = {
             "S": 31.44173199078317,
             "capacity_J": 49825135.877877116,
             "storage_mass_kg": 34.60078880408133,
+            'type': fuel_cell()
         },
     },
 }
+
+design = "flyingwing_batteries"
+
+power_consumption = DESIGNS[design]["endurance"]["power_consumption_W"]
+surface = DESIGNS[design]["endurance"]["S"]
+bat = DESIGNS[design]["endurance"]["type"]
+init_bat_capacity = bat.massEnergy * DESIGNS[design]["endurance"]["storage_mass_kg"]
+
+latitudes = [-60,-45,-30,-15,0,15,30,45,60]
+
+
+FILE_ID = "outputs/endurance_" + design + ".txt"
+out_file = open(FILE_ID, "w")
+
+for latitude in latitudes:
+    Endurance_class = Endurance(power_consumption=power_consumption,init_bat_capacity=init_bat_capacity,S=surface,latitude=latitude,height=18500,solar_panel=solar_panel(), battery=bat,days_from_solstice_start=-14,startingtimeofday=0)
+
+    passed, time_passed = Endurance_class.compute_endurance(time_step=20)
+    
+    if not passed:
+        print(f'At a latitude of {latitude} degrees, energy storage dropped below 10% capacity after {time_passed//86400} days and {(time_passed - (time_passed//86400) * 86400)/(3600):.2f} hours.', file=out_file)
+    else:
+        print(f'At a latitude of {latitude} degrees, energy storage remained with sufficient capacity for {time_passed//86400} days and {(time_passed - (time_passed//86400) * 86400)/(3600):.2f} hours.', file=out_file)
+
+
+
+
+#Endurance_class.plot_endurance(86400*60,50)
