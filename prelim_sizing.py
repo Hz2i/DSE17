@@ -10,7 +10,7 @@ from Objects.Performance.ScissorPlot import ScissorPlot
 from Objects.AircraftGeneral.Aircraft import Aircraft
 
 
-powM_frac_target = 0.5    # From the NASA paper (mass fraction of the power system): 0.30 for the fuel cells, 0.5 or 0.6 for batteries
+powM_frac_target = 0.3    # From the NASA paper (mass fraction of the power system): 0.30 for the fuel cells, 0.5 or 0.6 for batteries
 payload_apprx_frac = 0.2
 
 MTOW_initial = 120.0
@@ -19,28 +19,28 @@ gamma = 0.0
 h_cruise = 18500.0
 lat = 30.0
 day_margin = 0
-use_batt = True
+use_batt = False
 energy_delta = 0.0
 DoD = 0.7
 night_time = 0.0
 
 S = 36.0
-Sh_S = 0 #0.15
-Sv_S = 0 #0.07
+Sh_S = 0.15
+Sv_S = 0.07
 
 # Choose planform type (uncomment the required one):
 
 # Traditional wing planform:
-#wing_geo = wing(S=S,A=25.0, qc_sweep=0.0*np.pi/180, taper=1.0, dihedral=0.0*np.pi/180.0)
-#fus_geo = fuselage(D=0.5, L1=0.25, L2=10, L3=0.25)
-#emp_geo = empennage(S_h = S*Sh_S, S_v = S*Sv_S, lh=8.0, h_AR=5, v_AR=2)
-#nac_geo = nacelles(nr_of_engines=4)
+wing_geo = wing(S=S,A=25.0, qc_sweep=0.0*np.pi/180, taper=1.0, dihedral=0.0*np.pi/180.0)
+fus_geo = fuselage(D=0.5, L1=0.25, L2=10, L3=0.25)
+emp_geo = empennage(S_h = S*Sh_S, S_v = S*Sv_S, lh=8.0, h_AR=5, v_AR=2)
+nac_geo = nacelles(nr_of_engines=4)
 
 # Flying wing planform:
-wing_geo = wing(S=S,A=25.0, qc_sweep=15.0*np.pi/180, taper=1.0, dihedral=0.0*np.pi/180.0, airfoil=airfoil_e334())
-fus_geo = fuselage(D=0.5, L1=0.2, L2=0.6, L3=0.2)
-emp_geo = empennage(S_h = 0.0, S_v = 0.0)
-nac_geo = nacelles(nr_of_engines=4)
+#wing_geo = wing(S=S,A=25.0, qc_sweep=15.0*np.pi/180, taper=1.0, dihedral=0.0*np.pi/180.0, airfoil=airfoil_e334())
+#fus_geo = fuselage(D=0.5, L1=0.2, L2=0.6, L3=0.2)
+#emp_geo = empennage(S_h = 0.0, S_v = 0.0)
+#nac_geo = nacelles(nr_of_engines=4)
 
 # General subsystem parameters may be changed using the following (commented) code block; Sensible defaults should already be implemented
 

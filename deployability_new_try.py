@@ -105,7 +105,7 @@ class MissionProfile:
         self.S_guess = Aircraft.solar.area
         self.solarpower = solarpower
 
-        self.E_battery_guess = self.m_battery_guess * 400 * 3600  # J
+        self.E_battery_guess = self.m_battery_guess * 750 * 3600  # J; MUST BE CHANGED TO 400 * 3600 for batteries!!!!!!!!
 
         # given
         self.g = 9.81
@@ -343,7 +343,7 @@ DESIGNS = {
 }
 
 DESIGN_CHOICES = list(DESIGNS.keys())
-DESIGN = DESIGN_CHOICES[0]  # Change this index to select a different design
+DESIGN = DESIGN_CHOICES[3]  # Change this index to select a different design
 MTOW = DESIGNS[DESIGN]["MTOW"]
 S = DESIGNS[DESIGN]["S"]
 Sh_S = DESIGNS[DESIGN]["Sh_S"]
@@ -362,9 +362,8 @@ L3 = DESIGNS[DESIGN]["fuselage"]["L3"]
 TAS_initial = 25.0
 gamma = 0.0
 h_cruise = 60000*0.3048
-lat = 30
+lat = 60
 day_margin = 0
-use_batt = True
 energy_delta = 0.0
 DoD = 0.7
 night_time = 0.0
