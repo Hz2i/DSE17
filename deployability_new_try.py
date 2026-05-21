@@ -291,8 +291,70 @@ class MissionProfile:
         
 
         return Profile_passed, sunrise_time, sunset_time
+DESIGNS = {
+    "conventional_batteries": {
+        "planform": 1,
+        "MTOW": 206.7315366071265,
+        "S": 43.60930233284505,
+        "Sh_S": 0.15,
+        "Sv_S": 0.07,
+        "wing": {"AR": 25.0, "qc_sweep_deg": 0.0, "taper": 1.0, "dihedral_deg": 0.0},
+        "fuselage": {"D": 0.5, "L1": 0.25, "L2": 10.0, "L3": 0.25},
+        "n_engines": 4,
+        "Use_batt": True,
+    },
+    "conventional_FC": {
+        "planform": 1,
+        "MTOW": 165.30598005034403,
+        "S": 35.83984024899324,
+        "Sh_S": 0.15,
+        "Sv_S": 0.07,
+        "wing": {"AR": 25.0, "qc_sweep_deg": 0.0, "taper": 1.0, "dihedral_deg": 0.0},
+        "fuselage": {"D": 0.5, "L1": 0.25, "L2": 10.0, "L3": 0.25},
+        "n_engines": 4,
+        "Use_batt": False,
+    },
+    "flyingwing_batteries": {
+        "planform": 0,
+        "MTOW": 176.48304772871623,
+        "S": 36.18243576930812,
+        "Sh_S": 0.0,
+        "Sv_S": 0.0,
+        "wing": {"AR": 25.0, "qc_sweep_deg": 15.0, "taper": 1.0, "dihedral_deg": 0.0},
+        "fuselage": {"D": 0.5, "L1": 0.2, "L2": 0.6, "L3": 0.2},
+        "n_engines": 4,
+        "Use_batt": True,
+    },
+    "flyingwing_FC": {
+        "planform": 0,
+        "MTOW": 149.8600536966793,
+        "S": 31.44173199078317,
+        "Sh_S": 0.0,
+        "Sv_S": 0.0,
+        "wing": {"AR": 25.0, "qc_sweep_deg": 15.0, "taper": 1.0, "dihedral_deg": 0.0},
+        "fuselage": {"D": 0.5, "L1": 0.2, "L2": 0.6, "L3": 0.2},
+        "n_engines": 4,
+        "Use_batt": False,
+    },
+}
 
-MTOW = 206.74
+DESIGN_CHOICES = list(DESIGNS.keys())
+DESIGN = DESIGN_CHOICES[0]  # Change this index to select a different design
+MTOW = DESIGNS[DESIGN]["MTOW"]
+S = DESIGNS[DESIGN]["S"]
+Sh_S = DESIGNS[DESIGN]["Sh_S"]
+Sv_S = DESIGNS[DESIGN]["Sv_S"]
+use_batt = DESIGNS[DESIGN]["Use_batt"]
+AR = DESIGNS[DESIGN]["wing"]["AR"]
+qc_sweep_deg = DESIGNS[DESIGN]["wing"]["qc_sweep_deg"]
+taper = DESIGNS[DESIGN]["wing"]["taper"]
+dihedral_deg = DESIGNS[DESIGN]["wing"]["dihedral_deg"]
+D = DESIGNS[DESIGN]["fuselage"]["D"]
+L1 = DESIGNS[DESIGN]["fuselage"]["L1"]
+L2 = DESIGNS[DESIGN]["fuselage"]["L2"]
+L3 = DESIGNS[DESIGN]["fuselage"]["L3"]
+
+
 TAS_initial = 25.0
 gamma = 0.0
 h_cruise = 60000*0.3048
@@ -303,17 +365,26 @@ energy_delta = 0.0
 DoD = 0.7
 night_time = 0.0
 
-S = 43.61
-Sh_S = 0.15
-Sv_S = 0.07
+
 
 # Choose planform type (uncomment the required one):
-
+if DESIGNS[DESIGN]["planform"] == 1: #Conventional wing planform:
+    # Traditional wing planform:
+    wing_geo = wing(S=S,A=AR, qc_sweep=qc_sweep_deg*np.pi/180, taper=taper, dihedral=dihedral_deg*np.pi/180.0, airfoil=airfoil_e387())
+    fus_geo = fuselage(D=D, L1=L1,L2=L2, L3=L3)
+    emp_geo = empennage(S_h = S*Sh_S, S_v = S*Sv_S,lh=8.0,h_AR=5,v_AR=2)
+    nac_geo = nacelles(nr_of_engines=4)
+elif DESIGNS[DESIGN]["planform"] == 0: # Flying wing planform:
+    # Flying wing planform:
+    wing_geo = wing(S=S,A=AR, qc_sweep=qc_sweep_deg*np.pi/180, taper=taper, dihedral=dihedral_deg*np.pi/180.0, airfoil=airfoil_e334())
+    fus_geo = fuselage(D=D, L1=L1, L2=L2, L3=L3)
+    emp_geo = empennage(S_h = S*Sh_S, S_v = S*Sv_S)
+    nac_geo = nacelles(nr_of_engines=4)
 # Traditional wing planform:
-wing_geo = wing(S=S,A=25.0, qc_sweep=0.0*np.pi/180, taper=1.0, dihedral=0.0*np.pi/180.0)
-fus_geo = fuselage(D=0.5, L1=0.25,L2=10, L3=0.25)
-emp_geo = empennage(S_h = S*Sh_S, S_v = S*Sv_S,lh=8.0,h_AR=5,v_AR=2)
-nac_geo = nacelles(nr_of_engines=4)
+# wing_geo = wing(S=S,A=AR, qc_sweep=qc_sweep_deg*np.pi/180, taper=taper, dihedral=dihedral_deg*np.pi/180.0)
+# fus_geo = fuselage(D=DeprecationWarning, L1=L1,L2=L2, L3=L3)
+# emp_geo = empennage(S_h = S*Sh_S, S_v = S*Sv_S,lh=8.0,h_AR=5,v_AR=2)
+# nac_geo = nacelles(nr_of_engines=4)
 
 # Flying wing planform:
 # wing_geo = wing(S=S,A=25.0, qc_sweep=15.0*np.pi/180, taper=1.0, dihedral=0.0*np.pi/180.0, airfoil=airfoil_e334())
@@ -332,7 +403,7 @@ mission_profile = MissionProfile(solarpower=SolarPower(latitude_deg=lat),Aircraf
 #print(mission_profile.climb_profile())
 
 dt1 = 3600
-dt2 = 3600
+dt2 = 1800
 dt3 = 30
 day_of_year = np.arange(0,360+dt3,dt3)
 time_of_day = np.arange(0,86400+dt1,dt1)
