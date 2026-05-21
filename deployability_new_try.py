@@ -10,44 +10,7 @@ from Objects.AircraftGeneral.Aircraft import Aircraft
 from Objects.Characteristics.Airframe import wing, empennage, fuselage, nacelles
 
 
-# -----------------------------
-# Daylight / Sunrise / Sunset
-# -----------------------------
-class LightData:
-    def __init__(self, latitude_deg, days=None):
-        self.latitude_deg = float(latitude_deg)
-        self.latitude_rad = np.deg2rad(self.latitude_deg)
-        self.days = np.arange(1, 366) if days is None else np.asarray(days, dtype=int)
-
-        self.declination_deg = self.solar_declination(self.days)
-        self.daylight_hours = self.compute_daylight_hours(self.days)
-        self.sunrise_list, self.sunset_list = self.compute_sunrise_sunset_lists(self.days)
-
-    @staticmethod
-    def solar_declination(day_of_year):
-        day_of_year = np.asarray(day_of_year, dtype=float)
-        #return 23.43585 * np.sin(np.deg2rad((360.0 / 365.0) * (day_of_year + 10.0)))
-        return 23.43585 * np.sin(np.pi*2/365 * (day_of_year + 284.0))
-
-    def compute_daylight_hours(self, day_of_year):
-        day_of_year = np.asarray(day_of_year, dtype=float)
-        delta_rad = np.deg2rad(self.solar_declination(day_of_year))
-        phi = self.latitude_rad
-        cos_h0 = -np.tan(phi) * np.tan(delta_rad)
-        cos_h0 = np.clip(cos_h0, -1.0, 1.0)
-        h0 = np.arccos(cos_h0)
-        return (2.0 / 15.0) * np.rad2deg(h0)
-
-    def compute_sunrise_sunset_lists(self, day_of_year):
-        daylen = self.compute_daylight_hours(day_of_year)
-        sunrise = 12.0 - 0.5 * daylen
-        sunset = 12.0 + 0.5 * daylen
-        return sunrise, sunset
-
-
-# -----------------------------
-# Solar power (daily average)
-# -----------------------------
+# Solar power
 class SolarPower:
     def __init__(self, latitude_deg=30.0, days=None):
         self.latitude_deg = float(latitude_deg)
@@ -60,17 +23,8 @@ class SolarPower:
         self.I0 = 1378.0
         self.powLimS = 200.0
 
-        #self.incidence_angle_rad = self.calc_daily_mean_incidence_angle(self.days)
-        #self.power_per_m2_W = self.calc_power_per_m2(self.days)
-        #self.power_W = self.power_per_m2_W * self.solar_area_m2
 
-    @staticmethod
-    def calc_solar_declination_rad(day_of_year):
-        day_of_year = np.asarray(day_of_year, dtype=float)
-        decl_deg = 23.45 * np.sin(np.deg2rad((360.0 / 365.0) * (day_of_year + 10.0)))
-        return np.deg2rad(decl_deg)
-
-    def calc_power_per_m2(self,h,h_cloud=8000,cloud_cover = 0.35, day_of_year=0,time_passed=0,starting_timeofday=0):
+    def calc_power_per_m2(self,h,h_cloud=18000,cloud_cover = 4, day_of_year=0,time_passed=0,starting_timeofday=0):
         lat = self.latitude_rad
         days_passed = (time_passed+starting_timeofday) // (24*60*60)
         days_from_solstice = day_of_year + 10 + days_passed
@@ -99,13 +53,18 @@ class SolarPower:
 # Mission profile
 # -----------------------------
 class MissionProfile:
-    def __init__(self, solarpower = SolarPower(), Aircraft=Aircraft()):
+    def __init__(self, solarpower = SolarPower(), Aircraft=Aircraft(),use_bat = True):
         self.m_battery_guess = Aircraft.pow_store.mass
         self.gamma_guess = 2
         self.S_guess = Aircraft.solar.area
         self.solarpower = solarpower
 
-        self.E_battery_guess = self.m_battery_guess * 750 * 3600  # J; MUST BE CHANGED TO 400 * 3600 for batteries!!!!!!!!
+        if use_bat:
+            self.pow_constant = 400 # Wh/kg
+        else:
+            self.pow_constant = 750 # Wh/kg
+
+        self.E_battery_guess = self.m_battery_guess * self.pow_constant * 3600  # J; MUST BE CHANGED TO 400 * 3600 for batteries!!!!!!!!
 
         # given
         self.g = 9.81
@@ -123,13 +82,8 @@ class MissionProfile:
 
         # derived
         self.m_total_guess = Aircraft.MTOW
-        #self.density_climb = self.Calc_Density_Climb()
         self.Cl_opt_climb = self.Calc_Cl_opt_climb()
         self.CD_total_climb = self.Calc_CD_total(self.Cl_opt_climb)
-
-        # cruise
-        #self.Pprop_cruise = self.Calc_Pprop_cruise()
-        #self.Pavg_cruise = self.Pprop_cruise + self.Pavg_cruise_subsys
 
         self.Pprop_cruise = Aircraft.Pow_motor
         self.Pavg_cruise = Aircraft.Pow_req
@@ -233,7 +187,7 @@ class MissionProfile:
             if not less_than_90percent and Energy[i+1] >= self.E_battery_guess:
                 Energy[i+1] = self.E_battery_guess
             
-            if Energy[i+1] <= 0:
+            if Energy[i+1] <= 0.1*self.E_battery_guess:
                 timeofday += sunset
                 cruise = True
                 correctday = True
@@ -290,7 +244,7 @@ class MissionProfile:
             plt.show()
         
 
-        return Profile_passed, sunrise_time, sunset_time
+        return Profile_passed, sunrise_time, sunset_time, self.time_cruise_start
 DESIGNS = {
     "conventional_batteries": {
         "name": "Conventional Wing with Batteries",
@@ -343,7 +297,7 @@ DESIGNS = {
 }
 
 DESIGN_CHOICES = list(DESIGNS.keys())
-DESIGN = DESIGN_CHOICES[3]  # Change this index to select a different design
+DESIGN = DESIGN_CHOICES[2]  # Change this index to select a different design
 MTOW = DESIGNS[DESIGN]["MTOW"]
 S = DESIGNS[DESIGN]["S"]
 Sh_S = DESIGNS[DESIGN]["Sh_S"]
@@ -362,7 +316,7 @@ L3 = DESIGNS[DESIGN]["fuselage"]["L3"]
 TAS_initial = 25.0
 gamma = 0.0
 h_cruise = 60000*0.3048
-lat = 60
+lat = 30
 day_margin = 0
 energy_delta = 0.0
 DoD = 0.7
@@ -370,7 +324,7 @@ night_time = 0.0
 
 
 
-# Choose planform type (uncomment the required one):
+
 if DESIGNS[DESIGN]["planform"] == 1: #Conventional wing planform:
     # Traditional wing planform:
     wing_geo = wing(S=S,A=AR, qc_sweep=qc_sweep_deg*np.pi/180, taper=taper, dihedral=dihedral_deg*np.pi/180.0, airfoil=airfoil_e387())
@@ -383,21 +337,13 @@ elif DESIGNS[DESIGN]["planform"] == 0: # Flying wing planform:
     fus_geo = fuselage(D=D, L1=L1, L2=L2, L3=L3)
     emp_geo = empennage(S_h = S*Sh_S, S_v = S*Sv_S)
     nac_geo = nacelles(nr_of_engines=4)
-# Traditional wing planform:
-# wing_geo = wing(S=S,A=AR, qc_sweep=qc_sweep_deg*np.pi/180, taper=taper, dihedral=dihedral_deg*np.pi/180.0)
-# fus_geo = fuselage(D=DeprecationWarning, L1=L1,L2=L2, L3=L3)
-# emp_geo = empennage(S_h = S*Sh_S, S_v = S*Sv_S,lh=8.0,h_AR=5,v_AR=2)
-# nac_geo = nacelles(nr_of_engines=4)
 
-# Flying wing planform:
-# wing_geo = wing(S=S,A=25.0, qc_sweep=15.0*np.pi/180, taper=1.0, dihedral=0.0*np.pi/180.0, airfoil=airfoil_e334())
-# fus_geo = fuselage(D=0.5, L1=0.2, L2=0.6, L3=0.2)
-# emp_geo = empennage(S_h = 0.0, S_v = 0.0)
-# nac_geo = nacelles(nr_of_engines=4)
 
 aircraft_class = Aircraft(MTOW_guess=MTOW, TAS=TAS_initial, gamma=gamma, lat=30, day_margin=day_margin, DoD=DoD,Sh_S = Sh_S, Sv_S = Sv_S, wing=wing_geo, fus=fus_geo, emp=emp_geo, nac=nac_geo, use_batt=use_batt, energy_delta=energy_delta)
 
-mission_profile = MissionProfile(solarpower=SolarPower(latitude_deg=lat),Aircraft=aircraft_class)
+mission_profile = MissionProfile(solarpower=SolarPower(latitude_deg=lat),Aircraft=aircraft_class,use_bat=use_batt)
+
+#print(mission_profile.climb_profile(plot=True,extra_power=1.2,h_cloud=18000,cloud_cover = 4,day_of_year = 0, start_time = 0, time_step = 20)[3]/3600)
 
 #print(mission_profile.Calc_V_Pr_climb(0))
 #print(mission_profile.Calc_Pa(0))
@@ -406,8 +352,8 @@ mission_profile = MissionProfile(solarpower=SolarPower(latitude_deg=lat),Aircraf
 #print(mission_profile.climb_profile())
 
 dt1 = 3600
-dt2 = 3600
-dt3 = 15
+dt2 = 1800
+dt3 = 1
 day_of_year = np.arange(0,360+dt3,dt3)
 time_of_day = np.arange(0,86400+dt1,dt1)
 
@@ -418,7 +364,7 @@ sunset = np.zeros(len(day_of_year))
 for i in range(len(day_of_year)):
     for j in range(len(time_of_day)):
         print(f"Day {day_of_year[i]}, time {time_of_day[j]/3600} hours")
-        deployability[i][j], sunrise[i], sunset[i] = mission_profile.climb_profile(plot=False,extra_power=1.2,h_cloud=18000,cloud_cover = 4,day_of_year = day_of_year[i], start_time = time_of_day[j], time_step = dt2)
+        deployability[i][j], sunrise[i], sunset[i], _ = mission_profile.climb_profile(plot=False,extra_power=1.2,h_cloud=18000,cloud_cover = 4,day_of_year = day_of_year[i], start_time = time_of_day[j], time_step = dt2)
         print(deployability[i][j])
 
 import numpy as np
@@ -510,3 +456,4 @@ plt.tight_layout()
 plt.savefig(f"outputs/deployability_{lat}_{DESIGNS[DESIGN]['name']}.svg")
 
 plt.show()
+
