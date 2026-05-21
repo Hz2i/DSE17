@@ -20,7 +20,7 @@ class battery:
         self.volumeEnergy = E_vol*3600.0/0.001              # Volumetric energy density [J/m^3]
         self.massRho = self.volumeEnergy/self.massEnergy    # Mass density [kg/m^3]
         self.cycle_limit_nr=400                             # Cycle limit
-        self.cycle_limit_degradation=0.2                    # Cycle degradation at limit (fraction)
+        self.cycle_limit_degradation=0.1                    # Cycle degradation at limit (fraction)
 
 
 class fuel_cell:
@@ -28,3 +28,5 @@ class fuel_cell:
         self.massEnergy = E_m*3600.0                        # Mass energy density [J/kg]
         self.volumeEnergy = E_vol*3600.0/0.001              # Volumetric energy density [J/m^3]
         self.massRho = self.volumeEnergy/self.massEnergy    # Mass density [kg/m^3]
+        self.cycle_limit_nr=400                             # Cycle limit
+        self.cycle_limit_degradation=0.0                    # Cycle degradation at limit (fraction)
