@@ -56,14 +56,14 @@ class ScissorPlot:
         y_stab_margin = self.stability_min_Sh_S(x_cg,margin=0.05)
         y_stab = self.stability_min_Sh_S(x_cg,margin=0.0)
 
-        plt.hlines(Sh_S,x_cg_min,x_cg_max,colors=['black'],label="CG range")
+        plt.hlines(Sh_S,x_cg[0],x_cg[-1],colors=['black'],linestyles=["dashdot"],label="Sh/S")
 
         plt.plot(x_cg,y_control,color='blue',label="Controllability")
         plt.fill_between(x_cg,y_control,-1,color='mistyrose',alpha=1)
         plt.plot(x_cg,y_stab,color='red',label="Stability")
         plt.fill_between(x_cg,y_stab,-1,color='mistyrose',alpha=1)
         plt.plot(x_cg,y_stab_margin,color='green',label="Stability with margin")
-        plt.hlines(0,x_cg[0],x_cg[-1],colors=['black'],linestyles=["dashed"])
+        plt.hlines(0,x_cg[0],x_cg[-1],colors=['black'])
         plt.ylim(-0.05,0.5)
         plt.xlabel(r"$x_{cg}/MAC$")
         plt.ylabel(r'$S_h / S $')
