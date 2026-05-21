@@ -293,6 +293,7 @@ class MissionProfile:
         return Profile_passed, sunrise_time, sunset_time
 DESIGNS = {
     "conventional_batteries": {
+        "name": "Conventional Wing with Batteries",
         "planform": 1,
         "MTOW": 206.7315366071265,
         "S": 43.60930233284505,
@@ -304,6 +305,7 @@ DESIGNS = {
         "Use_batt": True,
     },
     "conventional_FC": {
+        "name": "Conventional Wing with Fuel Cell",
         "planform": 1,
         "MTOW": 165.30598005034403,
         "S": 35.83984024899324,
@@ -315,6 +317,7 @@ DESIGNS = {
         "Use_batt": False,
     },
     "flyingwing_batteries": {
+        "name": "Flying Wing with Batteries",
         "planform": 0,
         "MTOW": 176.48304772871623,
         "S": 36.18243576930812,
@@ -326,6 +329,7 @@ DESIGNS = {
         "Use_batt": True,
     },
     "flyingwing_FC": {
+        "name": "Flying Wing with Fuel Cell",
         "planform": 0,
         "MTOW": 149.8600536966793,
         "S": 31.44173199078317,
@@ -501,9 +505,9 @@ plt.xticks(day_of_year[::2])
 plt.ylabel("Hour of day")
 plt.xlabel("Day")
 #plt.legend()
-plt.title(f"${lat}^\circ$ Latitude")
+plt.title(f"${lat}^\circ$ Latitude, {DESIGNS[DESIGN]['name']}")
 plt.tight_layout()
 
-plt.savefig(f"outputs/deployability_{lat}.svg")
+plt.savefig(f"outputs/deployability_{lat}_{DESIGNS[DESIGN]['name']}.svg")
 
 plt.show()
