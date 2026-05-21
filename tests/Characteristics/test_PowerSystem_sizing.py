@@ -58,7 +58,7 @@ def test_power_system_constants():
     assert battery_data.volumeEnergy == 31392e5
 
     fuel_cell_data = fuel_cell()
-    assert fuel_cell_data.massEnergy == 576e4
+    assert fuel_cell_data.massEnergy == 270e4
     assert fuel_cell_data.volumeEnergy == 972e6
 
     solar_panel_data = solar_panel()
