@@ -297,7 +297,7 @@ DESIGNS = {
 }
 
 DESIGN_CHOICES = list(DESIGNS.keys())
-DESIGN = DESIGN_CHOICES[2]  # Change this index to select a different design
+DESIGN = DESIGN_CHOICES[3]  # Change this index to select a different design
 MTOW = DESIGNS[DESIGN]["MTOW"]
 S = DESIGNS[DESIGN]["S"]
 Sh_S = DESIGNS[DESIGN]["Sh_S"]
@@ -341,34 +341,27 @@ elif DESIGNS[DESIGN]["planform"] == 0: # Flying wing planform:
 
 aircraft_class = Aircraft(MTOW_guess=MTOW, TAS=TAS_initial, gamma=gamma, lat=30, day_margin=day_margin, DoD=DoD,Sh_S = Sh_S, Sv_S = Sv_S, wing=wing_geo, fus=fus_geo, emp=emp_geo, nac=nac_geo, use_batt=use_batt, energy_delta=energy_delta)
 
-mission_profile = MissionProfile(solarpower=SolarPower(latitude_deg=lat),Aircraft=aircraft_class,use_bat=use_batt)
-
-#print(mission_profile.climb_profile(plot=True,extra_power=1.2,h_cloud=18000,cloud_cover = 4,day_of_year = 0, start_time = 0, time_step = 20)[3]/3600)
-
-#print(mission_profile.Calc_V_Pr_climb(0))
-#print(mission_profile.Calc_Pa(0))
-#print(mission_profile.ROC(18500))
-#mission_profile.climb_profile()
-#print(mission_profile.climb_profile())
-
 dt1 = 3600
 dt2 = 1800
-dt3 = 1
+dt3 = 15
 day_of_year = np.arange(0,360+dt3,dt3)
 time_of_day = np.arange(0,86400+dt1,dt1)
 
-deployability = np.zeros((len(day_of_year),len(time_of_day)))
-sunrise = np.zeros(len(day_of_year))
-sunset = np.zeros(len(day_of_year))
+deployability = np.zeros((3,len(day_of_year),len(time_of_day)))
+sunrise = np.zeros((3,len(day_of_year)))
+sunset = np.zeros((3,len(day_of_year)))
+latitudes = [30,45,60]
 
-for i in range(len(day_of_year)):
-    for j in range(len(time_of_day)):
-        print(f"Day {day_of_year[i]}, time {time_of_day[j]/3600} hours")
-        deployability[i][j], sunrise[i], sunset[i], _ = mission_profile.climb_profile(plot=False,extra_power=1.2,h_cloud=18000,cloud_cover = 4,day_of_year = day_of_year[i], start_time = time_of_day[j], time_step = dt2)
-        print(deployability[i][j])
+for k in range(len(latitudes)):
+    mission_profile = MissionProfile(solarpower=SolarPower(latitude_deg=latitudes[k]),Aircraft=aircraft_class,use_bat=use_batt)
 
-import numpy as np
-import matplotlib.pyplot as plt
+
+    for i in range(len(day_of_year)):
+        for j in range(len(time_of_day)):
+            print(f"Day {day_of_year[i]}, time {time_of_day[j]/3600} hours")
+            deployability[k][i][j], sunrise[k][i], sunset[k][i], _ = mission_profile.climb_profile(plot=False,extra_power=1.2,h_cloud=18000,cloud_cover = 4,day_of_year = day_of_year[i], start_time = time_of_day[j], time_step = dt2)
+            print(deployability[k][i][j])
+
 
 sunrise /= 3600
 sunset /= 3600
@@ -376,36 +369,7 @@ sunset /= 3600
 y = time_of_day/3600
 x = day_of_year
 
-#X,Y = np.meshgrid(x,y)
 
-plt.figure(figsize=(10, 2))
-
-
-'''
-lower = []
-upper = []
-
-
-for row in deployability:
-
-    # indices where NOT viable
-    forbidden = np.where(row == 0)[0]
-    # no forbidden hours
-    if len(forbidden) == 0:
-        lower.append(np.nan)
-        upper.append(np.nan)
-        continue
-    
-    # split into contiguous forbidden regions
-    splits = np.where(np.diff(forbidden) > 1)[0]
-    regions = np.split(forbidden, splits + 1)
-
-    # choose the largest forbidden block
-    largest = max(regions, key=len)
-
-    lower.append(largest[0])
-    upper.append(largest[-1])
-'''
 
 from itertools import groupby
 
@@ -418,42 +382,53 @@ def get_windows(row, times):
             windows.append((times[indices[0]], times[indices[-1]]))
     return windows  # e.g. [(t_open1, t_close1), (t_open2, t_close2)]
 
+fig, axs = plt.subplots(nrows=3,ncols=1,sharex=True,sharey=True,figsize=(12, 5),constrained_layout=True)
+
+
+
+
 # Inspect how many windows each day has
-for i, day in enumerate(day_of_year):
-    windows = get_windows(deployability[i], time_of_day)
-    for t_open, t_close in windows:
-        plt.fill_between(
-            [day - dt3/2, day + dt3/2],          # span half a day-step either side
-            t_open  / 3600 - dt1/(2*3600),
-            t_close / 3600 + dt1/(2*3600),
-            color="green", alpha=0.4,
-        )
+for k in range(3):
+    for i, day in enumerate(day_of_year):
+        windows = get_windows(deployability[k][i], time_of_day)
+        for t_open, t_close in windows:
+            axs[k].fill_between(
+                [day - dt3/2, day + dt3/2],          # span half a day-step either side
+                t_open  / 3600 - dt1/(2*3600),
+                t_close / 3600 + dt1/(2*3600),
+                color="green", alpha=0.4,
+            )
+            #axs[k].set_title(f"{latitudes[k]}' Latitude")
+    
+    axs[k].plot(x,sunrise[k],linestyle="dashed",color="black")
+    axs[k].plot(x,sunset[k],linestyle="dashdot",color="black")
 
-plt.fill_between([0],[-1],[-5],color="green", alpha=0.4, label="Deployable Window")
-
-all_windows = [get_windows(deployability[i], time_of_day) for i in range(len(day_of_year))]
-
-print(all_windows)
-
-
-#plt.plot(restricted_days,upper_times,color="red")
-#plt.plot(restricted_days,lower_times,color='red')
-#plt.fill_between(restricted_days,upper_times,lower_times,color="green",alpha=0.5,label="Deployable")
+    ax_r = axs[k].twinx()
+    ax_r.set_yticks([])
+    ax_r.set_ylabel(f"{latitudes[k]}",rotation=0,labelpad=15)
 
 
-plt.plot(x,sunrise,linestyle="dashed",color="black",label="Sunrise Time")
-plt.plot(x,sunset,linestyle="dashdot",color="black",label="Sunset Time")
-#plt.contourf(X,Y, deployability.T, levels=[-0.5, 0.5, 1.5],cmap=ListedColormap(['red', 'green']))
+axs[2].plot([], [], linestyle="dashed", color="black", label="Sunrise Time")
+axs[2].plot([], [], linestyle="dashdot", color="black", label="Sunset Time")
+axs[2].fill_between([], [], [], color="green", alpha=0.4, label="Deployable Window")
+
+axs[2].legend(loc="lower right")
+
+fig.text(
+    1.02, 0.5,              # x, y in figure coordinates
+    "Latitude [deg]",  # label text
+    rotation=270,           # vertical label (or 90 depending on direction)
+    va="center",
+    ha="right"
+)
+
 
 plt.ylim(0,24)
 plt.xticks(day_of_year[::2])
-plt.ylabel("Hour of day")
-plt.xlabel("Day")
-#plt.legend()
-plt.title(f"${lat}^\circ$ Latitude, {DESIGNS[DESIGN]['name']}")
-plt.tight_layout()
+fig.supylabel("Hour of day")
+fig.supxlabel("Day")
 
-plt.savefig(f"outputs/deployability_{lat}_{DESIGNS[DESIGN]['name']}.svg")
+plt.savefig(f"outputs/deployability_{DESIGNS[DESIGN]['name']}.svg",bbox_inches="tight")
 
 plt.show()
 

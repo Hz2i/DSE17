@@ -54,7 +54,7 @@ DESIGNS = {
     },
 }
 
-design = "flyingwing_FC"
+design = "conventional_FC"
 
 power_consumption = DESIGNS[design]["endurance"]["power_consumption_W"]
 surface = DESIGNS[design]["endurance"]["S"]
@@ -83,4 +83,4 @@ latitude = 30
 
 Endurance_class = Endurance(power_consumption=power_consumption,init_bat_capacity=init_bat_capacity,S=surface,latitude=latitude,height=18500,solar_panel=solar_panel(), battery=bat,days_from_solstice_start=-14,startingtimeofday=0)
 
-Endurance_class.plot_endurance(86400*60,50)
+Endurance_class.plot_endurance(86400*30,50)
