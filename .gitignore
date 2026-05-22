@@ -1,0 +1,9 @@
+__pycache__/
+**/__pycache__/
+*.pyc
+**/*.pyc
+*.pyo
+*.pyd
+*LUUK.md
+Objects/Characteristics/__pycache__/PowerSystem_sizing.cpython-313.pyc
+Objects/Characteristics/__pycache__/Airframe.cpython-313.pyc
