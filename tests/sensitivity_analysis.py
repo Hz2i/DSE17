@@ -39,7 +39,7 @@ def calculate_weighted_sum(score_table, weights):
     return score_table @ weights
 
 
-print(calculate_weighted_sum(score_table, weights))
+#print(calculate_weighted_sum(score_table, weights))
 
 def plot_sensitivity_analysis(score_table, weights, options):
     weighted_sums = calculate_weighted_sum(score_table, weights)
@@ -48,8 +48,8 @@ def plot_sensitivity_analysis(score_table, weights, options):
     plt.ylim(2,3)
     plt.show()
 
-plot_sensitivity_analysis(score_table, weights, options)
-plot_sensitivity_analysis(score_table, np.ones((5,1))*0.2, options)
+#plot_sensitivity_analysis(score_table, weights, options)
+#plot_sensitivity_analysis(score_table, np.ones((5,1))*0.2, options)
 
 def remove_criteria_test(score_table, weights, criteria_names, options):
     n_criteria = len(criteria_names)
@@ -67,7 +67,7 @@ def remove_criteria_test(score_table, weights, criteria_names, options):
     plt.tight_layout()
     plt.show()
 
-remove_criteria_test(score_table, weights, criteria_names, options)
+#remove_criteria_test(score_table, weights, criteria_names, options)
 
 def change_weights_test(score_table, weights, criteria_names, options):
     n_criteria = len(criteria_names)
@@ -96,7 +96,7 @@ def change_weights_test(score_table, weights, criteria_names, options):
     plt.tight_layout()
     plt.show()
 
-change_weights_test(score_table, weights, criteria_names, options)
+#change_weights_test(score_table, weights, criteria_names, options)
 
 def change_weights_test2(score_table, weights, criteria_names, options):
     # Normalize weights to ensure they sum to 1
@@ -187,7 +187,7 @@ def change_weights_test2(score_table, weights, criteria_names, options):
     plt.tight_layout(pad=2.0)
     plt.show()
 
-change_weights_test2(score_table, weights, criteria_names, options2)
+#change_weights_test2(score_table, weights, criteria_names, options2)
 
 # Equal Weights Test
 
@@ -233,7 +233,7 @@ def change_scores_test(score_table, weights, criteria_names, options, option2):
     plt.tight_layout(pad=2.0, rect=[0.05, 0, 1, 1])
     plt.show()
 
-change_scores_test(score_table, weights, criteria_names, options, options2)
+#change_scores_test(score_table, weights, criteria_names, options, options2)
 
 def change_weights_test2(score_table, weights, criteria_names, options):
     # Normalize weights to ensure they sum to 1
@@ -319,9 +319,9 @@ def change_weights_test2(score_table, weights, criteria_names, options):
     
     ax.set_xticklabels(x_labels, fontsize=11, rotation=45, ha='right', rotation_mode='anchor')
     
-    ax.set_ylabel('Weighted Sum')
-    ax.legend(loc='lower right')
-    ax.set_ylim(0, 3.5)
+    ax.set_ylabel('Weighted Sum', fontsize=14)
+    ax.legend(loc='lower left', ncols=2)
+    ax.set_ylim(1.6, 2.8)
     
     plt.tight_layout(pad=2.0)
     plt.show()
@@ -378,11 +378,11 @@ def change_scores_test(score_table, weights, criteria_names, options, options2):
 
     # Minor x-axis labels (option + delta), small font
     ax.set_xticks(x_positions)
-    ax.set_xticklabels(minor_labels, fontsize=9, rotation=45, ha='right', rotation_mode='anchor')
+    ax.set_xticklabels(minor_labels, fontsize=11, rotation=45, ha='right', rotation_mode='anchor')
 
     # Major criterion labels above x-axis (below plot area), larger font
     for cx, name in zip(group_centers, group_names):
-        ax.text(cx, ax.get_ylim()[0] - 0.55, name,
+        ax.text(cx, ax.get_ylim()[1], name,
                 ha='center', va='top', fontsize=11, fontweight='bold',
                 transform=ax.transData)
 
@@ -397,9 +397,10 @@ def change_scores_test(score_table, weights, criteria_names, options, options2):
         group_edges.append((left, right))
         x2 += n_options * 2 + 1.5
 
-    ax.set_ylabel('Weighted Sum')
-    ax.legend(loc='lower right')
-    ax.set_ylim(0, max(perturbations.flatten()) * 1.15)
+    ax.set_ylabel('Weighted Sum', fontsize=14)
+    ax.legend(loc='lower left', ncols=2)
+    #ax.set_ylim(0, max(perturbations.flatten()) * 1.15)
+    ax.set_ylim(1.6, 3)
 
     plt.tight_layout(pad=2.0, rect=[0.05, 0.08, 1, 1])
     plt.show()
