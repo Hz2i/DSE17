@@ -187,7 +187,7 @@ def main():
     ]
 
 
-    packets = build_packets_from_list(con_list)
+    packets = build_packets_from_list(wing_list)
     assess_packing_feasibility(packets, visualize=True)
 
 
