@@ -1,4 +1,5 @@
 import aerosandbox as asb
+from Objects.Characteristics.Airframe import Airframe
 import aerosandbox.numpy as np
 from aerosandbox.aerodynamics.aero_3D.test_aero_3D.geometries.conventional import wing_airfoil, tail_airfoil
 
@@ -12,13 +13,20 @@ class Control_Surface_Sizing():
                 velocity=28,  # m/s
                 alpha=0,  # degree
             )
-        # self.control_requirements = control_requirements
+        self.wing_sweep = 0.2618
+        self.b = 30.08
+        self.c = 1.203
+        self.dihedral = 0.0
+        self.start_inner_elevon = (self.b/2)*0.1
+        self.elevon_connection = (self.b/2)*0.5
+        self.end_outer_elevon = (self.b/2)*0.9
+        #self.control_requirements = control_requirements
 
     def Airplane_Geo(self):
         ### Define the 3D geometry you want to analyze/optimize.
         # Here, all distances are in meters and all angles are in degrees.
         self.airplane = asb.Airplane(
-            name="Peter's Glider",
+            name="AHAPS",
             xyz_ref=[0, 0, 0],  # CG location
             wings=[
                 asb.Wing(
@@ -28,19 +36,19 @@ class Control_Surface_Sizing():
                         # The wing's cross ("X") sections
                         asb.WingXSec(  # Root
                             xyz_le=[0, 0, 0],  # Coordinates of the XSec's leading edge, relative to the wing's leading edge.
-                            chord=0.12,
+                            chord=self.c,  # Chord length at the XSec
                             twist=0,  # degrees
                             airfoil=wing_airfoil,  # Airfoils are blended between a given XSec and the next one.
                         ),
 
                         asb.WingXSec(  # Mid
-                            xyz_le=[0.00, 0.15, 0], #[sweep, , dihedral]
-                            chord=0.12,
+                            xyz_le=[np.tan(self.wing_sweep) * self.start_inner_elevon, self.start_inner_elevon, self.dihedral], #[sweep, , dihedral]
+                            chord=self.c,
                             twist=0,
                             airfoil=wing_airfoil,
                             control_surfaces=[
                                 asb.ControlSurface(
-                                    name="inner elevon",
+                                    name="inner_elevon",
                                     hinge_point=0.75,
                                     deflection=0.0,
                                     symmetric=True,
@@ -49,13 +57,13 @@ class Control_Surface_Sizing():
                         ),
 
                         asb.WingXSec(  # Mid
-                            xyz_le=[0.00, 0.35, 0], #[sweep, , dihedral]
-                            chord=0.12,
+                            xyz_le=[np.tan(self.wing_sweep) * self.elevon_connection, self.elevon_connection, self.dihedral], #[sweep, , dihedral]
+                            chord=self.c,
                             twist=0,
                             airfoil=wing_airfoil,
                             control_surfaces=[
                                 asb.ControlSurface(
-                                    name="outer elevon",
+                                    name="outer_elevon",
                                     hinge_point=0.75,
                                     deflection=0.0,
                                     symmetric=True,
@@ -64,15 +72,15 @@ class Control_Surface_Sizing():
                         ),
 
                         asb.WingXSec(  # Mid
-                            xyz_le=[0.00, 0.55, 0], #[sweep, , dihedral]
-                            chord=0.12,
+                            xyz_le=[np.tan(self.wing_sweep) * self.end_outer_elevon, self.end_outer_elevon, self.dihedral], #[sweep, , dihedral]
+                            chord=self.c,
                             twist=0,
                             airfoil=wing_airfoil,
                         ),
 
                         asb.WingXSec(  # Tip
-                            xyz_le=[0.00, 0.6, 0],
-                            chord=0.12,
+                            xyz_le=[np.tan(self.wing_sweep) * Airframe.b, self.b, self.dihedral],
+                            chord=self.c,
                             twist=0,
                             airfoil=wing_airfoil,
                         ),
@@ -155,9 +163,8 @@ class Control_Surface_Sizing():
 
         # vlm.draw(show_kwargs=dict(jupyter_backend="static"))
 
-    # def Control_Check(self):
+    def Control_Check(self):
 
-
-control_surface = Control_Surface_Sizing()
-control_surface.Airplane_Geo()
-control_surface.vlm_run()
+# control_surface = Control_Surface_Sizing()
+# control_surface.Airplane_Geo()
+# control_surface.vlm_run()
