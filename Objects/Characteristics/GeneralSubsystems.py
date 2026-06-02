@@ -39,7 +39,7 @@ class ComputerSystem:
 class CommunicationSystem:
     def __init__(self, required_bitrate=2*10**6, required_distance=400*10**3, link_budget=10**(-12), transmit_power=10, 
                  transmit_efficiency=0.3, comms_mass_density=0.030, comms_volume_density=0.0005, comms_x_pos=0.0, 
-                 adsb_power=1, adsb_mass=0.020, adsb_volume=21.25 * 10**(-6), 
+                 adsb_power=20, adsb_mass=0.020, adsb_volume=21.25 * 10**(-6), 
                  elt_power=5, elt_mass=0.908, elt_volume=1.173842 * 10**(-3), 
                  ssr_power=18, ssr_mass=1.04, ssr_volume=0.01709952):                                     # Initialise with proper values
         """required_bitrate: conservative estimate of the required bitrate for the communication system, in bps

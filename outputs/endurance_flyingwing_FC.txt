@@ -1,0 +1,9 @@
+At a latitude of -60 degrees, energy storage remained with sufficient capacity for 30 days and 0.00 hours.
+At a latitude of -45 degrees, energy storage remained with sufficient capacity for 30 days and 0.00 hours.
+At a latitude of -30 degrees, energy storage remained with sufficient capacity for 30 days and 0.00 hours.
+At a latitude of -15 degrees, energy storage remained with sufficient capacity for 30 days and 0.00 hours.
+At a latitude of 0 degrees, energy storage remained with sufficient capacity for 30 days and 0.00 hours.
+At a latitude of 15 degrees, energy storage remained with sufficient capacity for 30 days and 0.00 hours.
+At a latitude of 30 degrees, energy storage remained with sufficient capacity for 30 days and 0.00 hours.
+At a latitude of 45 degrees, energy storage dropped below 10% capacity after 1 days and 4.15 hours.
+At a latitude of 60 degrees, energy storage dropped below 10% capacity after 0 days and 17.84 hours.

@@ -15,8 +15,9 @@ POWER SYSTEM PARAMETERS:
  - Final energy storage system capacity: 138993304.786096
 ___________________________________
 PROPULSION SYSTEM PARAMETERS:
- - Thrust required at cruise: 13.233436204824683
+ - Thrust required at cruise: 52.93374481929873
  - TAS at cruise: 28.580857313957825
+ - Power consumption at cruise: 1780.2220664549293
  - Lambda Advance Ratio: 0.36390277754564304
 ___________________________________
 FUSELAGE PARAMETERS:

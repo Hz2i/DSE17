@@ -112,8 +112,8 @@ class Aircraft:
                 self.CL_CD = CL_current/CD_current
                 self.TAS_cruise = (self.MTOW*self.const.g / (0.5 * am.Atmosphere(self.h).density[0] * self.wing.S * CL_current))**0.5
 
-            self.T_req = (self.MTOW*self.const.g/self.CL_CD + self.MTOW*self.const.g * np.sin(np.radians(self.gamma)))/self.nac.nr_of_engines
-            self.prop = PropulsionSystem(T=self.T_req, velocity=self.TAS_cruise, alt=self.h, rpm=1000.0, torque=4.0, motor_temp=-40.0,propeller_diameter=1.5)
+            self.T_req = (self.MTOW*self.const.g/self.CL_CD + self.MTOW*self.const.g * np.sin(np.radians(self.gamma)))
+            self.prop = PropulsionSystem(T=self.T_req/self.nac.nr_of_engines, velocity=self.TAS_cruise, alt=self.h, rpm=1000.0, torque=4.0, motor_temp=-40.0,propeller_diameter=1.5)
 
             self.Pow_motor = self.prop.power_required * self.nac.nr_of_engines
             self.Pow_req = self.compute_subsys_pow() + self.Pow_motor
@@ -122,7 +122,7 @@ class Aircraft:
             self.pow_store.compute_weight_volume()
             self.solar = power_generation(self.Pow_req, latitude=self.lat, days_from_solstice=self.day_margin, energy_delta=self.energy_delta)
             self.solar.compute_weight_surface()
-            
+
             if self.solar.area < self.wing.S/1.025:
                 surface_check = False
             else:
@@ -130,13 +130,14 @@ class Aircraft:
                 iterations += 1
                 # print("Inner iteration:", iterations)
                 # print("Surface difference:", self.solar.area - self.wing.S)
-
+        '''
         print("Optimal CL:", self.CL_opt)
         print("CL:", CL_current)
         print("CD0:", self.CD0)
         print("CL/CD:", self.CL_CD)
         print("Oswald efficiency:", self.e)
         print("Propulsive efficiency:", self.prop.overall_eff)
+        '''
 
 
     def compute_subsys_pow(self):

@@ -1,5 +1,5 @@
 import numpy as np
-
+import matplotlib.pyplot as plt
 from Objects.Characteristics.Airframe import wing, fuselage, empennage, nacelles
 from Objects.Characteristics.GeneralSubsystems import ComputerSystem, CommunicationSystem, FlightConditionsSystem, PayloadSystem, ControlSystem
 from Objects.Characteristics.PropulsionSystem import PropulsionSystem
@@ -113,66 +113,119 @@ labels = [
     "Remaining Mass (MTOW - Power System Mass - Payload Mass)",
     "Lambda Advance Ratio"
 ]
-delta=0.01
-# Compute results for two different aspect ratios
+
+
+# Compute normalized derivatives
+delta = 0.01  # Small change in the input parameter
+
+# Compute results for the baseline (no change)
 results_0 = compute()
+
+# Compute normalized derivatives
+def compute_normalized_derivative(results_0, results_1, delta, x0, labels):
+    normalized_derivatives = []
+    for r0, r1 in zip(results_0, results_1):
+        if r0 != 0 and x0 != 0:  # Avoid division by zero
+            normalized_derivative = ((r1 - r0) / r0) / (delta / x0)  # Normalized as (dy/y0) / (dx/x0)
+        else:
+            normalized_derivative = 0  # If the baseline value is zero, set derivative to 0
+        normalized_derivatives.append(normalized_derivative)
+    return normalized_derivatives
+
+# Baseline input values
+aspect_ratio_baseline = 25.0
+sweep_baseline = 0.0
+taper_baseline = 1.0
+thickness_baseline = 0.091
+thickness_pos_baseline = 0.311
+
+# Derivative with respect to aspect ratio
 results_1 = compute(d_AR=delta)
+normalized_derivatives1 = compute_normalized_derivative(results_0, results_1, delta, aspect_ratio_baseline, labels)
 
-# Compute the difference between the two results and calculate derivatives
-differences = [r1 - r0 for r1, r0 in zip(results_1, results_0)]
-derivatives = [diff / delta for diff in differences]
+# Derivative with respect to sweep
+results_1 = compute(d_sweep=30)
+normalized_derivatives2 = compute_normalized_derivative(results_0, results_1, 30, sweep_baseline + 25, labels)  # Add small value to avoid division by zero
 
-# Print the derivatives with labels
-print("\nDerivative with respect to aspect ratio:")
-for label, derivative in zip(labels, derivatives):
+# Derivative with respect to taper
+results_1 = compute(d_taper=-0.9)
+normalized_derivatives3 = compute_normalized_derivative(results_0, results_1, -0.9, taper_baseline, labels)
+
+# Derivative with respect to airfoil max thickness
+results_1 = compute(d_thickness=10*delta)
+normalized_derivatives4 = compute_normalized_derivative(results_0, results_1, 10*delta, thickness_baseline, labels)
+
+# Derivative with respect to airfoil max thickness position
+results_1 = compute(d_x_thickness=10*delta)
+normalized_derivatives5 = compute_normalized_derivative(results_0, results_1, 10*delta, thickness_pos_baseline, labels)
+
+# Print normalized derivatives
+print("\nNormalized Derivative with respect to aspect ratio:")
+for label, derivative in zip(labels, normalized_derivatives1):
+    print(f"{label}: {derivative}")
+
+print("\nNormalized Derivative with respect to sweep:")
+for label, derivative in zip(labels, normalized_derivatives2):
+    print(f"{label}: {derivative}")
+
+print("\nNormalized Derivative with respect to taper:")
+for label, derivative in zip(labels, normalized_derivatives3):
+    print(f"{label}: {derivative}")
+
+print("\nNormalized Derivative with respect to airfoil max thickness:")
+for label, derivative in zip(labels, normalized_derivatives4):
+    print(f"{label}: {derivative}")
+
+print("\nNormalized Derivative with respect to airfoil max thickness position:")
+for label, derivative in zip(labels, normalized_derivatives5):
     print(f"{label}: {derivative}")
 
 
-results_1 = compute(d_sweep=delta)
+sensitivity_data = np.array([
+    normalized_derivatives1[:3],  # Sensitivity of MTOW, Power Consumption, Wing Surface Area to Aspect Ratio
+    normalized_derivatives2[:3],  # Sensitivity to Sweep
+    normalized_derivatives3[:3],  # Sensitivity to Taper
+    normalized_derivatives4[:3],  # Sensitivity to Max Thickness
+    normalized_derivatives5[:3]   # Sensitivity to Thickness Position
+])
 
-# Compute the difference between the two results and calculate derivatives
-differences = [r1 - r0 for r1, r0 in zip(results_1, results_0)]
-derivatives = [diff / delta for diff in differences]
-
-# Print the derivatives with labels
-print("\nDerivative with respect to sweep:")
-for label, derivative in zip(labels, derivatives):
-    print(f"{label}: {derivative}")
-
-
-
-results_1 = compute(d_taper=delta)
-
-# Compute the difference between the two results and calculate derivatives
-differences = [r1 - r0 for r1, r0 in zip(results_1, results_0)]
-derivatives = [diff / delta for diff in differences]
-
-# Print the derivatives with labels
-print("\nDerivative with respect to taper:")
-for label, derivative in zip(labels, derivatives):
-    print(f"{label}: {derivative}")
-
-
-results_1 = compute(d_thickness=delta)
-
-# Compute the difference between the two results and calculate derivatives
-differences = [r1 - r0 for r1, r0 in zip(results_1, results_0)]
-derivatives = [diff / delta for diff in differences]
-
-# Print the derivatives with labels
-print("\nDerivative with respect to airfoil max thicknesss:")
-for label, derivative in zip(labels, derivatives):
-    print(f"{label}: {derivative}")
+# Take the absolute value of the sensitivities
+sensitivity_data = np.abs(sensitivity_data)
 
 
 
-results_1 = compute(d_x_thickness=delta)
+# Define a function to create a grouped bar plot for sensitivities
+def create_combined_sensitivity_plot(sensitivity_data, input_labels, output_labels):
+    num_inputs = len(input_labels)
+    num_outputs = len(output_labels)
+    bar_width = 0.15  # Width of each bar
+    x = np.arange(num_inputs)  # X positions for the groups
 
-# Compute the difference between the two results and calculate derivatives
-differences = [r1 - r0 for r1, r0 in zip(results_1, results_0)]
-derivatives = [diff / delta for diff in differences]
+    # Create the plot
+    plt.figure(figsize=(12, 6))
+    for i in range(num_outputs):
+        plt.bar(x + i * bar_width, sensitivity_data[:, i], bar_width, label=output_labels[i])
 
-# Print the derivatives with labels
-print("\nDerivative with respect to airfoil max thickness position:")
-for label, derivative in zip(labels, derivatives):
-    print(f"{label}: {derivative}")
+    # Set axis labels and title
+    plt.xlabel("Concept Design Inputs", fontsize=12)
+    plt.ylabel("Sensitivity (|Normalized Derivative|)", fontsize=12)
+
+    # Set x-axis ticks and labels
+    plt.xticks(x + bar_width * (num_outputs - 1) / 2, input_labels, rotation=45, ha="right")
+
+    # Add legend
+    plt.legend(title="Outputs", fontsize=10)
+
+    # Add grid for better readability
+    plt.grid(axis="y", linestyle="--", alpha=0.7)
+
+    # Show the plot
+    plt.tight_layout()
+    plt.show()
+
+# Input labels and output labels
+input_labels = ["Aspect Ratio", "Sweep", "Taper", "Max Thickness", "Thickness Position"]
+output_labels = ["MTOW", "Power Consumption", "Wing Surface Area"]
+
+# Create the combined sensitivity plot
+create_combined_sensitivity_plot(sensitivity_data, input_labels, output_labels)

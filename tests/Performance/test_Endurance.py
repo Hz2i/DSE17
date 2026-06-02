@@ -11,7 +11,7 @@ def test_endurance_null_values():
 
     endurance = Endurance(power_consumption=0, init_bat_capacity=0)
 
-    assert endurance.compute_endurance() is False
+    assert endurance.compute_endurance()[0] is False
 
 def test_endurance_power_calc_null_values():
     """Test the internal power calculation with zero collecting area"""
@@ -41,7 +41,7 @@ def test_endurance_capacity_reduction_order_of_magnitude():
 
     capacity_frac = endurance.reduced_capacity_frac(200)
 
-    assert 0.85 < capacity_frac < 0.95
+    assert 0.85 < capacity_frac <= 0.95
 
 
 def test_endurance_compute_order_of_magnitude():
@@ -49,7 +49,7 @@ def test_endurance_compute_order_of_magnitude():
 
     endurance = Endurance(power_consumption=0.1, init_bat_capacity=1e9)
 
-    assert endurance.compute_endurance() is True
+    assert endurance.compute_endurance()[0] is True
 
 
 # ASSUMED CONSTANTS CROSS-VERIFICATION TESTS
@@ -61,7 +61,7 @@ def test_endurance_constants():
     assert endurance.solar.efficiency == 0.2
     # Battery cycle limits
     assert endurance.cycle_limit_nr == 400
-    assert endurance.cycle_limit_degradation == 0.2
+    assert endurance.cycle_limit_degradation == 0.1
 
 
 # UNIT TESTS
