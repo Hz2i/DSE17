@@ -3,15 +3,23 @@ import aerosandbox.numpy as np
 from aerosandbox.aerodynamics.aero_3D.test_aero_3D.geometries.conventional import wing_airfoil, tail_airfoil
 
 
-class Control_Surface_Sizing():
+class Control_Surface_Sizing(control_requirements={
+
+}):
     def __init__(self):
+        self.airplane = None
         self.wing_airfoil = asb.Airfoil("sd7037")
         self.tail_airfoil = asb.Airfoil("naca0010")
+        self.op_point=asb.OperatingPoint(
+                velocity=28,  # m/s
+                alpha=0,  # degree
+            )
+        self.control_requirements = control_requirements
 
     def Airplane_Geo(self):
         ### Define the 3D geometry you want to analyze/optimize.
         # Here, all distances are in meters and all angles are in degrees.
-        airplane = asb.Airplane(
+        self.airplane = asb.Airplane(
             name="Peter's Glider",
             xyz_ref=[0, 0, 0],  # CG location
             wings=[
@@ -141,16 +149,16 @@ class Control_Surface_Sizing():
     def vlm_run(self):
         vlm = asb.VortexLatticeMethod(
             airplane=self.airplane,
-            op_point=asb.OperatingPoint(
-                velocity=28,  # m/s
-                alpha=0,  # degree
-            ),
+            op_point=self.op_point,
         )
         aero = vlm.run_with_stability_derivatives()  # Returns a dictionary
         for k, v in aero.items():
             print(f"{k.rjust(4)} : {v}")
 
         # vlm.draw(show_kwargs=dict(jupyter_backend="static"))
+
+    def Control_Check(self):
+
 
 control_surface = Control_Surface_Sizing()
 control_surface.Airplane_Geo()
