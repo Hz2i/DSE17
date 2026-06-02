@@ -86,7 +86,7 @@ airplane = asb.Airplane(
 vlm = asb.VortexLatticeMethod(
     airplane=airplane,
     op_point=asb.OperatingPoint(
-        velocity=25,  # m/s
+        velocity=28,  # m/s
         alpha=0,  # degree
     ),
 )
