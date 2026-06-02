@@ -3,9 +3,7 @@ import aerosandbox.numpy as np
 from aerosandbox.aerodynamics.aero_3D.test_aero_3D.geometries.conventional import wing_airfoil, tail_airfoil
 
 
-class Control_Surface_Sizing(control_requirements={
-
-}):
+class Control_Surface_Sizing():
     def __init__(self):
         self.airplane = None
         self.wing_airfoil = asb.Airfoil("sd7037")
@@ -14,7 +12,7 @@ class Control_Surface_Sizing(control_requirements={
                 velocity=28,  # m/s
                 alpha=0,  # degree
             )
-        self.control_requirements = control_requirements
+        # self.control_requirements = control_requirements
 
     def Airplane_Geo(self):
         ### Define the 3D geometry you want to analyze/optimize.
@@ -157,7 +155,7 @@ class Control_Surface_Sizing(control_requirements={
 
         # vlm.draw(show_kwargs=dict(jupyter_backend="static"))
 
-    def Control_Check(self):
+    # def Control_Check(self):
 
 
 control_surface = Control_Surface_Sizing()
