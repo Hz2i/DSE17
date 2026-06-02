@@ -34,7 +34,7 @@ class Control_Surface_Sizing():
                             airfoil=wing_airfoil,
                             control_surfaces=[
                                 asb.ControlSurface(
-                                    name="elevon",
+                                    name="inner elevon",
                                     hinge_point=0.75,
                                     deflection=0.0,
                                     symmetric=True,
@@ -49,7 +49,7 @@ class Control_Surface_Sizing():
                             airfoil=wing_airfoil,
                             control_surfaces=[
                                 asb.ControlSurface(
-                                    name="elevon",
+                                    name="outer elevon",
                                     hinge_point=0.75,
                                     deflection=0.0,
                                     symmetric=True,
