@@ -1,7 +1,7 @@
 import numpy as np
 
 class link_budget:
-    def __init__(self, distance, frequency=31e9, data_rate_bps=1e6, modulation='QPSK', target_link_margin_db=10):
+    def __init__(self, distance, frequency=0.12e9, data_rate_bps=1e6, modulation='QPSK', target_link_margin_db=10):
         self.frequency = frequency                              # set at 31 GHz but ranges include: 31-31.3 GHz, 47.2–47.5 GHz and 47.9–48.2 GHz
         self.distance = distance                                # input
         self.data_rate_bps = data_rate_bps                      # requirement: 1 Mbit/s
