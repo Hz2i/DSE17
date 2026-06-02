@@ -342,7 +342,7 @@ elif DESIGNS[DESIGN]["planform"] == 0: # Flying wing planform:
 aircraft_class = Aircraft(MTOW_guess=MTOW, TAS=TAS_initial, gamma=gamma, lat=30, day_margin=day_margin, DoD=DoD,Sh_S = Sh_S, Sv_S = Sv_S, wing=wing_geo, fus=fus_geo, emp=emp_geo, nac=nac_geo, use_batt=use_batt, energy_delta=energy_delta)
 
 dt1 = 3600
-dt2 = 1800
+dt2 = 900
 dt3 = 15
 day_of_year = np.arange(0,360+dt3,dt3)
 time_of_day = np.arange(0,86400+dt1,dt1)
