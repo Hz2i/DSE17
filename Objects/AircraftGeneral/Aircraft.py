@@ -88,7 +88,7 @@ class Aircraft:
 
             #self.e = 1/(K*self.CD0*np.pi*self.wing.AR + 1/(self.wing.e*(1-2*(self.fus.D/self.wing.b)**2))) * self.wing.k_e_dihedral
 
-            self.e = 0.85
+            self.e = 0.95
 
             self.CL_opt = (3* self.CD0 * np.pi * self.wing.AR * self.e)**0.5
             #self.CL_opt = (self.CD0 * np.pi * self.wing.AR * self.e)**0.5
