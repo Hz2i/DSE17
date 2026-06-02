@@ -1,7 +1,7 @@
 import numpy as np
 
 class link_budget:
-    def __init__(self, distance, frequency=31e9, data_rate_bps=1e6, modulation='QPSK', target_link_margin_db=10):
+    def __init__(self, distance, frequency=0.12e9, data_rate_bps=1e6, modulation='QPSK', target_link_margin_db=10):
         self.frequency = frequency                              # set at 31 GHz but ranges include: 31-31.3 GHz, 47.2–47.5 GHz and 47.9–48.2 GHz
         self.distance = distance                                # input
         self.data_rate_bps = data_rate_bps                      # requirement: 1 Mbit/s
@@ -69,3 +69,9 @@ print(lb)
 print(f"Required Rx Power: {lb.compute_required_rx_power():.2e} W")
 print(f"Required Tx Power: {lb.compute_required_tx_power():.2e} W")
 '''
+
+
+distance = 1000 * np.sqrt(18**2 + 400**2)  # example for max distance
+
+lb = link_budget(distance=distance)
+print(lb.compute_required_tx_power())
