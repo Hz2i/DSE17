@@ -36,6 +36,23 @@ airplane = asb.Airplane(
                     twist=0,
                     airfoil=wing_airfoil,
                 ),
+
+            ],
+            control_surfaces=[
+                asb.ControlSurface(
+                    name='Inboard Elevon',
+                    xsec_start=0.1,  # Start at 10% of the wing span
+                    xsec_end=0.25,     # End at 40% of the wing span
+                    hinge_line_xsec=0.75,  # Hinge line at 75% chord
+                    deflection=10,
+                ),
+                asb.ControlSurface(
+                    name='Outboard Elevon',
+                    xsec_start=0.5,  # Start at 50% of the wing span
+                    xsec_end=0.9,     # End at 90% of the wing span
+                    hinge_line_xsec=0.75,  # Hinge line at 75% chord
+                    deflection=10,
+                ),
             ],
         ),
         asb.Wing(
