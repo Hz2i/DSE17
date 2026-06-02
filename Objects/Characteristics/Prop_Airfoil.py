@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 
 altitude = 20000  # 20 km altitude for HAPS
 atmo = asb.Atmosphere(altitude=altitude)
-reynolds_number = 100000
+reynolds_number = 200000
 mach_number = 0.15
 
 # Angle of Attack sweep range
@@ -18,25 +18,20 @@ results = {}
 print(f"Running aerodynamic sweeps at Re = {reynolds_number:,}...")
 
 for name in airfoil_names:
-    formatted_name = "fx63137" if name == "FX63137" else name.lower()
+    airfoil = asb.Airfoil(name)
     
-    try:
-        airfoil = asb.Airfoil(name)
-        
-        # Pull viscous aerodynamics data directly using the integrated NeuralFoil engine
-        aero_data = airfoil.get_aero_from_neuralfoil(
-            alpha=alphas,
-            Re=reynolds_number,
-            mach=mach_number
-        )
-        
-        # Calculate Cl/Cd ratio cleanly
-        aero_data['Cl_Cd'] = aero_data['CL'] / aero_data['CD']
-        
-        results[name] = aero_data
-        print(f"Successfully analyzed: {name}")
-    except Exception as e:
-        print(f"Error loading or analyzing {name}: {e}")
+    # Pull viscous aerodynamics data directly using the integrated NeuralFoil engine
+    aero_data = airfoil.get_aero_from_neuralfoil(
+        alpha=alphas,
+        Re=reynolds_number,
+        mach=mach_number
+    )
+    
+    # Calculate Cl/Cd ratio cleanly
+    aero_data['Cl_Cd'] = aero_data['CL'] / aero_data['CD']
+    
+    results[name] = aero_data
+    print(f"Successfully analyzed: {name}")
 
 
 fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(18, 5.5))
