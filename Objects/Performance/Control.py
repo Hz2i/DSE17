@@ -10,12 +10,12 @@ class Control_Surface_Sizing():
     def __init__(self):
         self.coeff = None
         self.airplane = None
-        self.wing_airfoil = asb.Airfoil("sd7037")
-        self.tail_airfoil = asb.Airfoil("naca0010")
-        self.op_point=asb.OperatingPoint(
-                velocity=27.94,  # m/s
-                alpha=10,  # degree
-            )
+        self.wing_airfoil = asb.Airfoil("e344")
+        # self.tail_airfoil = asb.Airfoil("naca0010")
+        # self.op_point=asb.OperatingPoint(
+        #         velocity=27.94,  # m/s
+        #         alpha=10,  # degree
+        #     )
         self.wing_sweep = 0.2618
         self.b = 30.08
         self.c = 1.203
@@ -31,7 +31,7 @@ class Control_Surface_Sizing():
         # Here, all distances are in meters and all angles are in degrees.
         self.airplane = asb.Airplane(
             name="AHAPS",
-            xyz_ref=[0, 0, 0],  # CG location
+            xyz_ref=[2.0, 0, 0],  # CG location
             wings=[
                 asb.Wing(
                     name="Main Wing",
@@ -72,7 +72,7 @@ class Control_Surface_Sizing():
                                     hinge_point=0.75,
                                     deflection=delta_outer,
                                     trailing_edge=True,
-                                    symmetric=True,
+                                    symmetric=False,
                                 ),
                             ],
                         ),
@@ -212,26 +212,25 @@ class Control_Surface_Sizing():
         return aero_ab
 
     def Control_Coefficients(self):
-        d_deflect = 5
+        d_deflect = 1
         deflection_points = np.arange(-20, 20 + d_deflect, d_deflect)
-        Cl_list = []
+        Cm_list = []
 
         for i in deflection_points:
-            self.vlm_run(delta_inner=i, delta_outer=i)
+            self.op_point = asb.OperatingPoint(velocity=27.94, alpha=7)
+            self.vlm_run(delta_inner=0, delta_outer=i)
             if self.coeff is not None:
-                Cl_list.append(self.coeff.get("Cl", None))
+                Cm_list.append(self.coeff.get("Cm", None))
             else:
-                Cl_list.append(None)
+                Cm_list.append(None)
 
-        print(Cl_list)
-        plt.plot(deflection_points, Cl_list)
+        # print(Cm_list)
+        plt.plot(deflection_points, Cm_list)
         plt.xlabel("Elevon deflection (deg)")
-        plt.ylabel("Cl")
+        plt.ylabel("Cm")
         plt.title("Control coefficient sweep")
         plt.grid(True)
         plt.show()
-
-        # Clda = self.coeff["
 
 
 
@@ -240,8 +239,8 @@ class Control_Surface_Sizing():
 if __name__ == "__main__":
     print("Starting simulation")
     cs = Control_Surface_Sizing()
-    #cs.Airplane_Geo(0, 0)
-    cs.vlm_run(-20, -20)
+    # cs.Airplane_Geo(0, 0)
+    # cs.vlm_run(-20, -20)
     # cs.Airplane_Geo()
     # cs.vlm_run()
-    #cs.Control_Coefficients()
+    cs.Control_Coefficients()
