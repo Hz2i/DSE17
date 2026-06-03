@@ -11,11 +11,11 @@ class Control_Surface_Sizing():
         self.coeff = None
         self.airplane = None
         self.wing_airfoil = asb.Airfoil("e344")
-        # self.tail_airfoil = asb.Airfoil("naca0010")
-        # self.op_point=asb.OperatingPoint(
-        #         velocity=27.94,  # m/s
-        #         alpha=10,  # degree
-        #     )
+        self.tail_airfoil = asb.Airfoil("naca0010")
+        self.op_point = asb.OperatingPoint(
+            velocity=27.94,  # m/s
+            alpha=7,  # degree
+        )
         self.wing_sweep = 0.2618
         self.b = 30.08
         self.c = 1.203
@@ -24,6 +24,7 @@ class Control_Surface_Sizing():
         self.elevon_connection = (self.b/2)*0.5
         self.end_outer_elevon = (self.b/2)*0.9
         self.half_span = self.b/2
+        self.height_winglet = 1.5
         #self.control_requirements = control_requirements
 
     def Airplane_Geo(self, delta_inner=0, delta_outer=0):
@@ -54,7 +55,7 @@ class Control_Surface_Sizing():
                                 asb.ControlSurface(
                                     name="inner_elevon",
                                     hinge_point=0.75,
-                                    deflection=delta_inner,
+                                    deflection=0.0,
                                     trailing_edge=True,
                                     symmetric=True,
                                 ),
@@ -70,7 +71,7 @@ class Control_Surface_Sizing():
                                 asb.ControlSurface(
                                     name="outer_elevon",
                                     hinge_point=0.75,
-                                    deflection=delta_outer,
+                                    deflection=0.0,
                                     trailing_edge=True,
                                     symmetric=False,
                                 ),
@@ -88,7 +89,23 @@ class Control_Surface_Sizing():
                             xyz_le=[np.tan(self.wing_sweep) * self.half_span, self.half_span, self.dihedral],
                             chord=self.c,
                             twist=0,
-                            airfoil=self.wing_airfoil,
+                            airfoil=self.tail_airfoil,
+                            control_surfaces=[
+                                asb.ControlSurface(
+                                    name="rudder",
+                                    hinge_point=0.75,
+                                    deflection=0.0,
+                                    trailing_edge=True,
+                                    symmetric=True,
+                                ),
+                            ],
+                        ),
+
+                        asb.WingXSec(  # Tip
+                            xyz_le=[(np.tan(self.wing_sweep) * self.half_span)+(np.tan(self.wing_sweep) * self.height_winglet), self.half_span, self.height_winglet],
+                            chord=self.c,
+                            twist=0,
+                            airfoil=self.tail_airfoil,
                         ),
                     ],
                 ),
@@ -250,8 +267,9 @@ class Control_Surface_Sizing():
 if __name__ == "__main__":
     print("Starting simulation")
     cs = Control_Surface_Sizing()
-    # cs.Airplane_Geo(0, 0)
-    # cs.vlm_run(-20, -20)
+    cs.Airplane_Geo(0, 0)
+    cs.airplane.draw()
+    # cs.vlm_run(-20, 0)
     # cs.Airplane_Geo()
     # cs.vlm_run()
-    cs.Control_Coefficients()
+    # cs.Control_Coefficients()
