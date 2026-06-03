@@ -31,7 +31,7 @@ class Control_Surface_Sizing():
         # Here, all distances are in meters and all angles are in degrees.
         self.airplane = asb.Airplane(
             name="AHAPS",
-            xyz_ref=[2.0, 0, 0],  # CG location
+            xyz_ref=[1.8, 0, 0],  # CG location
             wings=[
                 asb.Wing(
                     name="Main Wing",
@@ -215,17 +215,28 @@ class Control_Surface_Sizing():
         d_deflect = 1
         deflection_points = np.arange(-20, 20 + d_deflect, d_deflect)
         Cm_list = []
+        Cl_list = []
+        Cn_list = []
 
         for i in deflection_points:
             self.op_point = asb.OperatingPoint(velocity=27.94, alpha=7)
-            self.vlm_run(delta_inner=0, delta_outer=i)
+            self.vlm_run(delta_inner=i, delta_outer=0)
             if self.coeff is not None:
                 Cm_list.append(self.coeff.get("Cm", None))
             else:
                 Cm_list.append(None)
 
+        for i in deflection_points:
+            self.op_point = asb.OperatingPoint(velocity=10, alpha=7)
+            self.vlm_run(delta_inner=0, delta_outer=i)
+            if self.coeff is not None:
+                Cl_list.append(self.coeff.get("Cl", None))
+            else:
+                Cl_list.append(None)
+
         # print(Cm_list)
-        plt.plot(deflection_points, Cm_list)
+        plt.plot(deflection_points, Cm_list, color="red", label="Cm")
+        plt.plot(deflection_points, Cl_list, color="blue", label="Cl")
         plt.xlabel("Elevon deflection (deg)")
         plt.ylabel("Cm")
         plt.title("Control coefficient sweep")
