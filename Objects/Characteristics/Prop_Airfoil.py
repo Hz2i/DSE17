@@ -7,7 +7,7 @@ from scipy.interpolate import interp1d
 from scipy.optimize import brentq
 
 # SETUP FROM PAPER
-v_inf = 30.0  # Freestream velocity in m/s
+v_inf = 27.6  # Freestream velocity in m/s
 altitude = 20000  # 20 km altitude for HAPS
 atmo = asb.Atmosphere(altitude=altitude)
 rho = atmo.density() # (kg/m^3)
@@ -15,8 +15,8 @@ speed_of_sound = atmo.speed_of_sound()
 mach_number = v_inf / speed_of_sound
 
 # Propeller Constants
-Nb = 3            # Number of blades
-D = 2.5           # Propeller Diameter (m)
+Nb = 2            # Number of blades
+D = 2           # Propeller Diameter (m)
 R_abs = D / 2.0   # Tip radius (m)
 
 airfoil_names = ["S1223", "NACA4412", "E387", "SD7037", "FX63137"] 
