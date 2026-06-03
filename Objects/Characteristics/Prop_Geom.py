@@ -136,7 +136,7 @@ def size_propeller_diameter(J_target, airfoil_name, total_thrust_required, num_e
 # !!!!!!SPECS!!!!!!!
 # ===========================================================================
 sizing_results = size_propeller_diameter(
-    J_target=0.68, 
+    J_target= 0.686, 
     airfoil_name="SD7037", 
     total_thrust_required=52.0, 
     num_engines=4

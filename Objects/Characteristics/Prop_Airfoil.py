@@ -168,3 +168,7 @@ ax2.legend(loc='upper right', fontsize='small')
 
 plt.tight_layout()
 plt.show()
+
+# print optimal advance ratio for sd7037
+optimal_idx = np.argmax(results['SD7037']['ETA'])
+print(f"Optimal Advance Ratio for SD7037: J = {results['SD7037']['J'][optimal_idx]:.3f} with Efficiency = {results['SD7037']['ETA'][optimal_idx]:.3f}")
