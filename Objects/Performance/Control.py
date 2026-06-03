@@ -2,6 +2,8 @@ import aerosandbox as asb
 import aerosandbox.numpy as np
 from aerosandbox import Airplane
 from aerosandbox.aerodynamics.aero_3D.test_aero_3D.geometries.conventional import wing_airfoil, tail_airfoil
+from matplotlib import pyplot as plt
+from numpy.ma.core import shape
 
 
 class Control_Surface_Sizing():
@@ -170,12 +172,30 @@ class Control_Surface_Sizing():
         return self.coeff
 
     def Control_Coefficients(self):
-        ddeflect = 5
-        deflection_points = np.arange(0,20+ddeflect, ddeflect)
+        d_deflect = 5
+        deflection_points = np.arange(-20,20+d_deflect, d_deflect)
+        coeff_list = []
+        Cm_list = []
+        Cl_list = []
+        Cn_list = []
+
         for i in deflection_points:
             cs.Airplane_Geo()
             cs.vlm_run()
-            print(self.coeff["Cla"])
+            Cl_list.append(self.coeff["Cl"])
+        print(Cl_list[3])
+
+        plt.plot(deflection_points, Cl_list)
+        plt.show()
+
+        #     if i == 0:
+        #         coeff_list_size = len(self.coeff)
+        #     coeff_list.append(self.coeff)
+        # print(coeff_list)
+
+        # Clda = self.coeff["
+
+
 
 #    def Control_Check(self):
 
@@ -183,6 +203,6 @@ if __name__ == "__main__":
     print("Starting simulation")
 
     cs = Control_Surface_Sizing()
-    cs.Airplane_Geo()
-    cs.vlm_run()
+    # cs.Airplane_Geo()
+    # cs.vlm_run()
     cs.Control_Coefficients()
