@@ -22,7 +22,7 @@ mach_number = v_inf / speed_of_sound
 # Propeller Architecture
 Nb = 2            # Number of blades
 beta_07 = 20.5    # Blade pitch setting at 70% radius (degrees)
-r = np.linspace(0.25, 0.95, 100) # Active aerodynamic span grid (r/R)
+r = np.linspace(0.10, 1.0, 100) # Active aerodynamic span grid (r/R)
 
 # ===========================================================================
 # 2. PROPELLER DIAMETER SIZING FUNCTION
