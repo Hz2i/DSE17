@@ -99,14 +99,15 @@ class airframe:
             )
 
     def display_plane(self, display):
-        drawn_airplane = self.geometry_asb.deepcopy()
-        drawn_airplane.wings = [
-            w.subdivide_sections(15, np.linspace) for w in drawn_airplane.wings
-        ]
-        drawn_airplane.fuselages = [f.subdivide_sections(2) for f in drawn_airplane.fuselages]
-        drawn_airplane.draw_three_view()
-        # self.geometry_asb.draw_three_view()
-        p.show_plot(dpi=600)
+        if display:
+            drawn_airplane = self.geometry_asb.deepcopy()
+            drawn_airplane.wings = [
+                w.subdivide_sections(15, np.linspace) for w in drawn_airplane.wings
+            ]
+            drawn_airplane.fuselages = [f.subdivide_sections(2) for f in drawn_airplane.fuselages]
+            drawn_airplane.draw_three_view()
+            # self.geometry_asb.draw_three_view()
+            p.show_plot(dpi=600)
 
 
     def vlm_analysis(self):         # Call to AeroSandbox for VLM implementation
@@ -114,15 +115,38 @@ class airframe:
 
 
     def llt_analysis(self, series=False, alpha=5.0):
+        op_point = asb.OperatingPoint(
+            atmosphere=asb.Atmosphere(altitude=0),
+            velocity=15.0
+        )
         if series:
-            N_runs = len(series)
+            N_runs = len(alpha)
             llt_op_pt = op_point.copy()
             llt_op_pt.alpha = alpha
 
-            llt_results = [
+            llt_batch = [
                 asb.LiftingLine(
                     airplane=self.geometry_asb,
                     op_point=op,
-                    )
+                    xyz_ref=self.geometry_asb.xyz_ref
+                    ).run()
+                for op in llt_op_pt
                 ]
+
+            llt_results = {}
+            for param in llt_batch[0].keys():
+                llt_results[param] = np.array([result[param] for result in llt_batch])
+            llt_results["alpha"] = alpha
+
+
+        else:
+            op = op_point.copy()
+            op.alpha = alpha
+            llt_results = asb.LiftingLine(
+                            airplane=self.geometry_asb,
+                            op_point=op,
+                            xys_ref=self.geometry_asb.xyz_ref
+                            ).run()
+
+        return llt_results
 
