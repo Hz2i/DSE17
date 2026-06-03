@@ -129,7 +129,7 @@ class Control_Surface_Sizing():
                     symmetric=True,
                     xsecs=[
                         asb.WingXSec(
-                            xyz_le=[np.tan(self.wing_sweep) * self.half_span, self.half_span, 0],
+                            xyz_le=[(np.tan(self.wing_sweep) * self.half_span)+(np.tan(self.wing_sweep) * self.height_winglet), self.half_span, self.height_winglet],
                             chord=1.5*self.c,
                             twist=0,
                             airfoil=self.tail_airfoil,
@@ -144,7 +144,7 @@ class Control_Surface_Sizing():
                             ],
                         ),
                         asb.WingXSec(
-                            xyz_le=[(np.tan(self.wing_sweep) * self.half_span)+(np.tan(self.wing_sweep) * self.height_winglet), self.half_span, self.height_winglet],
+                            xyz_le=[np.tan(self.wing_sweep) * self.half_span, self.half_span, 0],
                             chord=1.5*self.c,
                             twist=0,
                             airfoil=self.tail_airfoil,
@@ -173,6 +173,7 @@ class Control_Surface_Sizing():
         deflected = self.airplane.with_control_deflections({
             "inner_elevon": delta_inner,
             "outer_elevon": delta_outer,
+            "rudder_left": delta_rudder,
         })
 
         try:
@@ -261,7 +262,7 @@ class Control_Surface_Sizing():
         )
 
         # ── Plot ──────────────────────────────────────────────────────
-        fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+        fig, axes = plt.subplots(1, 3, figsize=(12, 5))
         fig.suptitle("Elevon Control Effectiveness  (V=27.94 m/s, α=7°)")
 
         # Left: pitch sweeps
@@ -283,13 +284,13 @@ class Control_Surface_Sizing():
         axes[1].grid(True)
 
         # Right: yaw sweep
-        axes[1].plot(deflection_points, Cl_outer, color="blue", label="Cn — rudder (antisym)")
-        axes[1].axhline(0, color="black", linewidth=0.8, linestyle="--")
-        axes[1].set_xlabel("Elevon deflection [deg]")
-        axes[1].set_ylabel("Cn")
-        axes[1].set_title("Roll authority")
-        axes[1].legend()
-        axes[1].grid(True)
+        axes[2].plot(deflection_points, Cn_rudder, color="green", label="Cn — rudder (antisym)")
+        axes[2].axhline(0, color="black", linewidth=0.8, linestyle="--")
+        axes[2].set_xlabel("Elevon deflection [deg]")
+        axes[2].set_ylabel("Cn")
+        axes[2].set_title("Yaw authority")
+        axes[2].legend()
+        axes[2].grid(True)
 
         plt.tight_layout()
         plt.show()
@@ -307,6 +308,6 @@ class Control_Surface_Sizing():
 if __name__ == "__main__":
     print("Starting simulation")
     cs = Control_Surface_Sizing()
-    cs.Airplane_Geo()
-    cs.airplane.draw()
-    # cs.Control_Coefficients()
+    # cs.Airplane_Geo()
+    # cs.airplane.draw()
+    cs.Control_Coefficients()
