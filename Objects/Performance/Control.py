@@ -1,52 +1,66 @@
 import aerosandbox as asb
 import aerosandbox.numpy as np
-from aerosandbox import Airplane
-from aerosandbox.aerodynamics.aero_3D.test_aero_3D.geometries.conventional import wing_airfoil, tail_airfoil
-from matplotlib import pyplot as plt
-from numpy.ma.core import shape
+import matplotlib
+matplotlib.use('TkAgg')
+import matplotlib.pyplot as plt
 
 
 class Control_Surface_Sizing():
     def __init__(self):
         self.coeff = None
         self.airplane = None
-        self.wing_airfoil = asb.Airfoil("e344")
-        # self.tail_airfoil = asb.Airfoil("naca0010")
-        # self.op_point=asb.OperatingPoint(
-        #         velocity=27.94,  # m/s
-        #         alpha=10,  # degree
-        #     )
-        self.wing_sweep = 0.2618
-        self.b = 30.08
-        self.c = 1.203
-        self.dihedral = 0.0
-        self.start_inner_elevon = (self.b/2)*0.1
-        self.elevon_connection = (self.b/2)*0.5
-        self.end_outer_elevon = (self.b/2)*0.9
-        self.half_span = self.b/2
-        #self.control_requirements = control_requirements
+        self.wing_airfoil = asb.Airfoil("mh91")
 
-    def Airplane_Geo(self, delta_inner=0, delta_outer=0):
-        ### Define the 3D geometry you want to analyze/optimize.
-        # Here, all distances are in meters and all angles are in degrees.
+        self.wing_sweep = 0.2618      # radians
+        self.b = 30.08                # full span [m]
+        self.c = 1.203                # chord [m]
+        self.dihedral = 0.0
+
+        self.half_span = self.b / 2
+        self.start_inner_elevon = self.half_span * 0.1
+        self.elevon_connection   = self.half_span * 0.5
+        self.end_outer_elevon    = self.half_span * 0.9
+
+        # Operating point (can be overridden before calling vlm_run)
+        self.op_point = asb.OperatingPoint(velocity=27.94, alpha=7)
+
+    # ------------------------------------------------------------------
+    # Geometry
+    # ------------------------------------------------------------------
+    def Airplane_Geo(self, delta_inner=0, delta_outer=0, outer_symmetric=True):
+        """
+        Build the airplane geometry.
+
+        Parameters
+        ----------
+        delta_inner     : inner elevon deflection [deg]
+        delta_outer     : outer elevon deflection [deg]
+        outer_symmetric : True  → both outer panels deflect equally (pitch)
+                          False → panels deflect opposite (roll / aileron)
+        """
         self.airplane = asb.Airplane(
             name="AHAPS",
-            xyz_ref=[1.8, 0, 0],  # CG location
+            xyz_ref=[0.45, 0, 0],   # CG at ~37% chord — adjust to your actual CG
             wings=[
                 asb.Wing(
                     name="Main Wing",
-                    symmetric=True,  # Should this wing be mirrored across the XZ plane?
+                    symmetric=True,
                     xsecs=[
-                        # The wing's cross ("X") sections
-                        asb.WingXSec(  # Root
-                            xyz_le=[0, 0, 0],  # Coordinates of the XSec's leading edge, relative to the wing's leading edge.
-                            chord=self.c,  # Chord length at the XSec
-                            twist=0,  # degrees
-                            airfoil=self.wing_airfoil,  # Airfoils are blended between a given XSec and the next one.
+                        # Root
+                        asb.WingXSec(
+                            xyz_le=[0, 0, 0],
+                            chord=self.c,
+                            twist=0,
+                            airfoil=self.wing_airfoil,
                         ),
 
-                        asb.WingXSec(  # Mid
-                            xyz_le=[np.tan(self.wing_sweep) * self.start_inner_elevon, self.start_inner_elevon, self.dihedral], #[sweep, , dihedral]
+                        # Inner elevon starts here (10 % semi-span)
+                        asb.WingXSec(
+                            xyz_le=[
+                                np.tan(self.wing_sweep) * self.start_inner_elevon,
+                                self.start_inner_elevon,
+                                self.dihedral,
+                            ],
                             chord=self.c,
                             twist=0,
                             airfoil=self.wing_airfoil,
@@ -56,13 +70,18 @@ class Control_Surface_Sizing():
                                     hinge_point=0.75,
                                     deflection=delta_inner,
                                     trailing_edge=True,
-                                    symmetric=True,
+                                    symmetric=True,         # always symmetric for pitch
                                 ),
                             ],
                         ),
 
-                        asb.WingXSec(  # Mid
-                            xyz_le=[np.tan(self.wing_sweep) * self.elevon_connection, self.elevon_connection, self.dihedral], #[sweep, , dihedral]
+                        # Transition — inner elevon ends / outer elevon starts (50 % semi-span)
+                        asb.WingXSec(
+                            xyz_le=[
+                                np.tan(self.wing_sweep) * self.elevon_connection,
+                                self.elevon_connection,
+                                self.dihedral,
+                            ],
                             chord=self.c,
                             twist=0,
                             airfoil=self.wing_airfoil,
@@ -72,186 +91,168 @@ class Control_Surface_Sizing():
                                     hinge_point=0.75,
                                     deflection=delta_outer,
                                     trailing_edge=True,
-                                    symmetric=False,
+                                    symmetric=outer_symmetric,  # caller decides
                                 ),
                             ],
                         ),
 
-                        asb.WingXSec(  # Mid
-                            xyz_le=[np.tan(self.wing_sweep) * self.end_outer_elevon, self.end_outer_elevon, self.dihedral], #[sweep, , dihedral]
+                        # Outer elevon ends (90 % semi-span)
+                        asb.WingXSec(
+                            xyz_le=[
+                                np.tan(self.wing_sweep) * self.end_outer_elevon,
+                                self.end_outer_elevon,
+                                self.dihedral,
+                            ],
                             chord=self.c,
                             twist=0,
                             airfoil=self.wing_airfoil,
                         ),
 
-                        asb.WingXSec(  # Tip
-                            xyz_le=[np.tan(self.wing_sweep) * self.half_span, self.half_span, self.dihedral],
+                        # Tip
+                        asb.WingXSec(
+                            xyz_le=[
+                                np.tan(self.wing_sweep) * self.half_span,
+                                self.half_span,
+                                self.dihedral,
+                            ],
                             chord=self.c,
                             twist=0,
                             airfoil=self.wing_airfoil,
                         ),
                     ],
                 ),
-            
-                    # control_surfaces=[
-                    #     asb.ControlSurface(
-                    #         name='Inboard Elevon',
-                    #         xsec_start=0.1,  # Start at 10% of the wing span
-                    #         xsec_end=0.25,     # End at 40% of the wing span
-                    #         hinge_line_xsec=0.75,  # Hinge line at 75% chord
-                    #         deflection=10,
-                    #     ),
-                    #     asb.ControlSurface(
-                    #         name='Outboard Elevon',
-                    #         xsec_start=0.5,  # Start at 50% of the wing span
-                    #         xsec_end=0.9,     # End at 90% of the wing span
-                    #         hinge_line_xsec=0.75,  # Hinge line at 75% chord
-                    #         deflection=10,
-                    #     ),
-                    # ],
-
-                # asb.Wing(
-                #     name="Horizontal Stabilizer",
-                #     symmetric=True,
-                #     xsecs=[
-                #         asb.WingXSec(  # root
-                #             xyz_le=[0, 0, 0],
-                #             chord=0.1,
-                #             twist=-10,
-                #             airfoil=tail_airfoil,
-                #         ),
-                #         asb.WingXSec(  # tip
-                #             xyz_le=[0.02, 0.17, 0], chord=0.08, twist=-10, airfoil=tail_airfoil
-                #         ),
-                #     ],
-                # ).translate([0.6, 0, 0.06]),
-
-            #     asb.Wing(
-            #         name="Vertical Stabilizer",
-            #         symmetric=False,
-            #         xsecs=[
-            #             asb.WingXSec(
-            #                 xyz_le=[0, 0, 0],
-            #                 chord=0.1,
-            #                 twist=0,
-            #                 airfoil=tail_airfoil,
-            #             ),
-            #             asb.WingXSec(
-            #                 xyz_le=[0.04, 0, 0.15], chord=0.06, twist=0, airfoil=tail_airfoil
-            #             ),
-            #         ],
-            #     ).translate([0.6, 0, 0.07]),
-            # ],
-
-        #     fuselages=[
-        #         asb.Fuselage(
-        #             name="Fuselage",
-        #             xsecs=[
-        #                 asb.FuselageXSec(
-        #                     xyz_c=[0.8 * xi - 0.1, 0, 0.1 * xi - 0.03],
-        #                     radius=0.6 * asb.Airfoil("dae51").local_thickness(x_over_c=xi),
-        #                 )
-        #                 for xi in np.cosspace(0, 1, 30)
-        #             ],
-        #         )
             ],
         )
-        # self.airplane.with_control_deflections({"inner_elevon": 15.0})
         return self.airplane
 
-    def vlm_run(self, delta_inner=0, delta_outer=0):
-        
-        # Rebuild airplane with new deflections
-        self.Airplane_Geo(delta_inner, delta_outer)
+    # ------------------------------------------------------------------
+    # VLM / AeroBuildup runner
+    # ------------------------------------------------------------------
+    def vlm_run(self, delta_inner=0, delta_outer=0, outer_symmetric=True, verbose=False):
+        """
+        Rebuild the geometry and run AeroBuildup.
 
-        print(f"\nRequested deflections: inner={delta_inner}°, outer={delta_outer}°")
+        Returns the aero dict (also stored in self.coeff).
+        """
+        self.Airplane_Geo(delta_inner, delta_outer, outer_symmetric)
 
-        def format_aero_value(v):
-            try:
-                arr = np.asarray(v)
-            except Exception:
-                return v
-            if arr.shape == ():
-                return float(arr)
-            if arr.size == 1:
-                return float(arr.flat[0])
-            return arr.tolist() if arr.ndim <= 2 else arr
+        if verbose:
+            print(f"\ndeflections: inner={delta_inner}°  outer={delta_outer}°  "
+                  f"outer_symmetric={outer_symmetric}")
 
-        # ===== AeroBuildup Analysis (DOES model control-surface effects) =====
-        deflected_airplane = self.airplane.with_control_deflections({
+        deflected = self.airplane.with_control_deflections({
             "inner_elevon": delta_inner,
             "outer_elevon": delta_outer,
         })
-        
+
         try:
             ab = asb.AeroBuildup(
-                airplane=deflected_airplane,
+                airplane=deflected,
                 op_point=self.op_point,
             )
-            aero_ab = ab.run_with_stability_derivatives()
-            cm_ab = aero_ab.get("Cm", None)
-            if cm_ab is not None:
-                cm_ab_scalar = format_aero_value(cm_ab)
-                print(f"AeroBuildup Cm = {cm_ab_scalar:.6f}")
-            else:
-                print("AeroBuildup Cm = N/A")
-
-            print("\nAeroBuildup results:")
-            for k, v in aero_ab.items():
-                try:
-                    print(f"  {k} : {format_aero_value(v)}")
-                except Exception:
-                    print(f"  {k} : {v}")
+            aero = ab.run_with_stability_derivatives()
         except Exception:
             import traceback
-            print(f"AeroBuildup failed with error:")
+            print("AeroBuildup failed:")
             traceback.print_exc()
-            aero_ab = None
+            aero = None
 
-        self.coeff = aero_ab
-        return aero_ab
+        self.coeff = aero
+        return aero
 
+    # ------------------------------------------------------------------
+    # Sweep helper
+    # ------------------------------------------------------------------
+    def _sweep(self, deflection_points, delta_inner_fn, delta_outer_fn,
+               outer_symmetric, coeff_key):
+        """
+        Generic deflection sweep.  Returns a list of scalar coefficient values.
+        """
+        results = []
+        for i in deflection_points:
+            aero = self.vlm_run(
+                delta_inner=delta_inner_fn(i),
+                delta_outer=delta_outer_fn(i),
+                outer_symmetric=outer_symmetric,
+            )
+            val = aero.get(coeff_key, None) if aero is not None else None
+            # Flatten to scalar
+            if val is not None:
+                try:
+                    val = float(np.asarray(val).flat[0])
+                except Exception:
+                    val = None
+            results.append(val)
+        return results
+
+    # ------------------------------------------------------------------
+    # Main analysis
+    # ------------------------------------------------------------------
     def Control_Coefficients(self):
+        """
+        Three sweeps:
+          1. Inner elevon (symmetric) → Cm   — pitch authority
+          2. Outer elevon (antisymmetric) → Cl — roll authority
+        """
         d_deflect = 1
         deflection_points = np.arange(-20, 20 + d_deflect, d_deflect)
-        Cm_list = []
-        Cl_list = []
-        Cn_list = []
 
-        for i in deflection_points:
-            self.op_point = asb.OperatingPoint(velocity=27.94, alpha=7)
-            self.vlm_run(delta_inner=i, delta_outer=0)
-            if self.coeff is not None:
-                Cm_list.append(self.coeff.get("Cm", None))
-            else:
-                Cm_list.append(None)
+        self.op_point = asb.OperatingPoint(velocity=27.94, alpha=7)
 
-        for i in deflection_points:
-            self.op_point = asb.OperatingPoint(velocity=10, alpha=7)
-            self.vlm_run(delta_inner=0, delta_outer=i)
-            if self.coeff is not None:
-                Cl_list.append(self.coeff.get("Cl", None))
-            else:
-                Cl_list.append(None)
+        print("Running inner elevon Cm sweep …")
+        Cm_inner = self._sweep(
+            deflection_points,
+            delta_inner_fn=lambda i: i,
+            delta_outer_fn=lambda i: 0,
+            outer_symmetric=True,
+            coeff_key="Cm",
+        )
 
-        # print(Cm_list)
-        plt.plot(deflection_points, Cm_list, color="red", label="Cm")
-        plt.plot(deflection_points, Cl_list, color="blue", label="Cl")
-        plt.xlabel("Elevon deflection (deg)")
-        plt.ylabel("Cm")
-        plt.title("Control coefficient sweep")
-        plt.grid(True)
+        print("Running outer elevon Cl sweep (antisymmetric / roll) …")
+        Cl_outer = self._sweep(
+            deflection_points,
+            delta_inner_fn=lambda i: 0,
+            delta_outer_fn=lambda i: i,
+            outer_symmetric=False,
+            coeff_key="Cl",
+        )
+
+        # ── Plot ──────────────────────────────────────────────────────
+        fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+        fig.suptitle("Elevon Control Effectiveness  (V=27.94 m/s, α=7°)")
+
+        # Left: pitch sweeps
+        axes[0].plot(deflection_points, Cm_inner, color="red",   label="Cm — inner elevon (sym)")
+        axes[0].axhline(0, color="black", linewidth=0.8, linestyle="--")
+        axes[0].set_xlabel("Elevon deflection [deg]")
+        axes[0].set_ylabel("Cm")
+        axes[0].set_title("Pitch authority")
+        axes[0].legend()
+        axes[0].grid(True)
+
+        # Right: roll sweep
+        axes[1].plot(deflection_points, Cl_outer, color="blue", label="Cl — outer elevon (antisym)")
+        axes[1].axhline(0, color="black", linewidth=0.8, linestyle="--")
+        axes[1].set_xlabel("Elevon deflection [deg]")
+        axes[1].set_ylabel("Cl")
+        axes[1].set_title("Roll authority")
+        axes[1].legend()
+        axes[1].grid(True)
+
+        plt.tight_layout()
         plt.show()
 
+    # ------------------------------------------------------------------
+    # Control requirements check (placeholder)
+    # ------------------------------------------------------------------
+    def Control_Check(self):
+        q_req = np.radians(3)    # pitch rate [rad/s]
+        p_req = np.radians(10)   # roll  rate [rad/s]
+        r_req = np.radians(5)    # yaw   rate [rad/s]
+        # todo
 
-
-#    def Control_Check(self):
 
 if __name__ == "__main__":
     print("Starting simulation")
     cs = Control_Surface_Sizing()
-    # cs.Airplane_Geo(0, 0)
-    # cs.vlm_run(-20, -20)
-    # cs.Airplane_Geo()
-    # cs.vlm_run()
     cs.Control_Coefficients()
