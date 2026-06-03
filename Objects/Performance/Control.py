@@ -27,7 +27,7 @@ class Control_Surface_Sizing():
         self.height_winglet = 1.5
         #self.control_requirements = control_requirements
 
-    def Airplane_Geo(self, delta_inner=0, delta_outer=0):
+    def Airplane_Geo(self, delta_inner=0, delta_outer=0, rudder=0):
         ### Define the 3D geometry you want to analyze/optimize.
         # Here, all distances are in meters and all angles are in degrees.
         self.airplane = asb.Airplane(
@@ -109,79 +109,16 @@ class Control_Surface_Sizing():
                         ),
                     ],
                 ),
-            
-                    # control_surfaces=[
-                    #     asb.ControlSurface(
-                    #         name='Inboard Elevon',
-                    #         xsec_start=0.1,  # Start at 10% of the wing span
-                    #         xsec_end=0.25,     # End at 40% of the wing span
-                    #         hinge_line_xsec=0.75,  # Hinge line at 75% chord
-                    #         deflection=10,
-                    #     ),
-                    #     asb.ControlSurface(
-                    #         name='Outboard Elevon',
-                    #         xsec_start=0.5,  # Start at 50% of the wing span
-                    #         xsec_end=0.9,     # End at 90% of the wing span
-                    #         hinge_line_xsec=0.75,  # Hinge line at 75% chord
-                    #         deflection=10,
-                    #     ),
-                    # ],
-
-                # asb.Wing(
-                #     name="Horizontal Stabilizer",
-                #     symmetric=True,
-                #     xsecs=[
-                #         asb.WingXSec(  # root
-                #             xyz_le=[0, 0, 0],
-                #             chord=0.1,
-                #             twist=-10,
-                #             airfoil=tail_airfoil,
-                #         ),
-                #         asb.WingXSec(  # tip
-                #             xyz_le=[0.02, 0.17, 0], chord=0.08, twist=-10, airfoil=tail_airfoil
-                #         ),
-                #     ],
-                # ).translate([0.6, 0, 0.06]),
-
-            #     asb.Wing(
-            #         name="Vertical Stabilizer",
-            #         symmetric=False,
-            #         xsecs=[
-            #             asb.WingXSec(
-            #                 xyz_le=[0, 0, 0],
-            #                 chord=0.1,
-            #                 twist=0,
-            #                 airfoil=tail_airfoil,
-            #             ),
-            #             asb.WingXSec(
-            #                 xyz_le=[0.04, 0, 0.15], chord=0.06, twist=0, airfoil=tail_airfoil
-            #             ),
-            #         ],
-            #     ).translate([0.6, 0, 0.07]),
-            # ],
-
-        #     fuselages=[
-        #         asb.Fuselage(
-        #             name="Fuselage",
-        #             xsecs=[
-        #                 asb.FuselageXSec(
-        #                     xyz_c=[0.8 * xi - 0.1, 0, 0.1 * xi - 0.03],
-        #                     radius=0.6 * asb.Airfoil("dae51").local_thickness(x_over_c=xi),
-        #                 )
-        #                 for xi in np.cosspace(0, 1, 30)
-        #             ],
-        #         )
             ],
         )
-        # self.airplane.with_control_deflections({"inner_elevon": 15.0})
         return self.airplane
 
-    def vlm_run(self, delta_inner=0, delta_outer=0):
+    def vlm_run(self, delta_inner=0, delta_outer=0, rudder=0):
         
         # Rebuild airplane with new deflections
-        self.Airplane_Geo(delta_inner, delta_outer)
+        self.Airplane_Geo(delta_inner, delta_outer, rudder)
 
-        print(f"\nRequested deflections: inner={delta_inner}°, outer={delta_outer}°")
+        print(f"\nRequested deflections: inner={delta_inner}°, outer={delta_outer}°, rudder={rudder}°")
 
         def format_aero_value(v):
             try:
@@ -198,6 +135,7 @@ class Control_Surface_Sizing():
         deflected_airplane = self.airplane.with_control_deflections({
             "inner_elevon": delta_inner,
             "outer_elevon": delta_outer,
+            "rudder": rudder
         })
         
         try:
@@ -236,8 +174,8 @@ class Control_Surface_Sizing():
         Cn_list = []
 
         for i in deflection_points:
-            self.op_point = asb.OperatingPoint(velocity=27.94, alpha=7)
-            self.vlm_run(delta_inner=i, delta_outer=0)
+            self.op_point = asb.OperatingPoint(velocity=10, alpha=7)
+            self.vlm_run(delta_inner=i, delta_outer=0, rudder=0)
             if self.coeff is not None:
                 Cm_list.append(self.coeff.get("Cm", None))
             else:
@@ -245,15 +183,24 @@ class Control_Surface_Sizing():
 
         for i in deflection_points:
             self.op_point = asb.OperatingPoint(velocity=10, alpha=7)
-            self.vlm_run(delta_inner=0, delta_outer=i)
+            self.vlm_run(delta_inner=0, delta_outer=i, rudder=0)
             if self.coeff is not None:
                 Cl_list.append(self.coeff.get("Cl", None))
             else:
                 Cl_list.append(None)
 
+        for i in deflection_points:
+            self.op_point = asb.OperatingPoint(velocity=10, alpha=7)
+            self.vlm_run(delta_inner=0, delta_outer=0, rudder=i)
+            if self.coeff is not None:
+                Cn_list.append(self.coeff.get("Cn", None))
+            else:
+                Cn_list.append(None)
+
         # print(Cm_list)
         plt.plot(deflection_points, Cm_list, color="red", label="Cm")
         plt.plot(deflection_points, Cl_list, color="blue", label="Cl")
+        plt.plot(deflection_points, Cn_list, color="green", label="Cn")
         plt.xlabel("Elevon deflection (deg)")
         plt.ylabel("Cm")
         plt.title("Control coefficient sweep")
@@ -267,9 +214,9 @@ class Control_Surface_Sizing():
 if __name__ == "__main__":
     print("Starting simulation")
     cs = Control_Surface_Sizing()
-    cs.Airplane_Geo(0, 0)
-    cs.airplane.draw()
+    # cs.Airplane_Geo(0, 0, 0)
+    # cs.airplane.draw()
     # cs.vlm_run(-20, 0)
     # cs.Airplane_Geo()
     # cs.vlm_run()
-    # cs.Control_Coefficients()
+    cs.Control_Coefficients()
