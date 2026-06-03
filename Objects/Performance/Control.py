@@ -205,6 +205,7 @@ class Control_Surface_Sizing():
             deflection_points,
             delta_inner_fn=lambda i: i,
             delta_outer_fn=lambda i: 0,
+            delta_rudder_fn=lambda i: 0,
             outer_symmetric=True,
             coeff_key="Cm",
         )
@@ -214,17 +215,19 @@ class Control_Surface_Sizing():
             deflection_points,
             delta_inner_fn=lambda i: 0,
             delta_outer_fn=lambda i: i,
+            delta_rudder_fn=lambda i: 0,
             outer_symmetric=False,
             coeff_key="Cl",
         )
 
         print("Running rudder Cn sweep (antisymmetric / yaw) …")
-        Cl_outer = self._sweep(
+        Cn_rudder = self._sweep(
             deflection_points,
             delta_inner_fn=lambda i: 0,
-            delta_outer_fn=lambda i: i,
+            delta_outer_fn=lambda i: 0,
+            delta_rudder_fn=lambda i: i,
             outer_symmetric=False,
-            coeff_key="Cl",
+            coeff_key="Cn",
         )
 
         # ── Plot ──────────────────────────────────────────────────────
@@ -245,6 +248,15 @@ class Control_Surface_Sizing():
         axes[1].axhline(0, color="black", linewidth=0.8, linestyle="--")
         axes[1].set_xlabel("Elevon deflection [deg]")
         axes[1].set_ylabel("Cl")
+        axes[1].set_title("Roll authority")
+        axes[1].legend()
+        axes[1].grid(True)
+
+        # Right: yaw sweep
+        axes[1].plot(deflection_points, Cl_outer, color="blue", label="Cn — rudder (antisym)")
+        axes[1].axhline(0, color="black", linewidth=0.8, linestyle="--")
+        axes[1].set_xlabel("Elevon deflection [deg]")
+        axes[1].set_ylabel("Cn")
         axes[1].set_title("Roll authority")
         axes[1].legend()
         axes[1].grid(True)
