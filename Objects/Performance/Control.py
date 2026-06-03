@@ -27,27 +27,27 @@ class Control_Surface_Sizing():
         self.height_winglet = 1.5
         #self.control_requirements = control_requirements
 
-    def Airplane_Geo(self, delta_inner=0, delta_outer=0):
-        ### Define the 3D geometry you want to analyze/optimize.
-        # Here, all distances are in meters and all angles are in degrees.
+    def Airplane_Geo(self):
         self.airplane = asb.Airplane(
             name="AHAPS",
-            xyz_ref=[1.8, 0, 0],  # CG location
+            xyz_ref=[1.8, 0, 0],
             wings=[
+
+                # ================= MAIN WING =================
                 asb.Wing(
                     name="Main Wing",
-                    symmetric=True,  # Should this wing be mirrored across the XZ plane?
+                    symmetric=True,
                     xsecs=[
-                        # The wing's cross ("X") sections
-                        asb.WingXSec(  # Root
-                            xyz_le=[0, 0, 0],  # Coordinates of the XSec's leading edge, relative to the wing's leading edge.
-                            chord=self.c,  # Chord length at the XSec
-                            twist=0,  # degrees
-                            airfoil=self.wing_airfoil,  # Airfoils are blended between a given XSec and the next one.
+
+                        asb.WingXSec(
+                            xyz_le=[0, 0, 0],
+                            chord=self.c,
+                            twist=0,
+                            airfoil=self.wing_airfoil,
                         ),
 
-                        asb.WingXSec(  # Mid
-                            xyz_le=[np.tan(self.wing_sweep) * self.start_inner_elevon, self.start_inner_elevon, self.dihedral], #[sweep, , dihedral]
+                        asb.WingXSec(
+                            xyz_le=[np.tan(self.wing_sweep) * self.start_inner_elevon, self.start_inner_elevon, 0],
                             chord=self.c,
                             twist=0,
                             airfoil=self.wing_airfoil,
@@ -58,12 +58,12 @@ class Control_Surface_Sizing():
                                     deflection=0.0,
                                     trailing_edge=True,
                                     symmetric=True,
-                                ),
+                                )
                             ],
                         ),
 
-                        asb.WingXSec(  # Mid
-                            xyz_le=[np.tan(self.wing_sweep) * self.elevon_connection, self.elevon_connection, self.dihedral], #[sweep, , dihedral]
+                        asb.WingXSec(
+                            xyz_le=[np.tan(self.wing_sweep) * self.elevon_connection, self.elevon_connection, 0],
                             chord=self.c,
                             twist=0,
                             airfoil=self.wing_airfoil,
@@ -74,34 +74,47 @@ class Control_Surface_Sizing():
                                     deflection=0.0,
                                     trailing_edge=True,
                                     symmetric=False,
-                                ),
+                                )
                             ],
                         ),
 
-                        asb.WingXSec(  # Mid
-                            xyz_le=[np.tan(self.wing_sweep) * self.end_outer_elevon, self.end_outer_elevon, self.dihedral], #[sweep, , dihedral]
+                        asb.WingXSec(
+                            xyz_le=[np.tan(self.wing_sweep) * self.end_outer_elevon, self.end_outer_elevon, 0],
                             chord=self.c,
                             twist=0,
                             airfoil=self.wing_airfoil,
                         ),
 
-                        asb.WingXSec(  # Tip
-                            xyz_le=[np.tan(self.wing_sweep) * self.half_span, self.half_span, self.dihedral],
+                        asb.WingXSec(
+                            xyz_le=[np.tan(self.wing_sweep) * self.half_span, self.half_span, 0],
+                            chord=self.c,
+                            twist=0,
+                            airfoil=self.wing_airfoil,
+                        ),
+                    ],
+                ),
+
+                # ================= LEFT WINGLET =================
+                asb.Wing(
+                    name="Left Winglet",
+                    symmetric=False,
+                    xsecs=[
+                        asb.WingXSec(
+                            xyz_le=[np.tan(self.wing_sweep) * self.half_span, self.half_span, 0],
                             chord=self.c,
                             twist=0,
                             airfoil=self.tail_airfoil,
                             control_surfaces=[
                                 asb.ControlSurface(
-                                    name="rudder",
-                                    hinge_point=0.75,
+                                    name="rudder_left",
+                                    hinge_point=0.7,
                                     deflection=0.0,
                                     trailing_edge=True,
-                                    symmetric=True,
-                                ),
+                                    symmetric=False,
+                                )
                             ],
                         ),
-
-                        asb.WingXSec(  # Tip
+                        asb.WingXSec(
                             xyz_le=[(np.tan(self.wing_sweep) * self.half_span)+(np.tan(self.wing_sweep) * self.height_winglet), self.half_span, self.height_winglet],
                             chord=self.c,
                             twist=0,
@@ -109,74 +122,41 @@ class Control_Surface_Sizing():
                         ),
                     ],
                 ),
-            
-                    # control_surfaces=[
-                    #     asb.ControlSurface(
-                    #         name='Inboard Elevon',
-                    #         xsec_start=0.1,  # Start at 10% of the wing span
-                    #         xsec_end=0.25,     # End at 40% of the wing span
-                    #         hinge_line_xsec=0.75,  # Hinge line at 75% chord
-                    #         deflection=10,
-                    #     ),
-                    #     asb.ControlSurface(
-                    #         name='Outboard Elevon',
-                    #         xsec_start=0.5,  # Start at 50% of the wing span
-                    #         xsec_end=0.9,     # End at 90% of the wing span
-                    #         hinge_line_xsec=0.75,  # Hinge line at 75% chord
-                    #         deflection=10,
-                    #     ),
-                    # ],
 
-                # asb.Wing(
-                #     name="Horizontal Stabilizer",
-                #     symmetric=True,
-                #     xsecs=[
-                #         asb.WingXSec(  # root
-                #             xyz_le=[0, 0, 0],
-                #             chord=0.1,
-                #             twist=-10,
-                #             airfoil=tail_airfoil,
-                #         ),
-                #         asb.WingXSec(  # tip
-                #             xyz_le=[0.02, 0.17, 0], chord=0.08, twist=-10, airfoil=tail_airfoil
-                #         ),
-                #     ],
-                # ).translate([0.6, 0, 0.06]),
-
-            #     asb.Wing(
-            #         name="Vertical Stabilizer",
-            #         symmetric=False,
-            #         xsecs=[
-            #             asb.WingXSec(
-            #                 xyz_le=[0, 0, 0],
-            #                 chord=0.1,
-            #                 twist=0,
-            #                 airfoil=tail_airfoil,
-            #             ),
-            #             asb.WingXSec(
-            #                 xyz_le=[0.04, 0, 0.15], chord=0.06, twist=0, airfoil=tail_airfoil
-            #             ),
-            #         ],
-            #     ).translate([0.6, 0, 0.07]),
-            # ],
-
-        #     fuselages=[
-        #         asb.Fuselage(
-        #             name="Fuselage",
-        #             xsecs=[
-        #                 asb.FuselageXSec(
-        #                     xyz_c=[0.8 * xi - 0.1, 0, 0.1 * xi - 0.03],
-        #                     radius=0.6 * asb.Airfoil("dae51").local_thickness(x_over_c=xi),
-        #                 )
-        #                 for xi in np.cosspace(0, 1, 30)
-        #             ],
-        #         )
+                # ================= RIGHT WINGLET =================
+                asb.Wing(
+                    name="Right Winglet",
+                    symmetric=False,
+                    xsecs=[
+                        asb.WingXSec(
+                            xyz_le=[np.tan(self.wing_sweep) * self.half_span, -self.half_span, 0],
+                            chord=self.c,
+                            twist=0,
+                            airfoil=self.tail_airfoil,
+                            control_surfaces=[
+                                asb.ControlSurface(
+                                    name="rudder_right",
+                                    hinge_point=0.7,
+                                    deflection=0.0,
+                                    trailing_edge=True,
+                                    symmetric=False,
+                                )
+                            ],
+                        ),
+                        asb.WingXSec(
+                            xyz_le=[(np.tan(self.wing_sweep) * self.half_span)+(np.tan(self.wing_sweep) * self.height_winglet), -self.half_span, self.height_winglet],
+                            chord=self.c,
+                            twist=0,
+                            airfoil=self.tail_airfoil,
+                        ),
+                    ],
+                ),
             ],
         )
-        # self.airplane.with_control_deflections({"inner_elevon": 15.0})
+
         return self.airplane
 
-    def vlm_run(self, delta_inner=0, delta_outer=0):
+    def vlm_run(self, delta_inner=0, delta_outer=0, delta_rudder=0):
         
         # Rebuild airplane with new deflections
         self.Airplane_Geo(delta_inner, delta_outer)
@@ -198,6 +178,8 @@ class Control_Surface_Sizing():
         deflected_airplane = self.airplane.with_control_deflections({
             "inner_elevon": delta_inner,
             "outer_elevon": delta_outer,
+            "rudder_left": delta_rudder,
+            "rudder_right": -delta_rudder,
         })
         
         try:
@@ -267,7 +249,7 @@ class Control_Surface_Sizing():
 if __name__ == "__main__":
     print("Starting simulation")
     cs = Control_Surface_Sizing()
-    cs.Airplane_Geo(0, 0)
+    cs.Airplane_Geo()
     cs.airplane.draw()
     # cs.vlm_run(-20, 0)
     # cs.Airplane_Geo()
