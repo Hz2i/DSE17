@@ -64,13 +64,8 @@ def size_propeller_diameter(J_target, airfoil_name, total_thrust_required, num_e
             cl_val = cl_interp(alpha_guess)
             phi_guess_rad = np.radians(beta_deg[i] - alpha_guess)
             
-            # Prandtl Tip Loss Calculation
-            f_prandtl = (Nb / 2.0) * (R_ref - r_abs_ref[i]) / (R_ref * np.sin(phi_guess_rad))
-            f_prandtl = np.clip(f_prandtl, 0.0, 100.0)
-            F = (2.0 / np.pi) * np.arccos(np.clip(np.exp(-f_prandtl), 0.0, 1.0))
-            
             lhs = cl_val * (Nb * b_ref[i]) / (2 * np.pi * r_abs_ref[i])
-            rhs = 4 * F * np.sin(phi_guess_rad) * np.tan(phi_guess_rad - phi_0_rad[i])
+            rhs = 4 * np.sin(phi_guess_rad) * np.tan(phi_guess_rad - phi_0_rad[i])
             return lhs - rhs
         
         try:
@@ -141,7 +136,7 @@ def size_propeller_diameter(J_target, airfoil_name, total_thrust_required, num_e
 # !!!!!!SPECS!!!!!!!
 # ===========================================================================
 sizing_results = size_propeller_diameter(
-    J_target=0.76, 
+    J_target=0.68, 
     airfoil_name="SD7037", 
     total_thrust_required=52.0, 
     num_engines=4
