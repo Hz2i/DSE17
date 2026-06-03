@@ -100,8 +100,15 @@ for name in airfoil_names:
                 # vector projection
                 velocity_term = (one_plus_a**2) / (np.sin(true_phi_rad)**2)
 
-                dT_dr[i] = b[i] * velocity_term * (cl_local * np.cos(true_phi_rad) - cd_local * np.sin(true_phi_rad))
-                dM_dr[i] = b[i] * velocity_term * (cl_local * np.sin(true_phi_rad) + cd_local * np.cos(true_phi_rad)) * r_abs[i]
+
+                # local tip loss factor for torque and thrust
+                f_prandtl = (Nb / 2.0) * (R_abs - r_abs[i]) / (R_abs * np.sin(true_phi_rad))
+                f_prandtl = np.clip(f_prandtl, 0.0, 100.0)
+                F_local = (2.0 / np.pi) * np.arccos(np.clip(np.exp(-f_prandtl), 0.0, 1.0))
+
+
+                dT_dr[i] = b[i] * velocity_term * (cl_local * np.cos(true_phi_rad) - cd_local * np.sin(true_phi_rad)) * F_local
+                dM_dr[i] = b[i] * velocity_term * (cl_local * np.sin(true_phi_rad) + cd_local * np.cos(true_phi_rad)) * r_abs[i] * F_local
 
             except (ValueError, ZeroDivisionError):
                 # if stall or numerical issue
