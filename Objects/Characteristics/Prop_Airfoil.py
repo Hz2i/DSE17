@@ -24,7 +24,7 @@ airfoil_names = ["S1223", "NACA4412", "E387", "SD7037", "FX63137"]
 alphas_sweep = np.linspace(-30, 30, 250)
 
 # radial geometry and blade distributions
-r = np.linspace(0.25, 0.95, 100)  # Normalized radius (r/R)
+r = np.linspace(0.1, 1, 100)  # Normalized radius (r/R)
 r_abs = r * R_abs                # Absolute radius in meters
 beta_07 = 20.5                   # Blade pitch setting at 70% radius (degrees)
 
