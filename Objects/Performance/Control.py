@@ -28,7 +28,7 @@ class Control_Surface_Sizing():
     # ------------------------------------------------------------------
     # Geometry
     # ------------------------------------------------------------------
-    def Airplane_Geo(self, delta_inner=0, delta_outer=0, outer_symmetric=True):
+    def Airplane_Geo(self, delta_inner=0, delta_outer=0, delta_rudder=0, outer_symmetric=True):
         """
         Build the airplane geometry.
 
@@ -157,16 +157,16 @@ class Control_Surface_Sizing():
     # ------------------------------------------------------------------
     # VLM / AeroBuildup runner
     # ------------------------------------------------------------------
-    def vlm_run(self, delta_inner=0, delta_outer=0, outer_symmetric=True, verbose=False):
+    def vlm_run(self, delta_inner=0, delta_outer=0, delta_rudder=0, outer_symmetric=True, verbose=False):
         """
         Rebuild the geometry and run AeroBuildup.
 
         Returns the aero dict (also stored in self.coeff).
         """
-        self.Airplane_Geo(delta_inner, delta_outer, outer_symmetric)
+        self.Airplane_Geo(delta_inner, delta_outer, delta_rudder, outer_symmetric)
 
         if verbose:
-            print(f"\ndeflections: inner={delta_inner}°  outer={delta_outer}°  "
+            print(f"\ndeflections: inner={delta_inner}°  outer={delta_outer}°  rudder={delta_rudder}"
                   f"outer_symmetric={outer_symmetric}")
 
         deflected = self.airplane.with_control_deflections({
@@ -192,7 +192,7 @@ class Control_Surface_Sizing():
     # ------------------------------------------------------------------
     # Sweep helper
     # ------------------------------------------------------------------
-    def _sweep(self, deflection_points, delta_inner_fn, delta_outer_fn,
+    def _sweep(self, deflection_points, delta_inner_fn, delta_outer_fn, delta_rudder_fn,
                outer_symmetric, coeff_key):
         """
         Generic deflection sweep.  Returns a list of scalar coefficient values.
@@ -202,6 +202,7 @@ class Control_Surface_Sizing():
             aero = self.vlm_run(
                 delta_inner=delta_inner_fn(i),
                 delta_outer=delta_outer_fn(i),
+                delta_rudder=delta_rudder_fn(i),
                 outer_symmetric=outer_symmetric,
             )
             val = aero.get(coeff_key, None) if aero is not None else None
@@ -238,6 +239,15 @@ class Control_Surface_Sizing():
         )
 
         print("Running outer elevon Cl sweep (antisymmetric / roll) …")
+        Cl_outer = self._sweep(
+            deflection_points,
+            delta_inner_fn=lambda i: 0,
+            delta_outer_fn=lambda i: i,
+            outer_symmetric=False,
+            coeff_key="Cl",
+        )
+
+        print("Running rudder Cn sweep (antisymmetric / yaw) …")
         Cl_outer = self._sweep(
             deflection_points,
             delta_inner_fn=lambda i: 0,
