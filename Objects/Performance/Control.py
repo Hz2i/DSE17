@@ -15,6 +15,7 @@ class Control_Surface_Sizing():
         self.b = 30.08                # full span [m]
         self.c = 1.203                # chord [m]
         self.dihedral = 0.0
+        self.height_winglet = 4      # height of winglet above main wing [m]
 
         self.half_span = self.b / 2
         self.start_inner_elevon = self.half_span * 0.1
@@ -118,6 +119,34 @@ class Control_Surface_Sizing():
                             chord=self.c,
                             twist=0,
                             airfoil=self.wing_airfoil,
+                        ),
+                    ],
+                ),
+                               # ================= LEFT WINGLET =================
+                asb.Wing(
+                    name="Left Winglet",
+                    symmetric=False,
+                    xsecs=[
+                        asb.WingXSec(
+                            xyz_le=[np.tan(self.wing_sweep) * self.half_span, self.half_span, 0],
+                            chord=1.5*self.c,
+                            twist=0,
+                            airfoil=self.tail_airfoil,
+                            control_surfaces=[
+                                asb.ControlSurface(
+                                    name="rudder_left",
+                                    hinge_point=0.6,
+                                    deflection=0.0,
+                                    trailing_edge=True,
+                                    symmetric=False,
+                                )
+                            ],
+                        ),
+                        asb.WingXSec(
+                            xyz_le=[(np.tan(self.wing_sweep) * self.half_span)+(np.tan(self.wing_sweep) * self.height_winglet), self.half_span, self.height_winglet],
+                            chord=1.5*self.c,
+                            twist=0,
+                            airfoil=self.tail_airfoil,
                         ),
                     ],
                 ),
@@ -255,4 +284,6 @@ class Control_Surface_Sizing():
 if __name__ == "__main__":
     print("Starting simulation")
     cs = Control_Surface_Sizing()
+    # cs.airplane_Geo()
+    # cs.vlm_draw()
     cs.Control_Coefficients()
