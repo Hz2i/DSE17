@@ -1,5 +1,4 @@
 import aerosandbox as asb
-from Objects.Characteristics.Airframe import Airframe
 import aerosandbox.numpy as np
 from aerosandbox.aerodynamics.aero_3D.test_aero_3D.geometries.conventional import wing_airfoil, tail_airfoil
 
@@ -20,6 +19,7 @@ class Control_Surface_Sizing():
         self.start_inner_elevon = (self.b/2)*0.1
         self.elevon_connection = (self.b/2)*0.5
         self.end_outer_elevon = (self.b/2)*0.9
+        self.half_span = self.b/2
         #self.control_requirements = control_requirements
 
     def Airplane_Geo(self):
@@ -66,7 +66,7 @@ class Control_Surface_Sizing():
                                     name="outer_elevon",
                                     hinge_point=0.75,
                                     deflection=0.0,
-                                    symmetric=True,
+                                    symmetric=False,
                                 ),
                             ],
                         ),
@@ -79,7 +79,7 @@ class Control_Surface_Sizing():
                         ),
 
                         asb.WingXSec(  # Tip
-                            xyz_le=[np.tan(self.wing_sweep) * Airframe.b, self.b, self.dihedral],
+                            xyz_le=[np.tan(self.wing_sweep) * self.half_span, self.half_span, self.dihedral],
                             chord=self.c,
                             twist=0,
                             airfoil=wing_airfoil,
@@ -150,6 +150,7 @@ class Control_Surface_Sizing():
         #         )
             ],
         )
+        # self.airplane.with_control_deflections({"inner_elevon": 15.0})
         return self.airplane
 
     def vlm_run(self):
@@ -163,8 +164,14 @@ class Control_Surface_Sizing():
 
         # vlm.draw(show_kwargs=dict(jupyter_backend="static"))
 
-    def Control_Check(self):
+#    def Control_Check(self):
+#       control_surface = Control_Surface_Sizing()
+#       control_surface.Airplane_Geo()
+#       control_surface.vlm_run()
 
-# control_surface = Control_Surface_Sizing()
-# control_surface.Airplane_Geo()
-# control_surface.vlm_run()
+if __name__ == "__main__":
+    print("Starting simulation")
+
+    cs = Control_Surface_Sizing()
+    cs.Airplane_Geo()
+    cs.vlm_run()
