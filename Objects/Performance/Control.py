@@ -126,7 +126,7 @@ class Control_Surface_Sizing():
                                # ================= LEFT WINGLET =================
                 asb.Wing(
                     name="Left Winglet",
-                    symmetric=False,
+                    symmetric=True,
                     xsecs=[
                         asb.WingXSec(
                             xyz_le=[np.tan(self.wing_sweep) * self.half_span, self.half_span, 0],
@@ -296,5 +296,5 @@ if __name__ == "__main__":
     print("Starting simulation")
     cs = Control_Surface_Sizing()
     cs.Airplane_Geo()
-    cs.airplane_draw()
+    cs.airplane.draw()
     # cs.Control_Coefficients()
