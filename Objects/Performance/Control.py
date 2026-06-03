@@ -10,6 +10,7 @@ class Control_Surface_Sizing():
         self.coeff = None
         self.airplane = None
         self.wing_airfoil = asb.Airfoil("mh91")
+        self.tail_airfoil = asb.Airfoil("naca0012")
 
         self.wing_sweep = 0.2618      # radians
         self.b = 30.08                # full span [m]
@@ -294,6 +295,6 @@ class Control_Surface_Sizing():
 if __name__ == "__main__":
     print("Starting simulation")
     cs = Control_Surface_Sizing()
-    # cs.airplane_Geo()
-    # cs.vlm_draw()
-    cs.Control_Coefficients()
+    cs.Airplane_Geo()
+    cs.airplane_draw()
+    # cs.Control_Coefficients()
