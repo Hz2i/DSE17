@@ -120,6 +120,9 @@ def size_propeller_diameter(J_target, airfoil_name, total_thrust_required, num_e
     C_T = thrust_target_per_prop / (rho * (n_actual**2) * (D_actual**4))
     C_P = Power_actual / (rho * (n_actual**3) * (D_actual**5))
     efficiency = (J_target * C_T) / C_P
+
+    # Compute tip mach number
+    tip_mach = np.sqrt((v_inf**2) + (omega_actual * (D_actual / 2.0))**2) / speed_of_sound # eq 35 from Chinese paper
     
     return {
         'Diameter (m)': D_actual,
@@ -130,7 +133,8 @@ def size_propeller_diameter(J_target, airfoil_name, total_thrust_required, num_e
         'Total Aircraft Power (kW)': (Power_actual * num_engines) / 1000.0,
         'C_T': C_T,
         'C_P': C_P,
-        'Efficiency (%)': efficiency * 100.0
+        'Efficiency (%)': efficiency * 100.0,
+        'Tip Mach Number': tip_mach
     }
 
 # ===========================================================================
