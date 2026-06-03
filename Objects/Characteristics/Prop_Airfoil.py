@@ -16,7 +16,7 @@ mach_number = v_inf / speed_of_sound
 
 # Propeller Constants
 Nb = 2            # Number of blades
-D = 2           # Propeller Diameter (m)
+D = 2.0           # Propeller Diameter (m)
 R_abs = D / 2.0   # Tip radius (m)
 
 airfoil_names = ["S1223", "NACA4412", "E387", "SD7037", "FX63137"] 
