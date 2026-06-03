@@ -10,10 +10,10 @@ import warnings
 warnings.filterwarnings("ignore")
 
 # ===========================================================================
-# 1. FIXED FLIGHT ENVIRONMENT (Table 1 & 2)
+# same initialization as Prop_Airfoil.py but wrapped in a function for reuse
 # ===========================================================================
 v_inf = 27.6      # Freestream velocity in m/s
-altitude = 20000  # 20 km operating altitude for HAPS
+altitude = 18288  # 60,000 ft operating altitude for HAPS
 atmo = asb.Atmosphere(altitude=altitude)
 rho = atmo.density() 
 speed_of_sound = atmo.speed_of_sound()
@@ -24,9 +24,6 @@ Nb = 2            # Number of blades
 beta_07 = 20.5    # Blade pitch setting at 70% radius (degrees)
 r = np.linspace(0.10, 1.0, 100) # Active aerodynamic span grid (r/R)
 
-# ===========================================================================
-# 2. PROPELLER DIAMETER SIZING FUNCTION
-# ===========================================================================
 def size_propeller_diameter(J_target, airfoil_name, total_thrust_required, num_engines):
     """
     Analytically sizes the propeller diameter to meet a target thrust requirement
@@ -40,13 +37,13 @@ def size_propeller_diameter(J_target, airfoil_name, total_thrust_required, num_e
     airfoil = asb.Airfoil(airfoil_name)
     aero_data = airfoil.get_aero_from_neuralfoil(
         alpha=alphas_sweep,
-        Re=200_000,
+        Re=100_000,
         mach=mach_number
     )
     cl_interp = interp1d(alphas_sweep, aero_data['CL'], kind='cubic', bounds_error=False, fill_value="extrapolate")
     cd_interp = interp1d(alphas_sweep, aero_data['CD'], kind='cubic', bounds_error=False, fill_value="extrapolate")
 
-    # --- STEP B: Evaluate Performance at a Reference Diameter (D = 1.0 m) ---
+    # --- Performance at ref 2.0 m diameter ---
     D_ref = 2.0
     R_ref = D_ref / 2.0
     r_abs_ref = r * R_ref
@@ -83,17 +80,18 @@ def size_propeller_diameter(J_target, airfoil_name, total_thrust_required, num_e
             cl_local = cl_interp(true_alpha_deg)
             cd_local = cd_interp(true_alpha_deg)
             
-            # Recompute local tip loss factor for element force reduction
-            f_prandtl = (Nb / 2.0) * (R_ref - r_abs_ref[i]) / (R_ref * np.sin(true_phi_rad))
-            f_prandtl = np.clip(f_prandtl, 0.0, 100.0)
-            F_local = (2.0 / np.pi) * np.arccos(np.clip(np.exp(-f_prandtl), 0.0, 1.0))
             
             # Compute Momentum parameter
             K = (cl_local * Nb * b_ref[i] * np.cos(true_phi_rad)) / (8 * np.pi * r_abs_ref[i] * (np.sin(true_phi_rad)**2))
-            K_effective = np.clip(K / np.max([F_local, 1e-5]), -0.5, 0.5)
+            K_effective = np.clip(K ,-0.5, 0.5)
             one_plus_a = 1.0 / (1.0 - K_effective)
             
             velocity_term = (one_plus_a**2) / (np.sin(true_phi_rad)**2)
+
+            # local tip loss factor for torque and thrust
+            f_prandtl = (Nb / 2.0) * (R_ref - r_abs_ref[i]) / (R_ref * np.sin(true_phi_rad))
+            f_prandtl = np.clip(f_prandtl, 0.0, 100.0)
+            F_local = (2.0 / np.pi) * np.arccos(np.clip(np.exp(-f_prandtl), 0.0, 1.0))
             
             # Cartesian integration elements
             dT_dr_ref[i] = b_ref[i] * velocity_term * (cl_local * np.cos(true_phi_rad) - cd_local * np.sin(true_phi_rad)) * F_local
@@ -106,15 +104,15 @@ def size_propeller_diameter(J_target, airfoil_name, total_thrust_required, num_e
     T_ref = F0_ref * trapezoid(dT_dr_ref, r_abs_ref)
     M_ref = F0_ref * trapezoid(dM_dr_ref, r_abs_ref)
     
-    # --- STEP C: Apply Analytical Scaling Law ---
+    # --- Scaling according to d equations ---
     D_actual = D_ref * np.sqrt(thrust_target_per_prop / T_ref)
     
-    # --- STEP D: Deduce Matching Operational Parameters ---
+    # --- Scaling according to n equations ----
     n_actual = v_inf / (D_actual * J_target)
     rpm_actual = n_actual * 60.0
     omega_actual = 2 * np.pi * n_actual
-    
-    # FIX: Torque scales with D^3 under fixed J and V_inf constraints
+
+    # --- Scaling according to M equations ---
     M_actual = M_ref * (D_actual / D_ref)**3
     Power_actual = M_actual * omega_actual
     
@@ -136,7 +134,7 @@ def size_propeller_diameter(J_target, airfoil_name, total_thrust_required, num_e
     }
 
 # ===========================================================================
-# 3. RUN THE FIXED SIZING SPECIFICATION
+# !!!!!!SPECS!!!!!!!
 # ===========================================================================
 sizing_results = size_propeller_diameter(
     J_target=0.76, 

@@ -6,9 +6,9 @@ from scipy.integrate import trapezoid
 from scipy.interpolate import interp1d
 from scipy.optimize import brentq
 
-# SETUP FROM PAPER
+# SPEED + ALTITUDE
 v_inf = 27.6  # Freestream velocity in m/s
-altitude = 20000  # 20 km altitude for HAPS
+altitude = 18288  # 60,000 ft operating altitude for HAPS
 atmo = asb.Atmosphere(altitude=altitude)
 rho = atmo.density() # (kg/m^3)
 speed_of_sound = atmo.speed_of_sound()
@@ -44,7 +44,7 @@ for name in airfoil_names:
         airfoil = asb.Airfoil(name)
         aero_data = airfoil.get_aero_from_neuralfoil(
             alpha=alphas_sweep,
-            Re=200_000,
+            Re=100_000,
             mach=mach_number
         )
 
