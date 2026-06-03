@@ -1,10 +1,12 @@
 import aerosandbox as asb
 import aerosandbox.numpy as np
+from aerosandbox import Airplane
 from aerosandbox.aerodynamics.aero_3D.test_aero_3D.geometries.conventional import wing_airfoil, tail_airfoil
 
 
 class Control_Surface_Sizing():
     def __init__(self):
+        self.coeff = None
         self.airplane = None
         self.wing_airfoil = asb.Airfoil("sd7037")
         self.tail_airfoil = asb.Airfoil("naca0010")
@@ -164,10 +166,18 @@ class Control_Surface_Sizing():
 
         # vlm.draw(show_kwargs=dict(jupyter_backend="static"))
 
+        self.coeff = aero
+        return self.coeff
+
+    def Control_Coefficients(self):
+        ddeflect = 5
+        deflection_points = np.arange(0,20+ddeflect, ddeflect)
+        for i in deflection_points:
+            cs.Airplane_Geo()
+            cs.vlm_run()
+            print(self.coeff["Cla"])
+
 #    def Control_Check(self):
-#       control_surface = Control_Surface_Sizing()
-#       control_surface.Airplane_Geo()
-#       control_surface.vlm_run()
 
 if __name__ == "__main__":
     print("Starting simulation")
@@ -175,3 +185,4 @@ if __name__ == "__main__":
     cs = Control_Surface_Sizing()
     cs.Airplane_Geo()
     cs.vlm_run()
+    cs.Control_Coefficients()
