@@ -6,10 +6,10 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from objects_detailed.Characteristics.Airframe import airframe
-from objects.Characteristics.GeneralSubsystems import ComputerSystem, CommunicationSystem, FlightConditionsSystem, PayloadSystem, ControlSystem
-from objects.Characteristics.PowerSystem_sizing import power_storage, power_generation
-from objects.Characteristics.PropulsionSystem import PropulsionSystem
-from objects.Constants import Constants
+from objects_detailed.Characteristics.GeneralSubsystems import ComputerSystem, CommunicationSystem, FlightConditionsSystem, PayloadSystem, ControlSystem
+from objects_detailed.Characteristics.PowerSystem_sizing import power_storage, power_generation
+from objects_detailed.Characteristics.PropulsionSystem import PropulsionSystem
+from objects_detailed.Constants import Constants
 
 
 # Note for Stefan: REFACTOR CODE TO FIT NEW FLOW DIAGRAM
