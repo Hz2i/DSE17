@@ -165,26 +165,19 @@ class Control_Surface_Sizing():
         self.Airplane_Geo(delta_inner, delta_outer)
 
         print(f"\nRequested deflections: inner={delta_inner}°, outer={delta_outer}°")
-        
-        # ===== VLM Analysis (doesn't model control-surface effects) =====
-        vlm = asb.VortexLatticeMethod(
-            airplane=self.airplane,
-            op_point=self.op_point,
-        )
-        aero_vlm = vlm.run_with_stability_derivatives()
-        print("\nVLM results:")
-        for k, v in aero_vlm.items():
+
+        def format_aero_value(v):
             try:
-                # Try printing scalars nicely
-                if hasattr(v, "shape") and getattr(v, "shape") != ():
-                    print(f"  {k} : array shape {np.asarray(v).shape}")
-                else:
-                    print(f"  {k} : {float(v):.6f}")
+                arr = np.asarray(v)
             except Exception:
-                print(f"  {k} : {v}")
-        
+                return v
+            if arr.shape == ():
+                return float(arr)
+            if arr.size == 1:
+                return float(arr.flat[0])
+            return arr.tolist() if arr.ndim <= 2 else arr
+
         # ===== AeroBuildup Analysis (DOES model control-surface effects) =====
-        # Create deflected airplane copy for AeroBuildup
         deflected_airplane = self.airplane.with_control_deflections({
             "inner_elevon": delta_inner,
             "outer_elevon": delta_outer,
@@ -196,55 +189,47 @@ class Control_Surface_Sizing():
                 op_point=self.op_point,
             )
             aero_ab = ab.run_with_stability_derivatives()
-            cm_ab = aero_ab.get('Cm', None)
+            cm_ab = aero_ab.get("Cm", None)
             if cm_ab is not None:
-                # Handle numpy array: flatten and get first scalar
-                cm_ab_scalar = float(np.asarray(cm_ab).flat[0])
+                cm_ab_scalar = format_aero_value(cm_ab)
                 print(f"AeroBuildup Cm = {cm_ab_scalar:.6f}")
             else:
                 print("AeroBuildup Cm = N/A")
+
             print("\nAeroBuildup results:")
             for k, v in aero_ab.items():
                 try:
-                    if hasattr(v, "shape") and getattr(v, "shape") != ():
-                        print(f"  {k} : array shape {np.asarray(v).shape}")
-                    else:
-                        print(f"  {k} : {float(v):.6f}")
+                    print(f"  {k} : {format_aero_value(v)}")
                 except Exception:
                     print(f"  {k} : {v}")
-        except Exception as e:
+        except Exception:
             import traceback
             print(f"AeroBuildup failed with error:")
             traceback.print_exc()
             aero_ab = None
-    
-        # Return both results for programmatic consumption
-        return {"vlm": aero_vlm, "aerobuildup": aero_ab}
 
-        self.coeff = aero
-        return self.coeff
+        self.coeff = aero_ab
+        return aero_ab
 
     def Control_Coefficients(self):
         d_deflect = 5
-        deflection_points = np.arange(-20,20+d_deflect, d_deflect)
-        coeff_list = []
-        Cm_list = []
+        deflection_points = np.arange(-20, 20 + d_deflect, d_deflect)
         Cl_list = []
-        Cn_list = []
 
         for i in deflection_points:
-            cs.Airplane_Geo()
-            cs.vlm_run()
-            Cl_list.append(self.coeff["Cl"])
-        print(Cl_list[3])
+            self.vlm_run(delta_inner=i, delta_outer=i)
+            if self.coeff is not None:
+                Cl_list.append(self.coeff.get("Cl", None))
+            else:
+                Cl_list.append(None)
 
+        print(Cl_list)
         plt.plot(deflection_points, Cl_list)
+        plt.xlabel("Elevon deflection (deg)")
+        plt.ylabel("Cl")
+        plt.title("Control coefficient sweep")
+        plt.grid(True)
         plt.show()
-
-        #     if i == 0:
-        #         coeff_list_size = len(self.coeff)
-        #     coeff_list.append(self.coeff)
-        # print(coeff_list)
 
         # Clda = self.coeff["
 
@@ -255,8 +240,8 @@ class Control_Surface_Sizing():
 if __name__ == "__main__":
     print("Starting simulation")
     cs = Control_Surface_Sizing()
-    cs.Airplane_Geo(0, 0)
+    #cs.Airplane_Geo(0, 0)
     cs.vlm_run(-20, -20)
     # cs.Airplane_Geo()
     # cs.vlm_run()
-    cs.Control_Coefficients()
+    #cs.Control_Coefficients()
