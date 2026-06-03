@@ -163,7 +163,7 @@ class Control_Surface_Sizing():
     # ------------------------------------------------------------------
     # Sweep helper
     # ------------------------------------------------------------------
-    def _sweep(self, deflection_points, delta_inner_fn, delta_outer_fn,
+    def _sweep(self, deflection_points, delta_inner_fn, delta_outer_fn, delta_rudder_fn,
                outer_symmetric, coeff_key):
         """
         Generic deflection sweep.  Returns a list of scalar coefficient values.
@@ -173,6 +173,7 @@ class Control_Surface_Sizing():
             aero = self.vlm_run(
                 delta_inner=delta_inner_fn(i),
                 delta_outer=delta_outer_fn(i),
+                delta_rudder=delta_rudder_fn(i),
                 outer_symmetric=outer_symmetric,
             )
             val = aero.get(coeff_key, None) if aero is not None else None
