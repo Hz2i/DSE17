@@ -27,7 +27,9 @@ class Control_Surface_Sizing():
         self.height_winglet = 1.5
         #self.control_requirements = control_requirements
 
-    def Airplane_Geo(self):
+    def Airplane_Geo(self, delta_inner=0, delta_outer=0, rudder=0):
+        ### Define the 3D geometry you want to analyze/optimize.
+        # Here, all distances are in meters and all angles are in degrees.
         self.airplane = asb.Airplane(
             name="AHAPS",
             xyz_ref=[1.8, 0, 0],
@@ -159,9 +161,9 @@ class Control_Surface_Sizing():
     def vlm_run(self, delta_inner=0, delta_outer=0, delta_rudder=0):
         
         # Rebuild airplane with new deflections
-        self.Airplane_Geo(delta_inner, delta_outer)
+        self.Airplane_Geo(delta_inner, delta_outer, rudder)
 
-        print(f"\nRequested deflections: inner={delta_inner}°, outer={delta_outer}°")
+        print(f"\nRequested deflections: inner={delta_inner}°, outer={delta_outer}°, rudder={rudder}°")
 
         def format_aero_value(v):
             try:
@@ -218,8 +220,8 @@ class Control_Surface_Sizing():
         Cn_list = []
 
         for i in deflection_points:
-            self.op_point = asb.OperatingPoint(velocity=27.94, alpha=7)
-            self.vlm_run(delta_inner=i, delta_outer=0)
+            self.op_point = asb.OperatingPoint(velocity=10, alpha=7)
+            self.vlm_run(delta_inner=i, delta_outer=0, rudder=0)
             if self.coeff is not None:
                 Cm_list.append(self.coeff.get("Cm", None))
             else:
@@ -227,15 +229,24 @@ class Control_Surface_Sizing():
 
         for i in deflection_points:
             self.op_point = asb.OperatingPoint(velocity=10, alpha=7)
-            self.vlm_run(delta_inner=0, delta_outer=i)
+            self.vlm_run(delta_inner=0, delta_outer=i, rudder=0)
             if self.coeff is not None:
                 Cl_list.append(self.coeff.get("Cl", None))
             else:
                 Cl_list.append(None)
 
+        for i in deflection_points:
+            self.op_point = asb.OperatingPoint(velocity=10, alpha=7)
+            self.vlm_run(delta_inner=0, delta_outer=0, rudder=i)
+            if self.coeff is not None:
+                Cn_list.append(self.coeff.get("Cn", None))
+            else:
+                Cn_list.append(None)
+
         # print(Cm_list)
         plt.plot(deflection_points, Cm_list, color="red", label="Cm")
         plt.plot(deflection_points, Cl_list, color="blue", label="Cl")
+        plt.plot(deflection_points, Cn_list, color="green", label="Cn")
         plt.xlabel("Elevon deflection (deg)")
         plt.ylabel("Cm")
         plt.title("Control coefficient sweep")
@@ -254,4 +265,4 @@ if __name__ == "__main__":
     # cs.vlm_run(-20, 0)
     # cs.Airplane_Geo()
     # cs.vlm_run()
-    # cs.Control_Coefficients()
+    cs.Control_Coefficients()
