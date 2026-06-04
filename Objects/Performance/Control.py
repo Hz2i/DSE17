@@ -11,7 +11,7 @@ class Control_Surface_Sizing():
     def __init__(self):
         self.coeff = None
         self.airplane = None
-        self.wing_airfoil = asb.Airfoil("mh91")
+        self.wing_airfoil = asb.Airfoil("mh60")
         self.tail_airfoil = asb.Airfoil("naca0012")
 
         self.wing_sweep = 0.2618      # radians
@@ -509,7 +509,20 @@ class Control_Surface_Sizing():
                 if q < q_req:
                     self.q_check = False
                     print("Final elevator fraction:", self.inner_elevon_frac+d_size_elevator)
+                    #cs.airplane.draw()
+
+        r, r_req = self.Yaw_Check()
+        d_size_rudder = 0.05
+        if r > r_req:
+            while self.r_check:
+                print("Winglet height:", self.height_winglet)
+                self.height_winglet -= d_size_rudder
+                r, r_req = self.Yaw_Check()
+                if r < r_req:
+                    self.r_check = False
+                    print("Final winglet height:", self.height_winglet + d_size_rudder)
                     cs.airplane.draw()
+
 
 
 
