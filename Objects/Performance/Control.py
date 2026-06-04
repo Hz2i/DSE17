@@ -45,7 +45,7 @@ class Control_Surface_Sizing():
         """
         self.airplane = asb.Airplane(
             name="AHAPS",
-            xyz_ref=[0.45, 0, 0],   # CG at ~37% chord — adjust to your actual CG
+            xyz_ref=[1.1, 0, 0],   # CG at ~37% chord — adjust to your actual CG
             wings=[
                 asb.Wing(
                     name="Main Wing",
@@ -314,7 +314,8 @@ class Control_Surface_Sizing():
 
         # ── Plot ──────────────────────────────────────────────────────
         fig, axes = plt.subplots(2, 3, figsize=(12, 5))
-        fig.suptitle("Elevon Control Effectiveness  (V=27.94 m/s, α=7°)")
+        fig.suptitle("Elevon Control Effectiveness  (V="+str(self.op_point.velocity)+"m/s, α="+str(self.op_point.alpha)+"°)")
+        print("Elevon Control Effectiveness  (V=", str(self.op_point.velocity), "m/s, α=", str(self.op_point.alpha),"°)")
 
         # Left: pitch sweeps
         axes[0, 0].plot(deflection_points, Cm_inner, color="red",   label="Cm — inner elevon (sym)")
@@ -322,7 +323,7 @@ class Control_Surface_Sizing():
         axes[0, 0].set_xlabel("Elevon deflection [deg]")
         axes[0, 0].set_ylabel("Cm")
         axes[0, 0].set_title("Pitch authority")
-        axes[0, 0].legend()
+        # axes[0, 0].legend()
         axes[0, 0].grid(True)
 
         axes[1, 0].plot(deflection_points, x_np_inner)
@@ -330,7 +331,7 @@ class Control_Surface_Sizing():
         axes[1, 0].set_xlabel("Elevon deflection [deg]")
         axes[1, 0].set_ylabel("x_np")
         axes[1, 0].set_title("x_np for pitch")
-        axes[1, 0].legend()
+        # axes[1, 0].legend()
         axes[1, 0].grid(True)
 
         # Right: roll sweep
@@ -339,7 +340,7 @@ class Control_Surface_Sizing():
         axes[0, 1].set_xlabel("Elevon deflection [deg]")
         axes[0, 1].set_ylabel("Cl")
         axes[0, 1].set_title("Roll authority")
-        axes[0, 1].legend()
+        # axes[0, 1].legend()
         axes[0, 1].grid(True)
 
         axes[1, 1].plot(deflection_points, x_np_outer)
@@ -347,7 +348,7 @@ class Control_Surface_Sizing():
         axes[1, 1].set_xlabel("Elevon deflection [deg]")
         axes[1, 1].set_ylabel("x_np")
         axes[1, 1].set_title("x_np for roll")
-        axes[1, 1].legend()
+        # axes[1, 1].legend()
         axes[1, 1].grid(True)
 
         # Right: yaw sweep
@@ -356,7 +357,7 @@ class Control_Surface_Sizing():
         axes[0, 2].set_xlabel("Elevon deflection [deg]")
         axes[0, 2].set_ylabel("Cn")
         axes[0, 2].set_title("Yaw authority")
-        axes[0, 2].legend()
+        # axes[0, 2].legend()
         axes[0, 2].grid(True)
 
         axes[1, 2].plot(deflection_points, x_np_rudder)
@@ -364,7 +365,7 @@ class Control_Surface_Sizing():
         axes[1, 2].set_xlabel("Elevon deflection [deg]")
         axes[1, 2].set_ylabel("x_np")
         axes[1, 2].set_title("x_np for yaw")
-        axes[1, 2].legend()
+        # axes[1, 2].legend()
         axes[1, 2].grid(True)
 
         plt.tight_layout()
@@ -430,6 +431,8 @@ class Control_Surface_Sizing():
         print(p, "rad/s")
         r = Cndr/Cnr*(np.radians(deflection_points[np.size(deflection_points)-1]))*2*self.op_point.velocity/self.b
         print(r, "rad/s")
+
+        return q, p, r
 
     # def Control_Sizing(self):
 
