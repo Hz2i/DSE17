@@ -20,7 +20,7 @@ class Control_Surface_Sizing():
         self.dihedral = 0.0
         self.inner_elevon_frac = 0.4
         self.outer_elevon_frac = 0.4
-        self.height_winglet = None    # height of winglet above main wing [m]
+        self.height_winglet = 4    # height of winglet above main wing [m]
 
         self.half_span = self.b / 2
         self.start_inner_elevon = None
@@ -29,6 +29,14 @@ class Control_Surface_Sizing():
 
         # Operating point (can be overridden before calling vlm_run)
         self.op_point = asb.OperatingPoint(velocity=27.94, alpha=7)
+
+        self.q_check = True
+        self.p_check = True
+        self.r_check = True
+
+        self.d_deflect = 5
+        self.deflection_points = np.arange(-25, 25 + self.d_deflect, self.d_deflect)
+        self.print_plots = False
 
     # ------------------------------------------------------------------
     # Geometry
@@ -254,20 +262,16 @@ class Control_Surface_Sizing():
     # ------------------------------------------------------------------
     # Main analysis
     # ------------------------------------------------------------------
-    def Control_Coefficients(self):
+    def Pitching_Coefficients(self):
         """
         Three sweeps:
           1. Inner elevon (symmetric) → Cm — pitch authority
           2. Outer elevon (antisymmetric) → Cl — roll authority
+          3. Rudder → Cn — yaw authority
         """
-        d_deflect = 1
-        deflection_points = np.arange(-25, 25 + d_deflect, d_deflect)
-
-        self.op_point = asb.OperatingPoint(velocity=27.94, alpha=7)
-
         print("Running inner elevon Cm sweep …")
         Cm_inner = self._sweep(
-            deflection_points,
+            self.deflection_points,
             delta_inner_fn=lambda i: i,
             delta_outer_fn=lambda i: 0,
             delta_rudder_fn=lambda i: 0,
@@ -275,7 +279,7 @@ class Control_Surface_Sizing():
             coeff_key="Cm",
         )
         x_np_inner = self._sweep(
-            deflection_points,
+            self.deflection_points,
             delta_inner_fn=lambda i: i,
             delta_outer_fn=lambda i: 0,
             delta_rudder_fn=lambda i: 0,
@@ -283,9 +287,53 @@ class Control_Surface_Sizing():
             coeff_key="x_np",
         )
 
-        print("Running outer elevon Cl sweep (antisymmetric / roll) …")
+        if self.print_plots:
+            # ── Plot ──────────────────────────────────────────────────────
+            fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+            fig.suptitle("Elevon Control Effectiveness  (V=" + str(self.op_point.velocity) + "m/s, α=" + str(
+                self.op_point.alpha) + "°)")
+
+            # Left: pitch sweeps
+            axes[0].plot(self.deflection_points, Cm_inner, color="red", label="Cm — inner elevon (sym)")
+            axes[0].axhline(0, color="black", linewidth=0.8, linestyle="--")
+            axes[0].set_xlabel("Elevon deflection [deg]")
+            axes[0].set_ylabel("Cm")
+            axes[0].set_title("Pitch authority")
+            # axes[0, 0].legend()
+            axes[0].grid(True)
+
+            axes[1].plot(self.deflection_points, x_np_inner)
+            axes[1].axhline(0, color="black", linewidth=0.8, linestyle="--")
+            axes[1].set_xlabel("Elevon deflection [deg]")
+            axes[1].set_ylabel("x_np")
+            axes[1].set_title("x_np for pitch")
+            # axes[1, 0].legend()
+            axes[1].grid(True)
+
+            plt.tight_layout()
+            plt.show()
+
+        # ── Control Coefficient Linearisation ─────────────────────────
+        Cmde = (Cm_inner[np.size(self.deflection_points) - 1] - Cm_inner[0]) / np.radians(self.deflection_points[np.size(self.deflection_points) - 1] - self.deflection_points[0])
+
+        print("Running Cmq sweep …")
+        Cmq = self._sweep_single(
+            self.deflection_points,
+            delta_inner_fn=lambda i: 0,
+            delta_outer_fn=lambda i: 0,
+            delta_rudder_fn=lambda i: 0,
+            outer_symmetric=False,
+            coeff_key="Cmq",
+        )
+        print("Cmq:", Cmq, "/rad")
+        print("Cmde:", Cmde, "/rad")
+
+        return Cmq, Cmde
+
+    def Rolling_Coefficients(self):
+        print("Running outer elevon Cl sweep …")
         Cl_outer = self._sweep(
-            deflection_points,
+            self.deflection_points,
             delta_inner_fn=lambda i: 0,
             delta_outer_fn=lambda i: i,
             delta_rudder_fn=lambda i: 0,
@@ -293,7 +341,7 @@ class Control_Surface_Sizing():
             coeff_key="Cl",
         )
         x_np_outer = self._sweep(
-            deflection_points,
+            self.deflection_points,
             delta_inner_fn=lambda i: 0,
             delta_outer_fn=lambda i: i,
             delta_rudder_fn=lambda i: 0,
@@ -301,9 +349,52 @@ class Control_Surface_Sizing():
             coeff_key="x_np",
         )
 
+        if self.print_plots:
+            # ── Plot ──────────────────────────────────────────────────────
+            fig, axes = plt.subplots(2, 3, figsize=(12, 5))
+            fig.suptitle("Elevon Control Effectiveness  (V=" + str(self.op_point.velocity) + "m/s, α=" + str(self.op_point.alpha) + "°)")
+
+            # Right: roll sweep
+            axes[0].plot(self.deflection_points, Cl_outer, color="blue", label="Cl — outer elevon (antisym)")
+            axes[0].axhline(0, color="black", linewidth=0.8, linestyle="--")
+            axes[0].set_xlabel("Elevon deflection [deg]")
+            axes[0].set_ylabel("Cl")
+            axes[0].set_title("Roll authority")
+            # axes[0, 1].legend()
+            axes[0].grid(True)
+
+            axes[1].plot(self.deflection_points, x_np_outer)
+            axes[1].axhline(0, color="black", linewidth=0.8, linestyle="--")
+            axes[1].set_xlabel("Elevon deflection [deg]")
+            axes[1].set_ylabel("x_np")
+            axes[1].set_title("x_np for roll")
+            # axes[1, 1].legend()
+            axes[1].grid(True)
+
+            plt.tight_layout()
+            plt.show()
+
+        # ── Control Coefficient Linearisation ─────────────────────────
+        Clda = (Cl_outer[np.size(self.deflection_points) - 1] - Cl_outer[0]) / np.radians(self.deflection_points[np.size(self.deflection_points) - 1] - self.deflection_points[0])
+
+        print("Running Clp sweep …")
+        Clp = self._sweep_single(
+            self.deflection_points,
+            delta_inner_fn=lambda i: 0,
+            delta_outer_fn=lambda i: 0,
+            delta_rudder_fn=lambda i: 0,
+            outer_symmetric=False,
+            coeff_key="Clp",
+        )
+        print("Clp:", Clp, "/rad")
+        print("Clda:", Clda, "/rad")
+
+        return Clp, Clda
+
+    def Yawing_Coefficients(self):
         print("Running rudder Cn sweep (antisymmetric / yaw) …")
         Cn_rudder = self._sweep(
-            deflection_points,
+            self.deflection_points,
             delta_inner_fn=lambda i: 0,
             delta_outer_fn=lambda i: 0,
             delta_rudder_fn=lambda i: i,
@@ -311,145 +402,105 @@ class Control_Surface_Sizing():
             coeff_key="Cn",
         )
         x_np_rudder = self._sweep(
-            deflection_points,
+            self.deflection_points,
             delta_inner_fn=lambda i: 0,
             delta_outer_fn=lambda i: 0,
             delta_rudder_fn=lambda i: i,
             outer_symmetric=True,
             coeff_key="x_np",
         )
-        print(min(x_np_inner), min(x_np_outer), min(x_np_rudder))
+        # print(min(x_np_inner), min(x_np_outer), min(x_np_rudder))
 
-        # ── Plot ──────────────────────────────────────────────────────
-        fig, axes = plt.subplots(2, 3, figsize=(12, 5))
-        fig.suptitle("Elevon Control Effectiveness  (V="+str(self.op_point.velocity)+"m/s, α="+str(self.op_point.alpha)+"°)")
+        if self.print_plots:
+            # ── Plot ──────────────────────────────────────────────────────
+            fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+            fig.suptitle("Elevon Control Effectiveness  (V=" + str(self.op_point.velocity) + "m/s, α=" + str(self.op_point.alpha) + "°)")
 
-        # Left: pitch sweeps
-        axes[0, 0].plot(deflection_points, Cm_inner, color="red",   label="Cm — inner elevon (sym)")
-        axes[0, 0].axhline(0, color="black", linewidth=0.8, linestyle="--")
-        axes[0, 0].set_xlabel("Elevon deflection [deg]")
-        axes[0, 0].set_ylabel("Cm")
-        axes[0, 0].set_title("Pitch authority")
-        # axes[0, 0].legend()
-        axes[0, 0].grid(True)
+            # Right: yaw sweep
+            axes[0].plot(self.deflection_points, Cn_rudder, color="green", label="Cn — rudder (antisym)")
+            axes[0].axhline(0, color="black", linewidth=0.8, linestyle="--")
+            axes[0].set_xlabel("Elevon deflection [deg]")
+            axes[0].set_ylabel("Cn")
+            axes[0].set_title("Yaw authority")
+            # axes[0, 2].legend()
+            axes[0].grid(True)
 
-        axes[1, 0].plot(deflection_points, x_np_inner)
-        axes[1, 0].axhline(0, color="black", linewidth=0.8, linestyle="--")
-        axes[1, 0].set_xlabel("Elevon deflection [deg]")
-        axes[1, 0].set_ylabel("x_np")
-        axes[1, 0].set_title("x_np for pitch")
-        # axes[1, 0].legend()
-        axes[1, 0].grid(True)
+            axes[1].plot(self.deflection_points, x_np_rudder)
+            axes[1].axhline(0, color="black", linewidth=0.8, linestyle="--")
+            axes[1].set_xlabel("Elevon deflection [deg]")
+            axes[1].set_ylabel("x_np")
+            axes[1].set_title("x_np for yaw")
+            # axes[1, 2].legend()
+            axes[1].grid(True)
 
-        # Right: roll sweep
-        axes[0, 1].plot(deflection_points, Cl_outer, color="blue", label="Cl — outer elevon (antisym)")
-        axes[0, 1].axhline(0, color="black", linewidth=0.8, linestyle="--")
-        axes[0, 1].set_xlabel("Elevon deflection [deg]")
-        axes[0, 1].set_ylabel("Cl")
-        axes[0, 1].set_title("Roll authority")
-        # axes[0, 1].legend()
-        axes[0, 1].grid(True)
-
-        axes[1, 1].plot(deflection_points, x_np_outer)
-        axes[1, 1].axhline(0, color="black", linewidth=0.8, linestyle="--")
-        axes[1, 1].set_xlabel("Elevon deflection [deg]")
-        axes[1, 1].set_ylabel("x_np")
-        axes[1, 1].set_title("x_np for roll")
-        # axes[1, 1].legend()
-        axes[1, 1].grid(True)
-
-        # Right: yaw sweep
-        axes[0, 2].plot(deflection_points, Cn_rudder, color="green", label="Cn — rudder (antisym)")
-        axes[0, 2].axhline(0, color="black", linewidth=0.8, linestyle="--")
-        axes[0, 2].set_xlabel("Elevon deflection [deg]")
-        axes[0, 2].set_ylabel("Cn")
-        axes[0, 2].set_title("Yaw authority")
-        # axes[0, 2].legend()
-        axes[0, 2].grid(True)
-
-        axes[1, 2].plot(deflection_points, x_np_rudder)
-        axes[1, 2].axhline(0, color="black", linewidth=0.8, linestyle="--")
-        axes[1, 2].set_xlabel("Elevon deflection [deg]")
-        axes[1, 2].set_ylabel("x_np")
-        axes[1, 2].set_title("x_np for yaw")
-        # axes[1, 2].legend()
-        axes[1, 2].grid(True)
-
-        plt.tight_layout()
-        plt.show()
+            plt.tight_layout()
+            plt.show()
 
         # ── Control Coefficient Linearisation ─────────────────────────
-        Cmde = (Cm_inner[np.size(deflection_points)-1] - Cm_inner[0])/np.radians(deflection_points[np.size(deflection_points)-1] - deflection_points[0])
-        Clda = (Cl_outer[np.size(deflection_points)-1] - Cl_outer[0])/np.radians(deflection_points[np.size(deflection_points)-1] - deflection_points[0])
-        Cndr = (Cn_rudder[np.size(deflection_points)-1] - Cn_rudder[0])/np.radians(deflection_points[np.size(deflection_points)-1] - deflection_points[0])
-
-        print("Running Cmq sweep …")
-        Cmq = self._sweep_single(
-            deflection_points,
-            delta_inner_fn=lambda i: 0,
-            delta_outer_fn=lambda i: 0,
-            delta_rudder_fn=lambda i: 0,
-            outer_symmetric=False,
-            coeff_key="Cmq",
-        )
-
-        print("Running Clp sweep …")
-        Clp = self._sweep_single(
-            deflection_points,
-            delta_inner_fn=lambda i: 0,
-            delta_outer_fn=lambda i: 0,
-            delta_rudder_fn=lambda i: 0,
-            outer_symmetric=False,
-            coeff_key="Clp",
-        )
+        Cndr = (Cn_rudder[np.size(self.deflection_points)-1] - Cn_rudder[0])/np.radians(self.deflection_points[np.size(self.deflection_points)-1] - self.deflection_points[0])
 
         print("Running Cmq sweep …")
         Cnr = self._sweep_single(
-            deflection_points,
+            self.deflection_points,
             delta_inner_fn=lambda i: 0,
             delta_outer_fn=lambda i: 0,
             delta_rudder_fn=lambda i: 0,
             outer_symmetric=False,
             coeff_key="Cnr",
         )
-
-        print("Cmq:", Cmq, "/rad")
-        print("Clp:", Clp, "/rad")
         print("Cnr:", Cnr, "/rad")
-
-        print("Cmde:", Cmde, "/rad")
-        print("Clda:", Clda, "/rad")
         print("Cndr:", Cndr, "/rad")
 
-        return Cmde, Clda, Cndr, Cmq, Clp, Cnr, deflection_points
+        return Cnr, Cndr
 
     # ------------------------------------------------------------------
     # Control requirements check (placeholder)
     # ------------------------------------------------------------------
-    def Control_Check(self):
-        Cmde, Clda, Cndr, Cmq, Clp, Cnr, deflection_points = self.Control_Coefficients()
-        q_req = np.radians(3)    # pitch rate [rad/s]
-        p_req = np.radians(10)   # roll  rate [rad/s]
-        r_req = np.radians(5)    # yaw   rate [rad/s]
-        # todo
-        q = Cmde/Cmq*(np.radians(deflection_points[np.size(deflection_points)-1]))*self.op_point.velocity/self.c
+    def Pitch_Check(self):
+        Cmde, Cmq = self.Pitching_Coefficients()
+        q_req = np.radians(3)  # pitch rate [rad/s]
+
+        q = Cmde/Cmq*(np.radians(self.deflection_points[np.size(self.deflection_points)-1]))*self.op_point.velocity/self.c
         print(q, "rad/s")
-        p = Clda/Clp*(np.radians(deflection_points[np.size(deflection_points)-1]))*2*self.op_point.velocity/self.b
+
+        return q, q_req
+
+    def Roll_Check(self):
+        Clda, Clp = self.Rolling_Coefficients()
+        p_req = np.radians(10)  # roll  rate [rad/s]
+
+        p = Clda / Clp * (np.radians(
+            self.deflection_points[np.size(self.deflection_points) - 1])) * 2 * self.op_point.velocity / self.b
         print(p, "rad/s")
-        r = Cndr/Cnr*(np.radians(deflection_points[np.size(deflection_points)-1]))*2*self.op_point.velocity/self.b
+
+        return p, p_req
+
+    def Yaw_Check(self):
+        Cndr, Cnr = self.Yawing_Coefficients()
+        r_req = np.radians(5)  # roll  rate [rad/s]
+
+        r = Cndr / Cnr * (np.radians(self.deflection_points[np.size(self.deflection_points) - 1])) * 2 * self.op_point.velocity / self.b
         print(r, "rad/s")
 
-        return q, p, r, q_req, p_req, r_req
+        return r, r_req
 
     def Control_Sizing(self):
-        q, p, r, q_req, p_req, r_req = self.Control_Check()
+        q, q_req = self.Pitch_Check()
 
-        d_size = 0.05
-        p_list = []
-        if p > p_req:
-            # p_list.append(outer_elevon_frac)
-            self.outer_elevon_frac -= d_size
-            q, p, r, q_req, p_req, r_req = self.Control_Check()
+        d_size_elevon = 0.05
+        if q > q_req:
+            while self.r_check:
+                print(self.inner_elevon_frac)
+                self.inner_elevon_frac -= d_size_elevon
+                q, q_req = self.Pitch_Check()
+                if q < q_req:
+                    self.r_check = False
+                    print("Final elevator fraction", self.inner_elevon_frac+d_size_elevon)
+
+
+
+        # todo OEI
+        # todo controllability at forward cg
 
 
 
@@ -461,4 +512,5 @@ if __name__ == "__main__":
     #cs.Airplane_Geo()
     #cs.airplane.draw()
     # cs.Control_Coefficients()
-    cs.Control_Check()
+    # cs.Control_Check()
+    cs.Control_Sizing()
