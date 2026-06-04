@@ -1,6 +1,8 @@
 import aerosandbox as asb
 import aerosandbox.numpy as np
 import matplotlib
+from pandas.core.missing import pad_or_backfill_inplace
+
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 
@@ -227,7 +229,7 @@ class Control_Surface_Sizing():
           2. Outer elevon (antisymmetric) → Cl — roll authority
         """
         d_deflect = 1
-        deflection_points = np.arange(-20, 20 + d_deflect, d_deflect)
+        deflection_points = np.arange(-20, 20 + d_deflect, d_deflect) #don't use non-integer with arange
 
         self.op_point = asb.OperatingPoint(velocity=27.94, alpha=7)
 
@@ -295,14 +297,61 @@ class Control_Surface_Sizing():
         plt.tight_layout()
         plt.show()
 
+        # ── Control Coefficient Linearisation ─────────────────────────
+        Cmde = Cm_inner[np.size(d_deflect)] - Cm_inner[0]
+        Clda = Cl_outer[np.size(d_deflect)] - Cl_outer[0]
+        Cndr = Cn_rudder[np.size(d_deflect)] - Cn_rudder[0]
+
+        print("Running Cmq sweep …")
+        Cmq = self._sweep(
+            deflection_points,
+            delta_inner_fn=lambda i: i,
+            delta_outer_fn=lambda i: 0,
+            delta_rudder_fn=lambda i: 0,
+            outer_symmetric=False,
+            coeff_key="Cmq",
+        )
+
+        print("Running Clp sweep …")
+        Clp = self._sweep(
+            deflection_points,
+            delta_inner_fn=lambda i: 0,
+            delta_outer_fn=lambda i: i,
+            delta_rudder_fn=lambda i: 0,
+            outer_symmetric=False,
+            coeff_key="Clp",
+        )
+
+        print("Running Cmq sweep …")
+        Cnr = self._sweep(
+            deflection_points,
+            delta_inner_fn=lambda i: 0,
+            delta_outer_fn=lambda i: 0,
+            delta_rudder_fn=lambda i: i,
+            outer_symmetric=False,
+            coeff_key="Cnr",
+        )
+
+        print("Cmq", Cmq)
+        print("Clp", Clp)
+        print("Cnr", Cnr)
+
+        print("Cmde", Cmde)
+        print("Clda", Clda)
+        print("Cndr", Cndr)
+
     # ------------------------------------------------------------------
     # Control requirements check (placeholder)
     # ------------------------------------------------------------------
-    def Control_Check(self):
-        q_req = np.radians(3)    # pitch rate [rad/s]
-        p_req = np.radians(10)   # roll  rate [rad/s]
-        r_req = np.radians(5)    # yaw   rate [rad/s]
-        # todo
+    # def Control_Check(self):
+    #     q_req = np.radians(3)    # pitch rate [rad/s]
+    #     p_req = np.radians(10)   # roll  rate [rad/s]
+    #     r_req = np.radians(5)    # yaw   rate [rad/s]
+    #     # todo
+    #     q =
+
+    # def Control_Sizing(self):
+
 
 
 if __name__ == "__main__":
