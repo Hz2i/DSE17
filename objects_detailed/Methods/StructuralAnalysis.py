@@ -11,8 +11,6 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../Char
 # Now you can import the Airframe module
 from Airframe import airframe
 import Components_Materials
-geo=airframe(airfoil = asb.Airfoil("e344"))
-airfoil = asb.Airfoil("e344")
 
 def airfoil_properties(airfoil, chord_length=1.2):
 
@@ -50,6 +48,7 @@ def internal_loading():             # Implement method for computing internal lo
 
 def bending_stress(Bending_distribution, airframe, dz=0.01):    # Compute bending stresses from bending distribution
     CFRP = Components_Materials.CFRP()
+    GLARE = Components_Materials.GLARE()
     safety_factor = 5
     yield_stress = CFRP.sigma
     chord=airframe.c_r
@@ -59,9 +58,9 @@ def bending_stress(Bending_distribution, airframe, dz=0.01):    # Compute bendin
     # find position where connection first starts taking (all) load
     wingbox_length = 0.4329
     sections_length = 4
-    connection_length = 1
+    connection_length = 0.09
     x_max_connection = int(np.round((wingbox_length +sections_length/2-connection_length/2)/dz,0))
-
+    yield_stress = GLARE.sigma
     min_connection = safety_factor*Bending_distribution[x_max_connection]*chord*max_thickness/2/(yield_stress) # find I for connection
     return min_I, min_connection
 
@@ -83,19 +82,20 @@ def bending_deflection(Bending_distribution, airframe, dz=0.01): # find bending 
     # plot if 1:1 axes to see realistic deflection
     return z[-1]
 
-bending_deflection([i for i in np.arange(1584*5,0,-5)], geo)
 
 def torsional_stress(Torsion_distribution, airframe, dz=0.01): # Compute torsional stresses from torsion distribution
     PETa = Components_Materials.PET()
     safety_factor = 5
     max_shear = PETa.shear
-    A_skin = 0.14
+    A_skin,_ = airfoil_properties(airframe.foil, airframe.c_r)
     t_skin = safety_factor*Torsion_distribution[0]/(2*A_skin*(max_shear))
     # 5x safety factor torque, min skin thickness calculated if skin carries all torque
     return t_skin
 
-def twist_deflection(Torsion_distribution, airframe, dz=0.01): # Compute twist deflection from torsion distribution
+def twist_deflection(Torsion_distribution, airframe, r_thickness=0.002, r_spar=0.04, dz=0.01): # Compute twist deflection from torsion distribution
+    # i guessed r_thickness and r_spar but you need to get those from bas
     t_skin = torsional_stress(Torsion_distribution, airframe, dz) # get area from torsional loads
+    print(t_skin)
     PET = Components_Materials.PET()
     CFRP = Components_Materials.CFRP()
     # considering all torsion carried by skin
@@ -105,12 +105,9 @@ def twist_deflection(Torsion_distribution, airframe, dz=0.01): # Compute twist d
     # symbolic solve dtheta_dz for skin and spar 
     T_spar = sp.Symbol('T_spar')  # Unknown torque carried by the skin
     A_skin, p_skin = airfoil_properties(airframe.foil, chord) # calculate area and perimeter of airfoil for skin torsion calculation
-    A_skin = 0.14 # conservative estimation, taking average thickness 
-    skin_int_t_ds = 2.5*chord/t_skin # conservative estimation, taking perimeter as 2*chord
-    min_thickness = 0.001
-    r_spar = 0.04 #guess
+    skin_int_t_ds = p_skin/t_skin # 
     A_spar = np.pi*r_spar**2 # conservative estimation
-    int_t_ds = np.pi*2*r_spar/min_thickness # calculate torsional constant by conservative approximation of min thickness all around, with assumption of 50% area efficiency (i.e. same area as square, twice the perimter)
+    int_t_ds = np.pi*2*r_spar/r_thickness # calculate torsional constant by conservative approximation of min thickness all around, with assumption of 50% area efficiency (i.e. same area as square, twice the perimter)
     dtheta_dz = sp.Symbol('dtheta_dz')  # Common twist rate (not solved for)
     eq1 = sp.Eq(dtheta_dz, (Torsion_distribution[0] - T_spar)*skin_int_t_ds / (4 * PET.G * A_skin**2))  # Skin equation
     eq2 = sp.Eq(dtheta_dz,  T_spar*int_t_ds/ (4 * CFRP.G*A_spar**2))  # Spar equation
@@ -124,11 +121,11 @@ def twist_deflection(Torsion_distribution, airframe, dz=0.01): # Compute twist d
     compatibility_factor = compatibility_dtdz/dtheta_dz[0] # calculate compatibility factor by comparing dtheta_dz from spar and skin at root
     dtheta_dz=dtheta_dz*compatibility_factor
     theta = np.cumsum(dtheta_dz) * dz*57.3 # convert to degrees
-    #plt.plot(np.linspace(0,len(theta)*dz,len(theta)), theta)
-    #plt.ylim((0,len(theta)*dz))
-    #plt.show()
+    plt.plot(np.linspace(0,len(theta)*dz,len(theta)), theta)
+    plt.ylim((0,len(theta)*dz))
+    plt.show()
+    return theta[-1]
 
-twist_deflection(np.array([i for i in np.arange(1584*0.5,0,-0.5)]), geo)
 
 
 

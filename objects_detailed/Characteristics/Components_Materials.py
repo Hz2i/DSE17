@@ -44,3 +44,8 @@ class PET:
         self.shear = 55e6 #max shear stress PEThttps://www.ensinger-pc.com/injection-molding-materials/our-plastic-stock-shapes/pet-thermoplastic-polyester/
         self.G = 1.375e9#https://designerdata.nl/materials/plastics/thermo-plastics/polyethylene-terephthalate
         self.rho = 1200
+
+class GLARE:
+    def __init__(self):                 # Provide method to define GLARE with certain parameters
+        self.sigma=403.66e6#https://www.academia.edu/104528943/ON_FABRICATION_AND_TESTING_OF_GLARE
+        self.rho=2400#https://www.researchgate.net/figure/Properties-of-Glare-components_tbl1_343586328
