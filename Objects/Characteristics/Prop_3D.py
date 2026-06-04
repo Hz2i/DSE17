@@ -4,7 +4,7 @@ import aerosandbox as asb
 import csv
 
 # ==========================================
-# 1. USER PARAMETERS & POLYNOMIALS
+# INPUT PARAMETERS
 # ==========================================
 D_ref = 2.1357*1000   # Reference Diameter in meters
 beta_07 = 20.5   # Pitch angle at 75% station in degrees 
@@ -13,7 +13,7 @@ num_stations = 20
 r_stations = np.linspace(0.0, 1.0, num_stations) 
 
 # ==========================================
-# 2. LOAD SD7037 VIA AEROSANDBOX
+# AIRFOIL COORDINATES
 # ==========================================
 print("Fetching SD7037 coordinates...")
 sd7037 = asb.Airfoil("sd7037").repanel(n_points_per_side=50)
@@ -21,11 +21,8 @@ sd7037 = asb.Airfoil("sd7037").repanel(n_points_per_side=50)
 x_base = sd7037.coordinates[:, 0] - 0.25 # Shift to quarter-chord
 y_base = sd7037.coordinates[:, 1]
 
-# ==========================================
-# 3. GENERATE 3D SECTIONS & FORMAT FOR MACRO
-# ==========================================
+
 catia_rows = []
-# Ensure only 3 columns to match X, Y, Z formatting
 catia_rows.append(['StartLoft', '', ''])
 
 fig = plt.figure(figsize=(10, 8))
@@ -34,7 +31,6 @@ ax = fig.add_subplot(111, projection='3d')
 print(f"Generating {num_stations} 3D sections for D = {D_ref}m...")
 
 for idx, r in enumerate(r_stations):
-    # Mathematics
     b_ref = (0.084241 - 0.85789*r + 4.7176*r**2 - 9.6225*r**3 + 8.5004*r**4 - 2.7959*r**5) * D_ref
     beta_deg = beta_07 + (0.4387 + 0.3040*r - 3.9616*r**2 + 5.1180*r**3 - 1.6284*r**4 - 0.3244*r**5) * (180/np.pi)
     beta_rad = np.radians(beta_deg)
@@ -56,7 +52,6 @@ for idx, r in enumerate(r_stations):
     # --- CATIA MACRO FORMATTING ---
     catia_rows.append(['StartCurve', '', ''])
     for i in range(len(x_twisted)):
-        # Format: X, Y, Z (No point index)
         catia_rows.append([x_twisted[i], y_twisted[i], z_array[i]])
     catia_rows.append(['EndCurve', '', ''])
 
@@ -64,9 +59,7 @@ for idx, r in enumerate(r_stations):
 catia_rows.append(['EndLoft', '', ''])
 catia_rows.append(['End', '', ''])
 
-# ==========================================
-# 4. EXPORT TO CSV
-# ==========================================
+# CSV
 output_filename = "HAPS_Propeller_Macro_Input.csv"
 
 with open(output_filename, mode='w', newline='') as file:
