@@ -18,7 +18,7 @@ class Control_Surface_Sizing():
         self.wing_sweep = 0.2618      # radians
         self.b = 30.08                # full span [m]
         self.c = 1.203                # chord [m]
-        self.dihedral = 0.0
+        self.dihedral = 3.0
         self.inner_elevon_frac = 0.05
         self.outer_elevon_frac = 0.25
         self.height_winglet = 2    # height of winglet above main wing [m]
