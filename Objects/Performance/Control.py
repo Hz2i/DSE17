@@ -424,8 +424,12 @@ class Control_Surface_Sizing():
         p_req = np.radians(10)   # roll  rate [rad/s]
         r_req = np.radians(5)    # yaw   rate [rad/s]
         # todo
-        p = Clda/Clp*(deflection_points[np.radians(np.size(deflection_points)-1)])*2*self.op_point.velocity/self.b
-        print(p)
+        q = Cmde/Cmq*(np.radians(deflection_points[np.size(deflection_points)-1]))*self.op_point.velocity/self.c
+        print(q, "rad/s")
+        p = Clda/Clp*(np.radians(deflection_points[np.size(deflection_points)-1]))*2*self.op_point.velocity/self.b
+        print(p, "rad/s")
+        r = Cndr/Cnr*(np.radians(deflection_points[np.size(deflection_points)-1]))*2*self.op_point.velocity/self.b
+        print(r, "rad/s")
 
     # def Control_Sizing(self):
 
