@@ -496,7 +496,8 @@ class Control_Surface_Sizing():
                 p, p_req = self.Roll_Check()
                 if p < p_req:
                     self.p_check = False
-                    print("Final aileron fraction:", self.outer_elevon_frac+d_size_aileron)
+                    self.outer_elevon_frac += d_size_aileron
+                    print("Final aileron fraction:", self.outer_elevon_frac)
                     # cs.airplane.draw()
         elif p < p_req:
             while self.p_check:
@@ -506,7 +507,8 @@ class Control_Surface_Sizing():
                 p, p_req = self.Roll_Check()
                 if p > p_req:
                     self.p_check = False
-                    print("Final aileron fraction:", self.outer_elevon_frac-d_size_aileron)
+                    self.outer_elevon_frac -= d_size_aileron
+                    print("Final aileron fraction:", self.outer_elevon_frac)
                     # cs.airplane.draw()
 
 
@@ -519,7 +521,8 @@ class Control_Surface_Sizing():
                 q, q_req = self.Pitch_Check()
                 if q < q_req:
                     self.q_check = False
-                    print("Final elevator fraction:", self.inner_elevon_frac+d_size_elevator)
+                    self.inner_elevon_frac += d_size_elevator
+                    print("Final elevator fraction:", self.inner_elevon_frac)
                     #cs.airplane.draw()
         elif q < q_req:
             while self.q_check:
@@ -528,7 +531,8 @@ class Control_Surface_Sizing():
                 q, q_req = self.Pitch_Check()
                 if q < q_req:
                     self.q_check = False
-                    print("Final elevator fraction:", self.inner_elevon_frac-d_size_elevator)
+                    self.inner_elevon_frac -= d_size_elevator
+                    print("Final elevator fraction:", self.inner_elevon_frac)
                     #cs.airplane.draw()
 
 
@@ -541,7 +545,8 @@ class Control_Surface_Sizing():
                 r, r_req = self.Yaw_Check()
                 if r < r_req:
                     self.r_check = False
-                    print("Final winglet height:", self.height_winglet + d_size_rudder)
+                    self.height_winglet += d_size_rudder
+                    print("Final winglet height:", self.height_winglet)
                     cs.airplane.draw()
         elif r < r_req:
             while self.r_check:
@@ -550,8 +555,14 @@ class Control_Surface_Sizing():
                 r, r_req = self.Yaw_Check()
                 if r < r_req:
                     self.r_check = False
-                    print("Final winglet height:", self.height_winglet - d_size_rudder)
+                    self.height_winglet -= d_size_rudder
+                    print("Final winglet height:", self.height_winglet)
                     cs.airplane.draw()
+
+        print("Final aileron fraction:", self.outer_elevon_frac)
+        print("Final elevator fraction:", self.inner_elevon_frac)
+        print("Final winglet height:", self.height_winglet)
+
 
 
 
