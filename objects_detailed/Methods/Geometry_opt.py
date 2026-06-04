@@ -1,5 +1,6 @@
 import numpy as np
 import aerosandbox as asb
+import matplotlib.patches as pth
 import matplotlib.pyplot as plt
 import scipy.interpolate as interpolate
 
@@ -44,8 +45,8 @@ class AirfoilGeometry:
             y_new = sy(s_new)
             return x_new, y_new
         
-        xu, yu = parametric_spline(upper_surface, n=400)
-        xl, yl = parametric_spline(lower_surface, n=400)
+        xu, yu = parametric_spline(upper_surface, n=40000)
+        xl, yl = parametric_spline(lower_surface, n=40000)
 
         #Offset splines inwards by t_skin_airfoil to account for skin thickness
         def offset_spline(x, y, t):
@@ -156,25 +157,40 @@ class AirfoilGeometry:
         plt.show()
 
 class GeometryOptimization:
-    def __init__(self, required_geometry, airfoil_geometry, optimize_variables, plot=True):
-        self.plot = plot
+    def __init__(self, required_geometry, airfoil_geometry, optimize_variables_square, optimize_variables_circular, material_properties):
         self.required_thickness = required_geometry.get("Minimim Thickness of Spar and Connector")
         self.I_xx_spar_req = required_geometry.get("I_xx_spar")
         self.I_yy_spar_req = required_geometry.get("I_yy_spar")
         self.I_xx_connection_req = required_geometry.get("I_xx_connection")
         self.I_yy_connection_req = required_geometry.get("I_yy_connection")
+        self.I_xx_clamp_req = required_geometry.get("I_xx_clamp")
+        self.I_yy_clamp_req = required_geometry.get("I_yy_clamp")
 
+        #Initial Guess Geometry Square
+        self.t_spar = optimize_variables_square.get("t_spar")
+        self.t_connection = optimize_variables_square.get("t_connection")
+        self.Available_Height_Spar = optimize_variables_square.get("Available_Height_Spar")
 
-        #Inital Guess Geometry
-        self.t_spar = optimize_variables.get("t_spar")
-        self.t_connection = optimize_variables.get("t_connection")
-        self.Available_Height_Spar = optimize_variables.get("Available_Height_Spar")
-        
+        #Initial Guess Geometry Circular
+        self.t_spar = optimize_variables_circular.get("t_spar")
+        self.t_bolts = optimize_variables_circular.get("t_bolts")
+        self.t_clamp = optimize_variables_circular.get("t_clamp")
+
         #Constraint Geometry
         self.airfoil_geometry = airfoil_geometry
         self.width = self.airfoil_geometry.Available_width * self.airfoil_geometry.chord_length
+
+        #Min Limits of Thicknesses based on manufacturability and material limits
+        self.CFRP_LIMIT_t = material_properties.get("CFRP_LIMIT_t")
+        self.Bolt_LIMIT_t = material_properties.get("Bolt_LIMIT_t")
+        self.Clamp_LIMIT_t = material_properties.get("Clamp_LIMIT_t")
+
+        '''Square'''
         self.h_connection = self.airfoil_geometry.h_region * ((1 - self.Available_Height_Spar)/2)
-        self.h_spar = self.airfoil_geometry.h_region * self.Available_Height_Spar      
+        self.h_spar = self.airfoil_geometry.h_region * self.Available_Height_Spar  
+
+        '''Circular'''
+        self.t_rubber = optimize_variables_circular.get("t_rubber") 
     
     def calc_I_square(self, b, h):
         return (b * h**3) / 12
@@ -263,10 +279,57 @@ class GeometryOptimization:
             "I_yy_conn_total": I_yy_conn_total,
         }
         
-    def calc_circular_geometry_outputs(self):
-        pass
-    def calc_geometry_circular(self):
-        pass
+    def calc_circular_geometry_outputs(self, t_spar, t_bolts, t_clamp):
+        #Constraints
+        t_rubber = self.t_rubber
+        b = self.width
+        h = self.airfoil_geometry.h_region
+        if h > b:
+            raise ValueError("Height of available region must be less than width for circular geometry.")
+        #Dims
+        r_clamp = h/2 - t_clamp - t_rubber #width cannot be used
+        r_spar_out = r_clamp - t_rubber
+        r_spar_in = r_spar_out - t_spar
+        Clamp_width = 2*(r_clamp + t_rubber + t_bolts)
+        Clamp_height = 2*(r_clamp + t_rubber + t_clamp)
+        
+        #Areas
+        A_spar = self.calc_A_circular(2*r_spar_out) - self.calc_A_circular(2*r_spar_in)
+        A_clamp = self.calc_A_square(b, h) - 2*t_rubber*(b) - self.calc_A_circular(2*r_clamp)
+        A_total_CFRP = A_spar + A_clamp
+        A_rubber = 2*t_rubber*(b) + self.calc_A_circular(2*r_clamp) - self.calc_A_circular(2*r_spar_out)
+        #Spar Inertias
+        I_xx_spar = self.calc_I_circular(2*r_spar_out) - self.calc_I_circular(2*r_spar_in)
+        I_yy_spar = self.calc_I_circular(2*r_spar_out) - self.calc_I_circular(2*r_spar_in)
+
+        #Clamp Inertias, for conservativeness assume no rubber (area closer to neutral axis)
+        I_xx_clamp = self.calc_I_square(b,h) - self.calc_I_circular(2*r_clamp)
+        I_yy_clamp = self.calc_I_square(h,b) - self.calc_I_circular(2*r_clamp)
+        #NO PAT!!!!
+        return {
+            # decision vars (echo)
+            "t_spar": t_spar,
+            "r_clamp": r_clamp,
+            "t_bolts": t_bolts,
+            "t_clamp": t_clamp,
+            # dims
+            "r_clamp": r_clamp,
+            "r_spar_out": r_spar_out,
+            "r_spar_in": r_spar_in,
+            "Clamp_width": Clamp_width,
+            "Clamp_height": Clamp_height,
+            # areas
+            "A_total_CFRP": A_total_CFRP,
+            "A_spar": A_spar,
+            "A_clamp": A_clamp,
+            "A_rubber": A_rubber,
+            # inertias
+            "I_xx_spar": I_xx_spar,
+            "I_yy_spar": I_yy_spar,
+            "I_xx_clamp": I_xx_clamp,
+            "I_yy_clamp": I_yy_clamp,
+            }
+
 
     def optimize_geometry_square_with_asb(self):
         import aerosandbox as asb
@@ -306,7 +369,45 @@ class GeometryOptimization:
                 # If it fails, it's a constant (self.width, etc.)
                 result[k] = float(v)
         return result
+    
+    def optimize_geometry_circular_with_asb(self):
+        import aerosandbox as asb
+        import aerosandbox.numpy as np  # ensures any np ops you add later are symbolic-safe
 
+        opti = asb.Opti()
+
+        t_spar = opti.variable(init_guess=float(self.t_spar), lower_bound=self.CFRP_LIMIT_t, upper_bound=0.10)
+        t_bolts = opti.variable(init_guess=float(self.t_bolts), lower_bound=self.Bolt_LIMIT_t, upper_bound=0.05)
+        t_clamp = opti.variable(init_guess=float(self.t_clamp), lower_bound=self.Clamp_LIMIT_t, upper_bound=0.10)
+
+        g = self.calc_circular_geometry_outputs(t_spar, t_bolts, t_clamp)
+
+        # feasibility
+        b = self.width
+        h = self.airfoil_geometry.h_region
+        opti.subject_to(g["Clamp_width"] <= b)
+        opti.subject_to(g["Clamp_height"] <= h)
+
+        # requirements
+        opti.subject_to(g["I_xx_spar"] >= float(self.I_xx_spar_req))
+        opti.subject_to(g["I_yy_spar"] >= float(self.I_yy_spar_req))
+        opti.subject_to(g["I_xx_clamp"] >= float(self.I_xx_clamp_req))
+        opti.subject_to(g["I_yy_clamp"] >= float(self.I_yy_clamp_req))
+
+        # objective
+        opti.minimize(g["A_total_CFRP"])
+
+        sol = opti.solve()
+
+        result = {}
+        for k, v in g.items():
+            try:
+                result[k] = float(sol(v))
+            except (RuntimeError, TypeError):
+                # If it fails, it's a constant (self.width, etc.)
+                result[k] = float(v)
+        return result
+    
     def plot_rect_lines(self, xc, yc, b, h, color, linestyle="-", label=None):
         xL, xR = xc - b / 2, xc + b / 2
         yB, yT = yc - h / 2, yc + h / 2
@@ -352,6 +453,62 @@ class GeometryOptimization:
         plt.legend()
         plt.show()
 
+    def plot_geometry_circular(self, r_clamp, r_spar_out, r_spar_in, t_spar, t_bolts, t_clamp):
+        xc = self.airfoil_geometry.x_centroid
+        yc = self.airfoil_geometry.y_centroid
+
+        plt.figure(figsize=(10, 5))
+        #Available Region
+        y_upper = self.airfoil_geometry.y_upper
+        y_lower = self.airfoil_geometry.y_lower
+        x_min = self.airfoil_geometry.x_min
+        x_max = self.airfoil_geometry.x_max
+        plt.fill_betweenx([y_lower, y_upper], x_min, x_max, color='gray', alpha=0.3, label='Available Region')
+
+        # Spar (tube)
+        circle_outer = plt.Circle((xc, yc), r_spar_out, color="blue", fill=False, linestyle="-", label="Spar Outer")
+        circle_inner = plt.Circle((xc, yc), r_spar_in, color="blue", fill=False, linestyle="--", label="Spar Inner")
+        plt.gca().add_patch(circle_outer)
+        plt.gca().add_patch(circle_inner)
+        
+        #Rubber btw spar and clamp
+        rubber = pth.Wedge(
+            (xc, yc),
+            r_clamp,
+            0, 360,
+            width=r_clamp - r_spar_out,
+            facecolor="red",
+            alpha=0.4,
+            label="Rubber"
+        )
+        plt.gca().add_patch(rubber)
+        # Clamp (Offsetted Arc Part))
+        circle_clamp = plt.Circle((xc, yc), r_clamp, color="purple", fill=False, linestyle=":", label="Clamp Outer")
+        plt.gca().add_patch(circle_clamp)
+        half_w = r_clamp + t_bolts
+        half_h = r_clamp + t_clamp
+
+        rect_clamp = plt.Rectangle(
+            (xc - half_w, yc - half_h),   # bottom-left corner (corrected)
+            2 * half_w,
+            2 * half_h,
+            angle=0,
+            edgecolor="purple",
+            fill=False,
+            linestyle="-",
+            label="Clamp Outer"
+        )
+        plt.gca().add_patch(rect_clamp)
+    
+
+
+        plt.title("Optimized Geometry Cross-Section (circular clamp + circular spar)")
+        plt.xlabel("x (m)")
+        plt.ylabel("y (m)")
+        plt.axis("equal")
+        plt.grid(True)
+        plt.legend()
+        plt.show()
 class StructuralWeightCalculator:
     def __init__(self, aircraft_properties, geometry_outputs, airfoil_geometry, material_properties):
         self.aircraft_properties = aircraft_properties
@@ -360,7 +517,7 @@ class StructuralWeightCalculator:
         self.material_properties = material_properties
 
     def calculate_weight_supportive_structure(self):
-        A_total = self.geometry_outputs["A_total"]
+        A_total = self.geometry_outputs["A_total_CFRP"]
         weight_supportive_structure = A_total * (self.aircraft_properties["span"]/np.cos(np.radians(self.aircraft_properties["sweep"]))) * self.material_properties["density_carbon_fiber_composite"]
         return weight_supportive_structure
     def closed_contour_area(self,xu, yu, xl, yl):
@@ -450,16 +607,18 @@ class StructuralWeightCalculator:
 
 if __name__ == "__main__":
     required_geometry = {
-        "I_xx_spar": 5.2e-7, #m^4
-        "I_yy_spar": 2.6e-8, #m^4
+        "I_xx_spar": 6.8e-6, #m^4
+        "I_yy_spar": 2.6e-12, #m^4
         "I_xx_connection": 5.2e-7, #m^4
         "I_yy_connection": 2.6e-8, #m^4
+        "I_xx_clamp": 5.2e-6, #m^4
+        "I_yy_clamp": 2.6e-12, #m^4
         "Minimim Thickness of Spar and Connector": 0.000001, #m
     }
     airfoil_geometry = {
-        "airfoil": asb.Airfoil("e344"),
+        "airfoil": asb.Airfoil("e344"),  # Use NACA 2412 as an example
         "chord_length": 1.2,  #m
-        "Available width": 0.1,  #Fraction of chord length
+        "Available width": 0.15,  #Fraction of chord length
         "t_skin_airfoil": 0.0002,  #m
     }
     optimize_variables_square = {
@@ -469,12 +628,17 @@ if __name__ == "__main__":
         "Available_Height_Spar": 0.6, #m
     }
     optimize_variables_circular = {
+        "t_rubber": 0.001, #m
         #THESE ARE INITIAL GUESS VALUES, NOT FINAL OPTIMIZED VALUES
-        "r_spar": 0.01, #m
-        "r_clamp": 0.01, #m
-        "Available_Height_Spar": 0.6, #m
+        "t_bolts": 0.025, #m
+        "t_spar": 0.001, #m
+        "r_clamp": 0.05, #m
+        "t_clamp": 0.025, #m
     }
     material_properties = {
+        "CFRP_LIMIT_t" : 0.001,
+        "Bolt_LIMIT_t": 0.03,
+        "Clamp_LIMIT_t": 0.01,
         "density_titanium": 4500.0, #kg/m^3
         "density_carbon_fiber_composite": 1800.0, #kg/m^3 (carbon fiber composite)
         "LDPET_density": 1000.0, #kg/m^3 (for comparison)
@@ -486,22 +650,32 @@ if __name__ == "__main__":
     }
     constraint_geometry = AirfoilGeometry(airfoil_geometry, plot=True)
     #Assume Centroid in middle of main spar
-    geometry_optimizer = GeometryOptimization(required_geometry, constraint_geometry, optimize_variables_square, plot=True)
-    optimized_geometry_square = geometry_optimizer.optimize_geometry_square_with_asb()
-    geometry_optimizer.plot_geometry_square(
-        optimized_geometry_square["b_spar_out"], 
-        optimized_geometry_square["h_spar_out"],
-        optimized_geometry_square["b_spar_in"], 
-        optimized_geometry_square["h_spar_in"],
-        optimized_geometry_square["b_conn_out"],      
-        optimized_geometry_square["h_conn_out"],     
-        optimized_geometry_square["b_conn_in"], 
-        optimized_geometry_square["h_conn_in"]        
+    geometry_optimizer = GeometryOptimization(required_geometry, constraint_geometry, optimize_variables_square, optimize_variables_circular, material_properties)
+    # optimized_geometry_square = geometry_optimizer.optimize_geometry_square_with_asb()
+    # geometry_optimizer.plot_geometry_square(
+    #     optimized_geometry_square["b_spar_out"], 
+    #     optimized_geometry_square["h_spar_out"],
+    #     optimized_geometry_square["b_spar_in"], 
+    #     optimized_geometry_square["h_spar_in"],
+    #     optimized_geometry_square["b_conn_out"],      
+    #     optimized_geometry_square["h_conn_out"],     
+    #     optimized_geometry_square["b_conn_in"], 
+    #     optimized_geometry_square["h_conn_in"]        
+    # )
+    optimized_geometry_circular = geometry_optimizer.optimize_geometry_circular_with_asb()
+    print(f"Optimized Circular Geometry Outputs: {optimized_geometry_circular}")
+    geometry_optimizer.plot_geometry_circular(
+        optimized_geometry_circular["r_clamp"],
+        optimized_geometry_circular["r_spar_out"],
+        optimized_geometry_circular["r_spar_in"],
+        optimized_geometry_circular["t_spar"],
+        optimized_geometry_circular["t_bolts"],
+        optimized_geometry_circular["t_clamp"],
     )
     
-    weight_calculator = StructuralWeightCalculator(aircraft_properties, optimized_geometry_square, constraint_geometry, material_properties)
-    weight_supportive_structure = weight_calculator.calculate_weight_supportive_structure()
-    weight_airfoil_skin = weight_calculator.calculate_airfoil_skin_weight()
-    print(f"Weight of Supportive Structure: {weight_supportive_structure:.2f} kg")
-    print(f"Weight of Airfoil Skin: {weight_airfoil_skin:.2f} kg")
-    print(f"Total Structural Weight: {weight_supportive_structure + weight_airfoil_skin:.2f} kg")
+    # weight_calculator = StructuralWeightCalculator(aircraft_properties, optimized_geometry_square, constraint_geometry, material_properties)
+    # weight_supportive_structure = weight_calculator.calculate_weight_supportive_structure()
+    # weight_airfoil_skin = weight_calculator.calculate_airfoil_skin_weight()
+    # print(f"Weight of Supportive Structure: {weight_supportive_structure:.2f} kg")
+    # print(f"Weight of Airfoil Skin: {weight_airfoil_skin:.2f} kg")
+    # print(f"Total Structural Weight: {weight_supportive_structure + weight_airfoil_skin:.2f} kg")
