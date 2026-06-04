@@ -19,7 +19,7 @@ class Control_Surface_Sizing():
         self.c = 1.203                # chord [m]
         self.dihedral = 0.0
         self.inner_elevon_frac = 0.05
-        self.outer_elevon_frac = 0.5
+        self.outer_elevon_frac = 0.2
         self.height_winglet = 2    # height of winglet above main wing [m]
 
         self.half_span = self.b / 2
@@ -486,16 +486,16 @@ class Control_Surface_Sizing():
 
     def Control_Sizing(self):
         p, p_req = self.Roll_Check()
-        d_size_aileron = 0.05
+        d_size_aileron = 0.01
         if p > p_req:
             while self.p_check:
-                print(self.outer_elevon_frac)
+                print("Aileron fraction:", self.outer_elevon_frac)
                 self.outer_elevon_frac -= d_size_aileron
                 # cs.airplane.draw()
                 p, p_req = self.Roll_Check()
                 if p < p_req:
-                    self.r_check = False
-                    print("Final elevator fraction", self.outer_elevon_frac+d_size_aileron)
+                    self.p_check = False
+                    print("Final aileron fraction:", self.outer_elevon_frac+d_size_aileron)
                     # cs.airplane.draw()
 
 
@@ -503,13 +503,12 @@ class Control_Surface_Sizing():
         d_size_elevator = 0.01
         if q > q_req:
             while self.q_check:
-                print(self.inner_elevon_frac)
+                print("Elevator fraction", self.inner_elevon_frac)
                 self.inner_elevon_frac -= d_size_elevator
-                # cs.airplane.draw()
                 q, q_req = self.Pitch_Check()
                 if q < q_req:
                     self.q_check = False
-                    print("Final elevator fraction", self.inner_elevon_frac+d_size_elevator)
+                    print("Final elevator fraction:", self.inner_elevon_frac+d_size_elevator)
                     cs.airplane.draw()
 
 
