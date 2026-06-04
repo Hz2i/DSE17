@@ -220,6 +220,29 @@ class Control_Surface_Sizing():
         return results
 
     # ------------------------------------------------------------------
+    # Sweep helper (single run) | Only for damping coefficients!!! |
+    # ------------------------------------------------------------------
+    def _sweep_single(self, deflection_points, delta_inner_fn, delta_outer_fn, delta_rudder_fn,
+               outer_symmetric, coeff_key):
+        """
+        Generic deflection sweep.  Returns a list of scalar coefficient values.
+        """
+        aero = self.vlm_run(
+            delta_inner=delta_inner_fn(0),
+            delta_outer=delta_outer_fn(0),
+            delta_rudder=delta_rudder_fn(0),
+            outer_symmetric=outer_symmetric,
+        )
+        val = aero.get(coeff_key, None) if aero is not None else None
+        # Flatten to scalar
+        if val is not None:
+            try:
+                val = float(np.asarray(val).flat[0])
+            except Exception:
+                val = None
+        return val
+
+    # ------------------------------------------------------------------
     # Main analysis
     # ------------------------------------------------------------------
     def Control_Coefficients(self):
@@ -303,9 +326,9 @@ class Control_Surface_Sizing():
         Cndr = Cn_rudder[np.size(d_deflect)] - Cn_rudder[0]
 
         print("Running Cmq sweep …")
-        Cmq = self._sweep(
+        Cmq = self._sweep_single(
             deflection_points,
-            delta_inner_fn=lambda i: i,
+            delta_inner_fn=lambda i: 0,
             delta_outer_fn=lambda i: 0,
             delta_rudder_fn=lambda i: 0,
             outer_symmetric=False,
@@ -313,21 +336,21 @@ class Control_Surface_Sizing():
         )
 
         print("Running Clp sweep …")
-        Clp = self._sweep(
+        Clp = self._sweep_single(
             deflection_points,
             delta_inner_fn=lambda i: 0,
-            delta_outer_fn=lambda i: i,
+            delta_outer_fn=lambda i: 0,
             delta_rudder_fn=lambda i: 0,
             outer_symmetric=False,
             coeff_key="Clp",
         )
 
         print("Running Cmq sweep …")
-        Cnr = self._sweep(
+        Cnr = self._sweep_single(
             deflection_points,
             delta_inner_fn=lambda i: 0,
             delta_outer_fn=lambda i: 0,
-            delta_rudder_fn=lambda i: i,
+            delta_rudder_fn=lambda i: 0,
             outer_symmetric=False,
             coeff_key="Cnr",
         )
