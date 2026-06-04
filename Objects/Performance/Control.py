@@ -18,9 +18,9 @@ class Control_Surface_Sizing():
         self.b = 30.08                # full span [m]
         self.c = 1.203                # chord [m]
         self.dihedral = 0.0
-        self.inner_elevon_frac = 0.4
-        self.outer_elevon_frac = 0.4
-        self.height_winglet = 4    # height of winglet above main wing [m]
+        self.inner_elevon_frac = 0.3
+        self.outer_elevon_frac = 0.1
+        self.height_winglet = 2    # height of winglet above main wing [m]
 
         self.half_span = self.b / 2
         self.start_inner_elevon = None
@@ -328,7 +328,7 @@ class Control_Surface_Sizing():
         print("Cmq:", Cmq, "/rad")
         print("Cmde:", Cmde, "/rad")
 
-        return Cmq, Cmde
+        return Cmde, Cmq
 
     def Rolling_Coefficients(self):
         print("Running outer elevon Cl sweep …")
@@ -389,7 +389,7 @@ class Control_Surface_Sizing():
         print("Clp:", Clp, "/rad")
         print("Clda:", Clda, "/rad")
 
-        return Clp, Clda
+        return Clda, Clp
 
     def Yawing_Coefficients(self):
         print("Running rudder Cn sweep (antisymmetric / yaw) …")
@@ -451,7 +451,7 @@ class Control_Surface_Sizing():
         print("Cnr:", Cnr, "/rad")
         print("Cndr:", Cndr, "/rad")
 
-        return Cnr, Cndr
+        return Cndr, Cnr
 
     # ------------------------------------------------------------------
     # Control requirements check (placeholder)
@@ -492,6 +492,7 @@ class Control_Surface_Sizing():
             while self.r_check:
                 print(self.inner_elevon_frac)
                 self.inner_elevon_frac -= d_size_elevon
+                cs.airplane.draw()
                 q, q_req = self.Pitch_Check()
                 if q < q_req:
                     self.r_check = False
