@@ -19,7 +19,7 @@ class Control_Surface_Sizing():
         self.c = 1.203                # chord [m]
         self.dihedral = 0.0
         self.inner_elevon_frac = 0.05
-        self.outer_elevon_frac = 0.2
+        self.outer_elevon_frac = 0.25
         self.height_winglet = 2    # height of winglet above main wing [m]
 
         self.half_span = self.b / 2
@@ -35,7 +35,7 @@ class Control_Surface_Sizing():
         self.r_check = True
 
         self.d_deflect = 5
-        self.deflection_points = np.arange(-25, 25 + self.d_deflect, self.d_deflect)
+        self.deflection_points = np.arange(-25, 25 + self.d_deflect, self.d_deflect) # don't use floats with arange
         self.print_plots = False
 
     # ------------------------------------------------------------------
@@ -61,7 +61,7 @@ class Control_Surface_Sizing():
 
         self.airplane = asb.Airplane(
             name="AHAPS",
-            xyz_ref=[1.1, 0, 0],   # CG at ~37% chord — adjust to your actual CG
+            xyz_ref=[0.45, 0, 0],   # CG at ~37% chord — adjust to your actual CG
             wings=[
                 asb.Wing(
                     name="Main Wing",
@@ -461,7 +461,7 @@ class Control_Surface_Sizing():
         q_req = np.radians(3)  # pitch rate [rad/s]
 
         q = Cmde/Cmq*(np.radians(self.deflection_points[np.size(self.deflection_points)-1]))*self.op_point.velocity/self.c
-        print(q, "rad/s")
+        print("Q:", q, "rad/s")
 
         return q, q_req
 
@@ -471,7 +471,7 @@ class Control_Surface_Sizing():
 
         p = Clda / Clp * (np.radians(
             self.deflection_points[np.size(self.deflection_points) - 1])) * 2 * self.op_point.velocity / self.b
-        print(p, "rad/s")
+        print("P:", p, "rad/s")
 
         return p, p_req
 
@@ -480,7 +480,7 @@ class Control_Surface_Sizing():
         r_req = np.radians(5)  # roll  rate [rad/s]
 
         r = Cndr / Cnr * (np.radians(self.deflection_points[np.size(self.deflection_points) - 1])) * 2 * self.op_point.velocity / self.b
-        print(r, "rad/s")
+        print("R:", r, "rad/s")
 
         return r, r_req
 
