@@ -1,6 +1,8 @@
 import aerosandbox as asb
 import aerosandbox.numpy as np
 import matplotlib
+from fontTools.feaLib import error
+
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 
@@ -37,6 +39,7 @@ class Control_Surface_Sizing():
         ----------
         delta_inner     : inner elevon deflection [deg]
         delta_outer     : outer elevon deflection [deg]
+        delta_rudder    : rudder deflection [deg]
         outer_symmetric : True  → both outer panels deflect equally (pitch)
                           False → panels deflect opposite (roll / aileron)
         """
@@ -137,7 +140,7 @@ class Control_Surface_Sizing():
                                 asb.ControlSurface(
                                     name="rudder_left",
                                     hinge_point=0.6,
-                                    deflection=0.0,
+                                    deflection=delta_rudder,
                                     trailing_edge=True,
                                     symmetric=False,
                                 )
@@ -368,9 +371,9 @@ class Control_Surface_Sizing():
         plt.show()
 
         # ── Control Coefficient Linearisation ─────────────────────────
-        Cmde = Cm_inner[np.size(d_deflect)] - Cm_inner[0]
-        Clda = Cl_outer[np.size(d_deflect)] - Cl_outer[0]
-        Cndr = Cn_rudder[np.size(d_deflect)] - Cn_rudder[0]
+        Cmde = (Cm_inner[np.size(deflection_points)-1] - Cm_inner[0])/np.radians(deflection_points[np.size(deflection_points)-1] - deflection_points[0])
+        Clda = (Cl_outer[np.size(deflection_points)-1] - Cl_outer[0])/np.radians(deflection_points[np.size(deflection_points)-1] - deflection_points[0])
+        Cndr = (Cn_rudder[np.size(deflection_points)-1] - Cn_rudder[0])/np.radians(deflection_points[np.size(deflection_points)-1] - deflection_points[0])
 
         print("Running Cmq sweep …")
         Cmq = self._sweep_single(
@@ -410,15 +413,19 @@ class Control_Surface_Sizing():
         print("Clda", Clda)
         print("Cndr", Cndr)
 
+        return Cmde, Clda, Cndr, Cmq, Clp, Cnr, deflection_points
+
     # ------------------------------------------------------------------
     # Control requirements check (placeholder)
     # ------------------------------------------------------------------
-    # def Control_Check(self):
-    #     q_req = np.radians(3)    # pitch rate [rad/s]
-    #     p_req = np.radians(10)   # roll  rate [rad/s]
-    #     r_req = np.radians(5)    # yaw   rate [rad/s]
-    #     # todo
-    #     q =
+    def Control_Check(self):
+        Cmde, Clda, Cndr, Cmq, Clp, Cnr, deflection_points = self.Control_Coefficients()
+        q_req = np.radians(3)    # pitch rate [rad/s]
+        p_req = np.radians(10)   # roll  rate [rad/s]
+        r_req = np.radians(5)    # yaw   rate [rad/s]
+        # todo
+        p = Clda/Clp*(deflection_points[np.radians(np.size(deflection_points)-1)])*2*self.op_point.velocity/self.b
+        print(p)
 
     # def Control_Sizing(self):
 
@@ -429,4 +436,5 @@ if __name__ == "__main__":
     cs = Control_Surface_Sizing()
     #cs.Airplane_Geo()
     #cs.airplane.draw()
-    cs.Control_Coefficients()
+    # cs.Control_Coefficients()
+    cs.Control_Check()
