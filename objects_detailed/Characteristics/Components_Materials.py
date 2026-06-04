@@ -28,3 +28,19 @@ class fuel_cell:
         self.massEnergy = E_m*3600.0                        # Mass energy density [J/kg]
         self.volumeEnergy = E_vol*3600.0/0.001              # Volumetric energy density [J/m^3]
         self.massRho = self.volumeEnergy/self.massEnergy    # Mass density [kg/m^3]
+
+class CFRP:
+    def __init__(self):                 # Provide method to define CFRP with certain parameters
+        self.E = 230e9                     # Young's modulus [Pa]
+        self.sigma = 3400e6                  
+        self.rho = 1720   #https://www.researchgate.net/figure/Properties-of-carbon-fiber-reinforced-polymer-CFRP_tbl3_342938721               # Density [kg/m^3]
+        self.ply_thickness = 0.000335
+        self.poisson = 0.297#https://www.sciencedirect.com/science/article/pii/S0142941824000321
+        self.G = self.E/(2*(1+self.poisson)) # Shear modulus [Pa]
+
+class PET:
+    def __init__(self, E=2.8e9, rho=1380.0):                 # Provide method to define PET with certain parameters
+        self.E = 2.95e9                      # Young's modulus [Pa]
+        self.shear = 55e6 #max shear stress PEThttps://www.ensinger-pc.com/injection-molding-materials/our-plastic-stock-shapes/pet-thermoplastic-polyester/
+        self.G = 1.375e9#https://designerdata.nl/materials/plastics/thermo-plastics/polyethylene-terephthalate
+        self.rho = 1200
