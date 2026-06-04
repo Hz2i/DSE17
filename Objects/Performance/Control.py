@@ -150,7 +150,7 @@ class Control_Surface_Sizing():
                     xsecs=[
                         asb.WingXSec(
                             xyz_le=[(np.tan(self.wing_sweep) * self.half_span)+(np.tan(self.wing_sweep) * self.height_winglet), self.half_span, self.height_winglet],
-                            chord=self.c,
+                            chord=1.5*self.c,
                             twist=0,
                             airfoil=self.tail_airfoil,
                             control_surfaces=[
@@ -165,7 +165,7 @@ class Control_Surface_Sizing():
                         ),
                         asb.WingXSec(
                             xyz_le=[np.tan(self.wing_sweep) * self.half_span, self.half_span, 0],
-                            chord=self.c,
+                            chord=1.5*self.c,
                             twist=0,
                             airfoil=self.tail_airfoil,
                         ),
@@ -484,6 +484,31 @@ class Control_Surface_Sizing():
         print("R:", r, "rad/s")
 
         return r, r_req
+
+    def Spiral_Check(self):
+        aero = self.vlm_run(
+            delta_inner=0, delta_outer=0, delta_rudder=0,
+            outer_symmetric=False,
+        )
+        Clb = float(np.asarray(aero["Clb"]).flat[0])
+        Cnb = float(np.asarray(aero["Cnb"]).flat[0])
+        Clr = float(np.asarray(aero["Clr"]).flat[0])
+        Cnr = float(np.asarray(aero["Cnr"]).flat[0])
+
+        criterion = Clb * Cnr - Cnb * Clr
+
+        print(f"  Cl_beta = {Clb:.5f}")
+        print(f"  Cn_beta = {Cnb:.5f}")
+        print(f"  Cl_r    = {Clr:.5f}")
+        print(f"  Cn_r    = {Cnr:.5f}")
+        print(f"  Spiral criterion (Cl_beta*Cn_r - Cn_beta*Cl_r) = {criterion:.6f}")
+
+        if criterion > 0:
+            print("Spiral mode is stable")
+        else:
+            print("Spiral mode is unstable")
+
+        return criterion
 
     def Control_Sizing(self):
         p, p_req = self.Roll_Check()
