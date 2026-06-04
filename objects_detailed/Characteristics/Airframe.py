@@ -113,7 +113,7 @@ class airframe:
             p.show_plot(dpi=600)
 
 
-    def llt_analysis(self, series=False, alpha=5.0, alt=18500.0, TAS=25.0):
+    def llt_analysis(self, series=False, alpha=5.0, alt=18500.0, TAS=25.0, resolution=5):
         op_point = asb.OperatingPoint(
             atmosphere=asb.Atmosphere(altitude=alt),
             velocity=TAS
@@ -127,7 +127,8 @@ class airframe:
                 LLT_Adjusted(
                     airplane=self.geometry_asb,
                     op_point=op,
-                    xyz_ref=self.geometry_asb.xyz_ref
+                    xyz_ref=self.geometry_asb.xyz_ref,
+                    spanwise_resolution=resolution
                     ).run()
                 for op in llt_op_pt
                 ]
@@ -146,7 +147,8 @@ class airframe:
             llt_an = LLT_Adjusted(
                             airplane=self.geometry_asb,
                             op_point=op,
-                            xyz_ref=self.geometry_asb.xyz_ref
+                            xyz_ref=self.geometry_asb.xyz_ref,
+                            spanwise_resolution=resolution
                             )
             llt_results = llt_an.run()
 
@@ -166,8 +168,9 @@ class airframe:
 
         i_min = np.argmin(abs(CL_data - 0.2*CL_min))
         i_max = np.argmin(abs(CL_data - 0.95*self.CL_max))
+        i_max_lift = np.argmin(abs(CL_data - 0.6*self.CL_max))
 
-        lift_curve_coeff = np.polynomial.polynomial.polyfit(alpha_range[i_min:i_max+1], CL_data[i_min:i_max+1], 1)
+        lift_curve_coeff = np.polynomial.polynomial.polyfit(alpha_range[i_min:i_max_lift+1], CL_data[i_min:i_max_lift+1], 1)
         drag_polar_coeff = np.polynomial.polynomial.polyfit(CL_data[i_min:i_max+1], CD_data[i_min:i_max+1], 2)
 
         self.CL0 = lift_curve_coeff[0]
@@ -179,3 +182,14 @@ class airframe:
 
         CL_CD_data = CL_data/CD_data
         self.CL_CD_max = CL_CD_data[np.argmax(CL_CD_data)]
+
+
+    def compute_force_distribution(self, alpha=5.0, alt=18500.0, TAS=25.0, res = 20):
+        llt_data, llt_an = self.llt_analysis(series=False, alpha=alpha, alt=alt, TAS=TAS, resolution=res)
+
+        total_F = llt_an.forces_inviscid_geometry + llt_an.forces_profile_geometry
+        total_M = llt_an.moments_inviscid_geometry + llt_an.moments_profile_geometry
+
+        vortex_coords = llt_an.vortex_centers
+
+        return total_F, total_M, vortex_coords
