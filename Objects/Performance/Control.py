@@ -218,6 +218,29 @@ class Control_Surface_Sizing():
         return results
 
     # ------------------------------------------------------------------
+    # Sweep helper (single run) | Only for damping coefficients!!! |
+    # ------------------------------------------------------------------
+    def _sweep_single(self, deflection_points, delta_inner_fn, delta_outer_fn, delta_rudder_fn,
+               outer_symmetric, coeff_key):
+        """
+        Generic deflection sweep.  Returns a list of scalar coefficient values.
+        """
+        aero = self.vlm_run(
+            delta_inner=delta_inner_fn(0),
+            delta_outer=delta_outer_fn(0),
+            delta_rudder=delta_rudder_fn(0),
+            outer_symmetric=outer_symmetric,
+        )
+        val = aero.get(coeff_key, None) if aero is not None else None
+        # Flatten to scalar
+        if val is not None:
+            try:
+                val = float(np.asarray(val).flat[0])
+            except Exception:
+                val = None
+        return val
+
+    # ------------------------------------------------------------------
     # Main analysis
     # ------------------------------------------------------------------
     def Control_Coefficients(self):
@@ -344,14 +367,61 @@ class Control_Surface_Sizing():
         plt.tight_layout()
         plt.show()
 
+        # ── Control Coefficient Linearisation ─────────────────────────
+        Cmde = Cm_inner[np.size(d_deflect)] - Cm_inner[0]
+        Clda = Cl_outer[np.size(d_deflect)] - Cl_outer[0]
+        Cndr = Cn_rudder[np.size(d_deflect)] - Cn_rudder[0]
+
+        print("Running Cmq sweep …")
+        Cmq = self._sweep_single(
+            deflection_points,
+            delta_inner_fn=lambda i: 0,
+            delta_outer_fn=lambda i: 0,
+            delta_rudder_fn=lambda i: 0,
+            outer_symmetric=False,
+            coeff_key="Cmq",
+        )
+
+        print("Running Clp sweep …")
+        Clp = self._sweep_single(
+            deflection_points,
+            delta_inner_fn=lambda i: 0,
+            delta_outer_fn=lambda i: 0,
+            delta_rudder_fn=lambda i: 0,
+            outer_symmetric=False,
+            coeff_key="Clp",
+        )
+
+        print("Running Cmq sweep …")
+        Cnr = self._sweep_single(
+            deflection_points,
+            delta_inner_fn=lambda i: 0,
+            delta_outer_fn=lambda i: 0,
+            delta_rudder_fn=lambda i: 0,
+            outer_symmetric=False,
+            coeff_key="Cnr",
+        )
+
+        print("Cmq", Cmq)
+        print("Clp", Clp)
+        print("Cnr", Cnr)
+
+        print("Cmde", Cmde)
+        print("Clda", Clda)
+        print("Cndr", Cndr)
+
     # ------------------------------------------------------------------
     # Control requirements check (placeholder)
     # ------------------------------------------------------------------
-    def Control_Check(self):
-        q_req = np.radians(3)    # pitch rate [rad/s]
-        p_req = np.radians(10)   # roll  rate [rad/s]
-        r_req = np.radians(5)    # yaw   rate [rad/s]
-        # todo
+    # def Control_Check(self):
+    #     q_req = np.radians(3)    # pitch rate [rad/s]
+    #     p_req = np.radians(10)   # roll  rate [rad/s]
+    #     r_req = np.radians(5)    # yaw   rate [rad/s]
+    #     # todo
+    #     q =
+
+    # def Control_Sizing(self):
+
 
 
 if __name__ == "__main__":
