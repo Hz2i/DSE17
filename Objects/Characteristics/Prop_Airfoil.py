@@ -172,3 +172,15 @@ plt.show()
 # print optimal advance ratio for sd7037
 optimal_idx = np.argmax(results['SD7037']['ETA'])
 print(f"Optimal Advance Ratio for SD7037: J = {results['SD7037']['J'][optimal_idx]:.3f} with Efficiency = {results['SD7037']['ETA'][optimal_idx]:.3f}")
+
+
+# plot beta over radius
+plt.figure(figsize=(8, 5))
+plt.plot(r, beta_deg, 'b-', linewidth=2)
+plt.xlabel('Normalized Radius (r/R)', fontsize=11)
+plt.ylabel('Blade Pitch Angle (degrees)', fontsize=11)
+plt.title('Blade Pitch Distribution Along the Span', fontsize=12, weight='bold')
+plt.grid(True, linestyle=':', alpha=0.6)
+# plt.xlim(0.1, 1)
+# plt.ylim(0, 40)
+plt.show()
