@@ -405,13 +405,13 @@ class Control_Surface_Sizing():
             coeff_key="Cnr",
         )
 
-        print("Cmq", Cmq)
-        print("Clp", Clp)
-        print("Cnr", Cnr)
+        print("Cmq:", Cmq, "/rad")
+        print("Clp:", Clp, "/rad")
+        print("Cnr:", Cnr, "/rad")
 
-        print("Cmde", Cmde)
-        print("Clda", Clda)
-        print("Cndr", Cndr)
+        print("Cmde:", Cmde, "/rad")
+        print("Clda:", Clda, "/rad")
+        print("Cndr:", Cndr, "/rad")
 
         return Cmde, Clda, Cndr, Cmq, Clp, Cnr, deflection_points
 
