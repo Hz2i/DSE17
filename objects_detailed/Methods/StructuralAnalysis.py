@@ -49,11 +49,11 @@ def internal_loading():             # Implement method for computing internal lo
     pass
 
 def pos_first_connection(airframe):
-    dz = airframe.S/points_loads
+    dz = airframe.b/(points_loads*2)
 
-    wingbox_length = 0.4329
+    wingbox_length = 0.4329 #come from container
     sections_length = 4
-    connection_length = 0.09
+    connection_length = 0.09 # is what bas told me, but the effect is probably negligible anyways due to resolution
     x_max_connection = int(np.round((wingbox_length +sections_length/2-connection_length/2)/dz,0))
     return x_max_connection
 
@@ -76,15 +76,15 @@ def bending_deflection(Bending_distribution, airframe): # find bending deflectio
     CFRP = Components_Materials.CFRP()
     I = min(spar_I, connection_I) # conservative estimate, difference is small as connections length are minimal, with small change in I
     # Compute deflection using beam theory
-    wingspan=airframe.S
-    sweep=airframe.qc_sweep
-    spanwise_length = wingspan/2/np.cos(sweep)
-    dz = airframe.S/points_loads
+
+    dz = airframe.b/(points_loads*2*np.cos(airframe.qc_sweep))
+    print(airframe.qc_sweep)
     dv2dz2 = Bending_distribution / (CFRP.E * I)
+    plt.plot()
     dvdz = np.cumsum(dv2dz2) * dz
     z = np.cumsum(dvdz) * dz
 
-    #plt.plot(np.linspace(0,spanwise_length,len(z)), z)
+    #plt.plot(np.linspace(0,len(theta)*dz,len(theta), z)
     #plt.ylim((0,len(z)*dz))
     #plt.show()
     # plot if 1:1 axes to see realistic deflection
@@ -127,19 +127,19 @@ def twist_deflection(Torsion_distribution, airframe, r_thickness=0.002, r_spar=0
     dtheta_dz = Torsion_distribution / (4*CFRP.G * A_spar**2)*int_t_ds
     compatibility_factor = compatibility_dtdz/dtheta_dz[0] # calculate compatibility factor by comparing dtheta_dz from spar and skin at root
     dtheta_dz=dtheta_dz*compatibility_factor
-    dz = airframe.S/points_loads
-    theta = np.cumsum(dtheta_dz) * dz*57.3 # convert to degrees
-    plt.plot(np.linspace(0,len(theta)*dz,len(theta)), theta)
-    plt.ylim((0,len(theta)*dz))
-    plt.show()
+    dz = airframe.b/(points_loads*2*np.cos(airframe.qc_sweep))
+    theta = np.cumsum(dtheta_dz) * dz # convert to degrees
+    #plt.plot(np.linspace(0,len(theta)*dz,len(theta)), theta)
+    #plt.ylim((0,len(theta)*dz))
+    #plt.show()
     return theta[-1]#in degrees
+
 
 def shear_force(Lift_distribution, airframe, t_spar, t_sleeve): #returns true if it passes this test #input drag works too
     safety_factor=5
     #root test stress/unit span
     sigma_root = safety_factor*Lift_distribution[0]/(2*t_spar) #lift stress at thinnest part of spar, with 5x safety factor
     sigma_sleeve = safety_factor*Lift_distribution[pos_first_connection(airframe)]/(2*t_sleeve) #lift stress at thinnest part of sleeve, with 5x safety factor
-    print(sigma_root/1e6, sigma_sleeve/1e6)
     root = Components_Materials.CFRP().sigma > sigma_root
     sleeve = Components_Materials.GLARE().sigma > sigma_sleeve
     return bool(sleeve*root)
