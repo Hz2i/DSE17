@@ -5,6 +5,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from objects_detailed.Characteristics.ReferenceGeometries import *
 import aerosandbox.tools.pretty_plots as p
+from objects_detailed.ModifiedLibraries.lifting_line_ADJUSTED import LiftingLine as LLT_Adjusted
 
 class fuselage:
     def __init__(self,D=0.3,L1=0.5,L2=3,L3=1.5):
@@ -28,7 +29,7 @@ class nacelles:
         self.m = None
 
 class airframe:
-    def __init__(self, S=36.0, A=25.0, qc_sweep=0.0, taper=1.0, dihedral=0.0 , airfoil=asb.Airfoil("e335"), fus = fuselage(), nac = nacelles(), display=False):
+    def __init__(self, S=36.0, A=25.0, qc_sweep=0.0, taper=1.0, dihedral=0.0 , airfoil=asb.Airfoil("e344"), fus = fuselage(), nac = nacelles(), display=False):
         self.foil = airfoil
         self.AR = A
         self.taper = taper
@@ -49,6 +50,7 @@ class airframe:
         self.nacelles = nac             # Fuselage Geometry and parameters
 
         self.define_geometry()
+        self.compute_polar()
         self.display_plane(display)
 
 
@@ -98,6 +100,7 @@ class airframe:
                 ]
             )
 
+
     def display_plane(self, display):
         if display:
             drawn_airplane = self.geometry_asb.deepcopy()
@@ -110,14 +113,10 @@ class airframe:
             p.show_plot(dpi=600)
 
 
-    def vlm_analysis(self):         # Call to AeroSandbox for VLM implementation
-        pass
-
-
-    def llt_analysis(self, series=False, alpha=5.0):
+    def llt_analysis(self, series=False, alpha=5.0, alt=18500.0, TAS=25.0):
         op_point = asb.OperatingPoint(
-            atmosphere=asb.Atmosphere(altitude=0),
-            velocity=15.0
+            atmosphere=asb.Atmosphere(altitude=alt),
+            velocity=TAS
         )
         if series:
             N_runs = len(alpha)
@@ -125,7 +124,7 @@ class airframe:
             llt_op_pt.alpha = alpha
 
             llt_batch = [
-                asb.LiftingLine(
+                LLT_Adjusted(
                     airplane=self.geometry_asb,
                     op_point=op,
                     xyz_ref=self.geometry_asb.xyz_ref
@@ -138,15 +137,45 @@ class airframe:
                 llt_results[param] = np.array([result[param] for result in llt_batch])
             llt_results["alpha"] = alpha
 
+            return llt_results
+
 
         else:
             op = op_point.copy()
             op.alpha = alpha
-            llt_results = asb.LiftingLine(
+            llt_an = LLT_Adjusted(
                             airplane=self.geometry_asb,
                             op_point=op,
-                            xys_ref=self.geometry_asb.xyz_ref
-                            ).run()
+                            xyz_ref=self.geometry_asb.xyz_ref
+                            )
+            llt_results = llt_an.run()
 
-        return llt_results
+            return llt_results, llt_an
 
+
+    def compute_polar(self, alpha_range=np.linspace(-10.0, 20.0, 50), alt=18500.0, TAS=25.0):
+        llt_data = self.llt_analysis(series=True, alpha=alpha_range, alt=alt, TAS=TAS)
+        CL_data = llt_data["CL"]
+        CD_data = llt_data["CD"]
+
+        i_stall = np.argmax(CL_data)
+        self.CL_max = CL_data[i_stall]
+
+        CL_min = CL_data[np.argmin(CL_data)]
+        self.CL_min = CL_min
+
+        i_min = np.argmin(abs(CL_data - 0.2*CL_min))
+        i_max = np.argmin(abs(CL_data - 0.95*self.CL_max))
+
+        lift_curve_coeff = np.polynomial.polynomial.polyfit(alpha_range[i_min:i_max+1], CL_data[i_min:i_max+1], 1)
+        drag_polar_coeff = np.polynomial.polynomial.polyfit(CL_data[i_min:i_max+1], CD_data[i_min:i_max+1], 2)
+
+        self.CL0 = lift_curve_coeff[0]
+        self.CL_alpha = lift_curve_coeff[1]
+
+        self.CD0 = drag_polar_coeff[0]
+        self.K1 = drag_polar_coeff[1]
+        self.K2 = drag_polar_coeff[2]
+
+        CL_CD_data = CL_data/CD_data
+        self.CL_CD_max = CL_CD_data[np.argmax(CL_CD_data)]

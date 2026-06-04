@@ -835,6 +835,11 @@ class LiftingLine(ExplicitAnalysis):
             * Vi_cross_li
             * tall(self.vortex_strengths)
         )
+
+        #MODIFICATIONS:
+        # print("Panel forces:", forces_inviscid_geometry)
+
+
         moments_inviscid_geometry = np.cross(
             np.add(vortex_centers, -wide(np.array(self.xyz_ref))),
             forces_inviscid_geometry,

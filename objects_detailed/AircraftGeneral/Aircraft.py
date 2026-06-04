@@ -16,14 +16,11 @@ from objects_detailed.Constants import Constants
 # It can be assumed that the general logic of this class (at least pertaining to airframe sizing) shall not significantly change.
 
 class Aircraft:
-    def __init__(self, MTOW_guess=100.0, TAS=20.0, h=18000.0, gamma=0.0, lat=50.0, day_margin=0, DoD=0.8, Sh_S = 0.15, Sv_S = 0.1, wing=wing(), fus=fuselage(), emp=empennage(), nac=nacelles(), comp=ComputerSystem(), comms=CommunicationSystem(), flight_con=FlightConditionsSystem(), payload=PayloadSystem(), ctrls=ControlSystem(), use_batt=True, energy_delta=0.0):
+    def __init__(self, MTOW_guess=200.0, TAS=25.0, h=18500.0, gamma=0.0, lat=30.0, day_margin=0, DoD=0.8, airframe=airframe(), comp=ComputerSystem(), comms=CommunicationSystem(), flight_con=FlightConditionsSystem(), payload=PayloadSystem(), ctrls=ControlSystem(), use_batt=True, energy_delta=0.0):
         self.MTOW = MTOW_guess
         self.const = Constants()
 
-        self.wing = wing
-        self.fus = fus
-        self.emp = emp
-        self.nac = nac
+        self.airframe = airframe
         self.comp = comp
         self.comms = comms
         self.flight_con = flight_con
@@ -36,8 +33,6 @@ class Aircraft:
         self.energy_delta = energy_delta
         self.prop = None
 
-        self.Sh_S = Sh_S
-        self.Sv_S = Sv_S
         self.TAS = TAS
         self.TAS_cruise = TAS
         self.h = h
@@ -74,19 +69,14 @@ class Aircraft:
         CL_current = None
         CD_current = None
 
-        while surface_check:
-            self.emp.Sh = self.wing.S * self.Sh_S
-            self.emp.Sv = self.wing.S * self.Sv_S
-            self.wing.compute_required_coefficients()
-            self.emp.compute_required_coefficients()
-            self.wing.compute_oswald_eff()
-            self.wing.compute_CL_max()
-            self.wing.zero_lift_drag(rho_cruise=am.Atmosphere(self.h).density[0], V_cruise=self.TAS, M=0.1)
-            self.fus.zero_lift_drag(rho_cruise=am.Atmosphere(self.h).density[0], V_cruise=self.TAS)
-            self.emp.zero_lift_drag(rho_cruise=am.Atmosphere(self.h).density[0], V_cruise=self.TAS, M=0.1)
-            self.nac.zero_lift_drag(rho_cruise=am.Atmosphere(self.h).density[0], V_cruise=self.TAS)
+        simulation_required = True
+        S_simulated = self.wing.S
 
-            self.CD0 = (self.fus.CD0 + self.wing.CD0 + self.emp.CD0 + self.nac.CD0)/self.wing.S
+        while surface_check:
+            self.airframe.define_geometry()
+            if simulation_required:
+                self.airframe.compute_polar(alt=self.h, TAS=self.TAS)
+
 
             #K = 0.38 # factor for viscous induced drag; For DC-8/9 family K=0.38, for sailplanes such as HAPS is likely lower
 
@@ -94,7 +84,7 @@ class Aircraft:
 
             self.e = 0.85
 
-            self.CL_opt = (3* self.CD0 * np.pi * self.wing.AR * self.e)**0.5
+            CL_opt_1 = (3* self.CD0 * np.pi * self.wing.AR * self.e)**0.5
             #self.CL_opt = (self.CD0 * np.pi * self.wing.AR * self.e)**0.5
 
             TAS_opt = (self.MTOW*self.const.g / (0.5 * am.Atmosphere(self.h).density[0] * self.wing.S * self.CL_opt))**0.5

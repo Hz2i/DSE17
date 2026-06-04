@@ -113,7 +113,7 @@ class FlightConditionsSystem:
         self.FCS_mass = self.mass + self.IMU_mass + self.GNSS_mass + self.pitot_mass
         self.FCS_volume = self.volume + self.IMU_volume + self.GNSS_volume + self.pitot_volume
         self.FCS_power_required = self.power_required + self.IMU_power_required + self.GNSS_power_required + self.pitot_power_required
-        return self.FCS_mass, self.FCS_volume, self.FCS_power_required
+        # return self.FCS_mass, self.FCS_volume, self.FCS_power_required
 
 class PayloadSystem:
     def __init__(self):                                     # Initialise with proper values
@@ -163,4 +163,4 @@ class ControlSystem:
         self.CS_mass = (self.actuator_mass + self.mass_cables + self.mass_pushrod + self.joints_mass_ratio * self.mass_pushrod) * 4
         self.CS_volume = (self.actuator_volume + self.volume_pushrod + self.volume_cable) * 4
         self.CS_power_required = (self.actuator_power + self.power_loss_cable) * 4
-        return self.CS_mass, self.CS_volume, self.CS_power_required
+        # return self.CS_mass, self.CS_volume, self.CS_power_required
