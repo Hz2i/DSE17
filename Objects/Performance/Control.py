@@ -16,11 +16,11 @@ class Control_Surface_Sizing():
         self.tail_airfoil = asb.Airfoil("naca0012")
 
         self.wing_sweep = 0.2618      # radians
-        self.b = 30.08                # full span [m]
-        self.c = 1.203                # chord [m]
+        self.b = 28.801               # full span [m]
+        self.c = 1.44                # chord [m]
         self.dihedral = 0.0
-        self.inner_elevon_frac = 0.05
-        self.outer_elevon_frac = 0.25
+        self.inner_elevon_frac = 0.3
+        self.outer_elevon_frac = 0.3
         self.height_winglet = 2    # height of winglet above main wing [m]
 
         self.half_span = self.b / 2
@@ -150,7 +150,7 @@ class Control_Surface_Sizing():
                     xsecs=[
                         asb.WingXSec(
                             xyz_le=[(np.tan(self.wing_sweep) * self.half_span)+(np.tan(self.wing_sweep) * self.height_winglet), self.half_span, self.height_winglet],
-                            chord=1.5*self.c,
+                            chord=self.c,
                             twist=0,
                             airfoil=self.tail_airfoil,
                             control_surfaces=[
@@ -165,7 +165,7 @@ class Control_Surface_Sizing():
                         ),
                         asb.WingXSec(
                             xyz_le=[np.tan(self.wing_sweep) * self.half_span, self.half_span, 0],
-                            chord=1.5*self.c,
+                            chord=self.c,
                             twist=0,
                             airfoil=self.tail_airfoil,
                         ),
@@ -487,77 +487,113 @@ class Control_Surface_Sizing():
 
     def Control_Sizing(self):
         p, p_req = self.Roll_Check()
-        d_size_aileron = 0.01
+        d_size_aileron = 0.1
         if p > p_req:
             while self.p_check:
                 print("Aileron fraction:", self.outer_elevon_frac)
                 self.outer_elevon_frac -= d_size_aileron
-                # cs.airplane.draw()
+
+                if self.outer_elevon_frac < 0:
+                    self.outer_elevon_frac += d_size_aileron/2
+                    d_size_aileron = d_size_aileron/2
+
                 p, p_req = self.Roll_Check()
+
                 if p < p_req:
-                    self.p_check = False
-                    self.outer_elevon_frac += d_size_aileron
-                    print("Final aileron fraction:", self.outer_elevon_frac)
-                    # cs.airplane.draw()
+                    if d_size_aileron > 0.01:
+                        d_size_aileron = d_size_aileron/2
+                    else:
+                        self.p_check = False
+                        self.outer_elevon_frac += d_size_aileron
+                        print("Final aileron fraction:", self.outer_elevon_frac)
+                        # cs.airplane.draw()
         elif p < p_req:
             while self.p_check:
                 print("Aileron fraction:", self.outer_elevon_frac)
                 self.outer_elevon_frac += d_size_aileron
-                # cs.airplane.draw()
                 p, p_req = self.Roll_Check()
                 if p > p_req:
-                    self.p_check = False
-                    self.outer_elevon_frac -= d_size_aileron
-                    print("Final aileron fraction:", self.outer_elevon_frac)
-                    # cs.airplane.draw()
+                    if p < p_req:
+                        if d_size_aileron > 0.01:
+                            d_size_aileron = d_size_aileron / 2
+                        else:
+                            self.p_check = False
+                            self.outer_elevon_frac -= d_size_aileron
+                            print("Final aileron fraction:", self.outer_elevon_frac)
+                            # cs.airplane.draw()
 
 
         q, q_req = self.Pitch_Check()
-        d_size_elevator = 0.01
+        d_size_elevator = 0.1
         if q > q_req:
             while self.q_check:
                 print("Elevator fraction", self.inner_elevon_frac)
                 self.inner_elevon_frac -= d_size_elevator
+
+                if self.inner_elevon_frac < 0:
+                    self.inner_elevon_frac += d_size_elevator/2
+                    d_size_elevator = d_size_elevator/2
+
                 q, q_req = self.Pitch_Check()
                 if q < q_req:
-                    self.q_check = False
-                    self.inner_elevon_frac += d_size_elevator
-                    print("Final elevator fraction:", self.inner_elevon_frac)
-                    #cs.airplane.draw()
+                    if q < q_req:
+                        if d_size_elevator > 0.01:
+                            d_size_elevator = d_size_elevator/ 2
+                        else:
+                            self.q_check = False
+                            self.inner_elevon_frac += d_size_elevator
+                            print("Final elevator fraction:", self.inner_elevon_frac)
+                            #cs.airplane.draw()
         elif q < q_req:
             while self.q_check:
                 print("Elevator fraction", self.inner_elevon_frac)
                 self.inner_elevon_frac += d_size_elevator
                 q, q_req = self.Pitch_Check()
                 if q < q_req:
-                    self.q_check = False
-                    self.inner_elevon_frac -= d_size_elevator
-                    print("Final elevator fraction:", self.inner_elevon_frac)
-                    #cs.airplane.draw()
+                    if q < q_req:
+                        if d_size_elevator > 0.01:
+                            d_size_elevator = d_size_elevator/ 2
+                        else:
+                            self.q_check = False
+                            self.inner_elevon_frac -= d_size_elevator
+                            print("Final elevator fraction:", self.inner_elevon_frac)
+                            #cs.airplane.draw()
 
 
         r, r_req = self.Yaw_Check()
-        d_size_rudder = 0.05
+        d_size_rudder = 0.1
         if r > r_req:
             while self.r_check:
                 print("Winglet height:", self.height_winglet)
                 self.height_winglet -= d_size_rudder
+
+                if self.height_winglet < 0:
+                    self.height_winglet += d_size_rudder/2
+                    d_size_rudder = d_size_rudder/2
+
                 r, r_req = self.Yaw_Check()
                 if r < r_req:
-                    self.r_check = False
-                    self.height_winglet += d_size_rudder
-                    print("Final winglet height:", self.height_winglet)
-                    cs.airplane.draw()
+                    if r < r_req:
+                        if d_size_rudder > 0.01:
+                            d_size_rudder = d_size_rudder/ 2
+                        else:
+                            self.r_check = False
+                            self.height_winglet += d_size_rudder
+                            print("Final winglet height:", self.height_winglet)
+                            cs.airplane.draw()
         elif r < r_req:
             while self.r_check:
                 print("Winglet height:", self.height_winglet)
                 self.height_winglet += d_size_rudder
                 r, r_req = self.Yaw_Check()
                 if r < r_req:
-                    self.r_check = False
-                    self.height_winglet -= d_size_rudder
-                    print("Final winglet height:", self.height_winglet)
-                    cs.airplane.draw()
+                    if d_size_rudder > 0.01:
+                        d_size_rudder = d_size_rudder / 2
+                    else:
+                        self.r_check = False
+                        self.height_winglet -= d_size_rudder
+                        print("Final winglet height:", self.height_winglet)
+                        cs.airplane.draw()
 
         print("Final aileron fraction:", self.outer_elevon_frac)
         print("Final elevator fraction:", self.inner_elevon_frac)
@@ -569,6 +605,7 @@ class Control_Surface_Sizing():
 
         # todo OEI
         # todo controllability at forward cg
+        # todo dutch roll/spiral stability
 
 
 
