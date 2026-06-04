@@ -18,12 +18,14 @@ class Control_Surface_Sizing():
         self.b = 30.08                # full span [m]
         self.c = 1.203                # chord [m]
         self.dihedral = 0.0
-        self.height_winglet = 4      # height of winglet above main wing [m]
+        self.inner_elevon_frac = 0.4
+        self.outer_elevon_frac = 0.4
+        self.height_winglet = None    # height of winglet above main wing [m]
 
         self.half_span = self.b / 2
-        self.start_inner_elevon = self.half_span * 0.1
-        self.elevon_connection   = self.half_span * 0.5
-        self.end_outer_elevon    = self.half_span * 0.9
+        self.start_inner_elevon = None
+        self.elevon_connection   = None
+        self.end_outer_elevon    = None
 
         # Operating point (can be overridden before calling vlm_run)
         self.op_point = asb.OperatingPoint(velocity=27.94, alpha=7)
@@ -43,6 +45,12 @@ class Control_Surface_Sizing():
         outer_symmetric : True  → both outer panels deflect equally (pitch)
                           False → panels deflect opposite (roll / aileron)
         """
+
+
+        self.start_inner_elevon = self.half_span * (0.9 - self.inner_elevon_frac - self.outer_elevon_frac)
+        self.elevon_connection = self.half_span * (0.9 - self.outer_elevon_frac)
+        self.end_outer_elevon = self.half_span * 0.9
+
         self.airplane = asb.Airplane(
             name="AHAPS",
             xyz_ref=[1.1, 0, 0],   # CG at ~37% chord — adjust to your actual CG
@@ -232,7 +240,7 @@ class Control_Surface_Sizing():
             delta_inner=delta_inner_fn(0),
             delta_outer=delta_outer_fn(0),
             delta_rudder=delta_rudder_fn(0),
-            outer_symmetric=outer_symmetric,
+            outer_symmetric=outer_symmetric
         )
         val = aero.get(coeff_key, None) if aero is not None else None
         # Flatten to scalar
@@ -272,7 +280,7 @@ class Control_Surface_Sizing():
             delta_outer_fn=lambda i: 0,
             delta_rudder_fn=lambda i: 0,
             outer_symmetric=True,
-            coeff_key="x_np"
+            coeff_key="x_np",
         )
 
         print("Running outer elevon Cl sweep (antisymmetric / roll) …")
@@ -290,7 +298,7 @@ class Control_Surface_Sizing():
             delta_outer_fn=lambda i: i,
             delta_rudder_fn=lambda i: 0,
             outer_symmetric=True,
-            coeff_key="x_np"
+            coeff_key="x_np",
         )
 
         print("Running rudder Cn sweep (antisymmetric / yaw) …")
@@ -308,14 +316,13 @@ class Control_Surface_Sizing():
             delta_outer_fn=lambda i: 0,
             delta_rudder_fn=lambda i: i,
             outer_symmetric=True,
-            coeff_key="x_np"
+            coeff_key="x_np",
         )
         print(min(x_np_inner), min(x_np_outer), min(x_np_rudder))
 
         # ── Plot ──────────────────────────────────────────────────────
         fig, axes = plt.subplots(2, 3, figsize=(12, 5))
         fig.suptitle("Elevon Control Effectiveness  (V="+str(self.op_point.velocity)+"m/s, α="+str(self.op_point.alpha)+"°)")
-        print("Elevon Control Effectiveness  (V=", str(self.op_point.velocity), "m/s, α=", str(self.op_point.alpha),"°)")
 
         # Left: pitch sweeps
         axes[0, 0].plot(deflection_points, Cm_inner, color="red",   label="Cm — inner elevon (sym)")
@@ -432,9 +439,19 @@ class Control_Surface_Sizing():
         r = Cndr/Cnr*(np.radians(deflection_points[np.size(deflection_points)-1]))*2*self.op_point.velocity/self.b
         print(r, "rad/s")
 
-        return q, p, r
+        return q, p, r, q_req, p_req, r_req
 
-    # def Control_Sizing(self):
+    def Control_Sizing(self):
+        q, p, r, q_req, p_req, r_req = self.Control_Check()
+
+        d_size = 0.05
+        p_list = []
+        if p > p_req:
+            # p_list.append(outer_elevon_frac)
+            self.outer_elevon_frac -= d_size
+            q, p, r, q_req, p_req, r_req = self.Control_Check()
+
+
 
 
 
