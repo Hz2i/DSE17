@@ -2,6 +2,7 @@ import aerosandbox as asb
 import aerosandbox.numpy as np
 import matplotlib
 from fontTools.feaLib import error
+from scipy.sparse.linalg import eigen
 
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
@@ -497,7 +498,7 @@ class Control_Surface_Sizing():
                     self.p_check = False
                     print("Final aileron fraction:", self.outer_elevon_frac+d_size_aileron)
                     # cs.airplane.draw()
-        if p < p_req:
+        elif p < p_req:
             while self.p_check:
                 print("Aileron fraction:", self.outer_elevon_frac)
                 self.outer_elevon_frac += d_size_aileron
@@ -520,7 +521,7 @@ class Control_Surface_Sizing():
                     self.q_check = False
                     print("Final elevator fraction:", self.inner_elevon_frac+d_size_elevator)
                     #cs.airplane.draw()
-        if q < q_req:
+        elif q < q_req:
             while self.q_check:
                 print("Elevator fraction", self.inner_elevon_frac)
                 self.inner_elevon_frac += d_size_elevator
@@ -542,7 +543,7 @@ class Control_Surface_Sizing():
                     self.r_check = False
                     print("Final winglet height:", self.height_winglet + d_size_rudder)
                     cs.airplane.draw()
-        if r < r_req:
+        elif r < r_req:
             while self.r_check:
                 print("Winglet height:", self.height_winglet)
                 self.height_winglet += d_size_rudder
