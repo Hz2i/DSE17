@@ -14,7 +14,7 @@ import Components_Materials
 geo=airframe(airfoil = asb.Airfoil("e344"))
 airfoil = asb.Airfoil("e344")
 
-def airfoil_properties(airfoil, chord_length=1.0):
+def airfoil_properties(airfoil, chord_length=1.2):
 
     # Get the upper and lower coordinates
     upper_coords = airfoil.upper_coordinates()  # Upper surface (x, y)
@@ -28,8 +28,14 @@ def airfoil_properties(airfoil, chord_length=1.0):
     area=np.trapezoid(y,x)
     # Calculate the perimeter
     dx = np.diff(x)
-    dy = np.diff(y)
-    perimeter = np.sum(np.sqrt(dx**2 + dy**2))
+
+    dy_upper = np.diff(interp_higher)
+    dy_lower = np.diff(interp_lower)
+
+    upper_length = np.sum(np.sqrt(dx**2 + dy_upper**2))
+    lower_length = np.sum(np.sqrt(dx**2 + dy_lower**2))
+
+    perimeter = upper_length + lower_length
 
     # Scale area and perimeter by the chord length
     scaled_area = area * chord_length**2
@@ -66,7 +72,7 @@ def bending_deflection(Bending_distribution, airframe, dz=0.01): # find bending 
     # Compute deflection using beam theory
     wingspan=airframe.S
     sweep=airframe.qc_sweep
-    spanwise_length = wingspan/2/np.cos(np.radians(sweep))
+    spanwise_length = wingspan/2/np.cos(sweep)
     dv2dz2 = Bending_distribution / (CFRP.E * I)
     dvdz = np.cumsum(dv2dz2) * dz
     z = np.cumsum(dvdz) * dz
@@ -99,7 +105,6 @@ def twist_deflection(Torsion_distribution, airframe, dz=0.01): # Compute twist d
     # symbolic solve dtheta_dz for skin and spar 
     T_spar = sp.Symbol('T_spar')  # Unknown torque carried by the skin
     A_skin, p_skin = airfoil_properties(airframe.foil, chord) # calculate area and perimeter of airfoil for skin torsion calculation
-    print(A_skin, p_skin)
     A_skin = 0.14 # conservative estimation, taking average thickness 
     skin_int_t_ds = 2.5*chord/t_skin # conservative estimation, taking perimeter as 2*chord
     min_thickness = 0.001
