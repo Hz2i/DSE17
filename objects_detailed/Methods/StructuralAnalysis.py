@@ -9,7 +9,6 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../Characteristics')))
 
 # Now you can import the Airframe module
-from Airframe import airframe
 import Components_Materials
 
 points_loads = 50
@@ -45,8 +44,46 @@ def airfoil_properties(airfoil, chord_length=1.2):
     
 
 
-def internal_loading():             # Implement method for computing internal loading (lift distribution potentially taken from VLM analysis)
-    pass
+def internal_loading_dMx(airframe):             # Implement method for computing internal loading (lift distribution potentially taken from VLM analysis)
+    half_point=int(round(len(airframe.dMx_dy_current)/2,0))
+    half_xmoment = airframe.dMx_dy_current[:half_point:]
+    half_ymoment = airframe.dMz_dy_current[:half_point:]   
+    half_Tmoment = np.cos(airframe.qc_sweep)*half_xmoment - np.sin(airframe.qc_sweep)*half_ymoment
+    y_positions = airframe.vortex_coords[:half_point,1]
+    spanwise_pos = np.linspace(-airframe.b/2/np.cos(airframe.qc_sweep),0,points_loads)
+    dT_dy = np.interp(spanwise_pos, y_positions, half_Tmoment)
+    # Perform cumulative integration using the trapezoidal rule
+    internal_load = np.zeros_like(spanwise_pos)
+    internal_load[1:] = np.cumsum((dT_dy[:-1] + dT_dy[1:]) / 2 * np.diff(spanwise_pos))
+
+    return abs(internal_load[::-1])
+
+
+def internal_loading_dMZ(airframe):             # Implement method for computing internal loading (lift distribution potentially taken from VLM analysis)
+    half_point=int(round(len(airframe.dMx_dy_current)/2,0))
+    half_Tmoment = airframe.dMz_dy_current[:half_point:]
+    y_positions = airframe.vortex_coords[:half_point,1]
+    spanwise_pos = np.linspace(-airframe.b/2/np.cos(airframe.qc_sweep),0,points_loads)
+    dT_dy = np.interp(spanwise_pos, y_positions, half_Tmoment)
+    # Perform cumulative integration using the trapezoidal rule
+    internal_load = np.zeros_like(spanwise_pos)
+    internal_load[1:] = np.cumsum((dT_dy[:-1] + dT_dy[1:]) / 2 * np.diff(spanwise_pos))
+
+    return abs(internal_load[::-1])
+
+def internal_loading_dT(airframe):             # Implement method for computing internal loading (lift distribution potentially taken from VLM analysis)
+    half_point=int(round(len(airframe.dMx_dy_current)/2,0))
+    half_xmoment = airframe.dMx_dy_current[:half_point:]
+    half_ymoment = airframe.dMz_dy_current[:half_point:]
+    half_Tmoment = np.sin(airframe.qc_sweep)*half_xmoment + np.cos(airframe.qc_sweep)*half_ymoment
+    y_positions = airframe.vortex_coords[:half_point,1]
+    spanwise_pos = np.linspace(-airframe.b/2/np.cos(airframe.qc_sweep),0,points_loads)
+    dT_dy = np.interp(spanwise_pos, y_positions, half_Tmoment)
+    # Perform cumulative integration using the trapezoidal rule
+    internal_load = np.zeros_like(spanwise_pos)
+    internal_load[1:] = np.cumsum((dT_dy[:-1] + dT_dy[1:]) / 2 * np.diff(spanwise_pos))
+
+    return abs(internal_load[::-1])
 
 def pos_first_connection(airframe):
     dz = airframe.b/(points_loads*2)
@@ -57,12 +94,12 @@ def pos_first_connection(airframe):
     x_max_connection = int(np.round((wingbox_length +sections_length/2-connection_length/2)/dz,0))
     return x_max_connection
 
-def bending_stress(Bending_distribution, airframe):    # Compute bending stresses from bending distribution
-    if len(Bending_distribution) != points_loads:
-        pass
+def bending_stress_lift(airframe, safety_factor=5, drag=False):    # Compute bending stresses from bending distribution
+    Bending_distribution = internal_loading_dMx(airframe)
+    if  drag:
+        Bending_distribution = internal_loading_dMZ(airframe)
     CFRP = Components_Materials.CFRP()
     GLARE = Components_Materials.GLARE()
-    safety_factor = 5
     yield_stress = CFRP.sigma
     chord=airframe.c_r
     max_thickness = airframe.foil.max_thickness()
@@ -73,18 +110,15 @@ def bending_stress(Bending_distribution, airframe):    # Compute bending stresse
     min_connection = safety_factor*Bending_distribution[x_max_connection]*chord*max_thickness/2/(yield_stress) # find I for connection
     return min_I, min_connection
 
-def bending_deflection(airframe): # find bending deflection in either direction
-    half_xmoment = airframe.dMx_dy_current[int(round((len(airframe.dMx_dy_current)-1)/2,0))::]
-    y_positions = airframe.vortex_coords[1,:]
-    #print(half_xmoment)
-    #print(airframe.dMx_dy_current)
-    #print(airframe.b/2)
-    print(airframe.vortex_coords[:,1])
-    print(airframe.dMx_dy_current)
-    Bending_distribution = np.interp(np.linspace(0,airframe.b/2/airframe.qc_sweep,points_loads), airframe.vortex_coords[1,:], airframe.dMx_dy_current[(round((len(airframe.dMx_dy_current)-1)/2,0))::]) # get bending distribution from VLM analysis, interpolated to match points_loads
+def bending_stress_drag(airframe, safety_factor=5):    # Compute bending stresses from bending distribution
+    return bending_stress_lift(airframe, safety_factor, drag=True)
 
-    
-    spar_I, connection_I = bending_stress(Bending_distribution, airframe) # get I from bending loads
+def bending_deflection_lift(airframe, drag=False): # find bending deflection in either direction
+ # get bending distribution from VLM analysis, interpolated to match points_loads
+    Bending_distribution = internal_loading_dMx(airframe) # get bending distribution from bending moment distribution
+    if  drag:
+        Bending_distribution = internal_loading_dMZ(airframe)
+    spar_I, connection_I = bending_stress_lift(airframe) # get I from bending loads
     CFRP = Components_Materials.CFRP()
     I = min(spar_I, connection_I) # conservative estimate, difference is small as connections length are minimal, with small change in I
     # Compute deflection using beam theory
@@ -100,26 +134,23 @@ def bending_deflection(airframe): # find bending deflection in either direction
     #plt.show()
     # plot if 1:1 axes to see realistic deflection
     return z
-print("before airframe")
-a=airframe()
-print("airframe")
-a.compute_force_distribution()
-print("analysis")
-bending_deflection(a)
 
+def bending_deflection_drag(airframe): # find bending deflection in either direction
+    return bending_deflection_lift(airframe, drag=True)
 
-def torsional_stress(Torsion_distribution, airframe): # Compute torsional stresses from torsion distribution
+def torsional_stress(airframe, safety_factor = 5): # Compute torsional stresses from torsion distribution
+    Torsion_distribution = internal_loading_dT(airframe)
     mylar = Components_Materials.Mylar()
-    safety_factor = 5
     max_shear = mylar.shear
     A_skin,_ = airfoil_properties(airframe.foil, airframe.c_r)
     t_skin = safety_factor*Torsion_distribution[0]/(2*A_skin*(max_shear))
     # 5x safety factor torque, min skin thickness calculated if skin carries all torque
     return max(t_skin, 0.0002)
 
-def twist_deflection(Torsion_distribution, airframe, r_thickness=0.002, r_spar=0.04): # Compute twist deflection from torsion distribution
+def torsional_deflection(airframe, r_thickness=0.002, r_spar=0.04): # Compute twist deflection from torsion distribution
+    Torsion_distribution = internal_loading_dT(airframe)
     # i guessed r_thickness and r_spar but you need to get those from bas
-    t_skin = torsional_stress(Torsion_distribution, airframe) # get area from torsional loads
+    t_skin = torsional_stress(airframe) # get area from torsional loads
     mylar = Components_Materials.Mylar()
     CFRP = Components_Materials.CFRP()
     # considering all torsion carried by skin
@@ -143,13 +174,15 @@ def twist_deflection(Torsion_distribution, airframe, r_thickness=0.002, r_spar=0
     #reused variable name but can change this
     dtheta_dz = Torsion_distribution / (4*CFRP.G * A_spar**2)*int_t_ds
     compatibility_factor = compatibility_dtdz/dtheta_dz[0] # calculate compatibility factor by comparing dtheta_dz from spar and skin at root
+    
     dtheta_dz=dtheta_dz*compatibility_factor
     dz = airframe.b/(points_loads*2*np.cos(airframe.qc_sweep))
-    theta = np.cumsum(dtheta_dz) * dz # convert to degrees
+    theta = np.cumsum(dtheta_dz) * dz # rad
     #plt.plot(np.linspace(0,len(theta)*dz,len(theta)), theta)
     #plt.ylim((0,len(theta)*dz))
     #plt.show()
-    return theta#in degrees
+    return theta#in rad
+
 
 
 
