@@ -12,7 +12,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../Char
 from Airframe import airframe
 import Components_Materials
 
-points_loads = 100
+points_loads = 50
 
 def airfoil_properties(airfoil, chord_length=1.2):
 
@@ -58,6 +58,8 @@ def pos_first_connection(airframe):
     return x_max_connection
 
 def bending_stress(Bending_distribution, airframe):    # Compute bending stresses from bending distribution
+    if len(Bending_distribution) != points_loads:
+        pass
     CFRP = Components_Materials.CFRP()
     GLARE = Components_Materials.GLARE()
     safety_factor = 5
@@ -71,13 +73,23 @@ def bending_stress(Bending_distribution, airframe):    # Compute bending stresse
     min_connection = safety_factor*Bending_distribution[x_max_connection]*chord*max_thickness/2/(yield_stress) # find I for connection
     return min_I, min_connection
 
-def bending_deflection(Bending_distribution, airframe): # find bending deflection in either direction
+def bending_deflection(airframe): # find bending deflection in either direction
+    half_xmoment = airframe.dMx_dy_current[int(round((len(airframe.dMx_dy_current)-1)/2,0))::]
+    y_positions = airframe.vortex_coords[1,:]
+    #print(half_xmoment)
+    #print(airframe.dMx_dy_current)
+    #print(airframe.b/2)
+    print(airframe.vortex_coords[:,1])
+    print(airframe.dMx_dy_current)
+    Bending_distribution = np.interp(np.linspace(0,airframe.b/2/airframe.qc_sweep,points_loads), airframe.vortex_coords[1,:], airframe.dMx_dy_current[(round((len(airframe.dMx_dy_current)-1)/2,0))::]) # get bending distribution from VLM analysis, interpolated to match points_loads
+
+    
     spar_I, connection_I = bending_stress(Bending_distribution, airframe) # get I from bending loads
     CFRP = Components_Materials.CFRP()
     I = min(spar_I, connection_I) # conservative estimate, difference is small as connections length are minimal, with small change in I
     # Compute deflection using beam theory
 
-    dz = airframe.b/(points_loads*2*np.cos(airframe.qc_sweep))
+    dz = airframe.b/(points_loads*2*np.cos(airframe.qc_sweep)) 
     dv2dz2 = Bending_distribution / (CFRP.E * I)
     plt.plot()
     dvdz = np.cumsum(dv2dz2) * dz
@@ -87,7 +99,13 @@ def bending_deflection(Bending_distribution, airframe): # find bending deflectio
     #plt.ylim((0,len(z)*dz))
     #plt.show()
     # plot if 1:1 axes to see realistic deflection
-    return z[-1]
+    return z
+print("before airframe")
+a=airframe()
+print("airframe")
+a.compute_force_distribution()
+print("analysis")
+bending_deflection(a)
 
 
 def torsional_stress(Torsion_distribution, airframe): # Compute torsional stresses from torsion distribution
@@ -131,7 +149,7 @@ def twist_deflection(Torsion_distribution, airframe, r_thickness=0.002, r_spar=0
     #plt.plot(np.linspace(0,len(theta)*dz,len(theta)), theta)
     #plt.ylim((0,len(theta)*dz))
     #plt.show()
-    return theta[-1]#in degrees
+    return theta#in degrees
 
 
 
