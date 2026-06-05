@@ -671,3 +671,4 @@ if __name__ == "__main__":
     # cs.Control_Check()
     # cs.Control_Sizing()
     cs.Yaw_Check()
+    # cs.Spiral_Check()
