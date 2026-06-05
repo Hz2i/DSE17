@@ -22,7 +22,7 @@ class Control_Surface_Sizing():
         self.dihedral = 0.0
         self.inner_elevon_frac = 0.05
         self.outer_elevon_frac = 0.25
-        self.height_winglet = 2    # height of winglet above main wing [m]
+        self.height_winglet = 1.5    # height of winglet above main wing [m]
         self.fraction_outer_engine = None
 
         self.half_span = self.b / 2
@@ -155,7 +155,7 @@ class Control_Surface_Sizing():
                     xsecs=[
                         asb.WingXSec(
                             xyz_le=[(np.tan(self.wing_sweep) * self.half_span)+(np.tan(self.wing_sweep) * self.height_winglet), self.half_span, self.height_winglet],
-                            chord=1.5*self.c,
+                            chord=self.c,
                             twist=0,
                             airfoil=self.tail_airfoil,
                             control_surfaces=[
@@ -170,7 +170,7 @@ class Control_Surface_Sizing():
                         ),
                         asb.WingXSec(
                             xyz_le=[np.tan(self.wing_sweep) * self.half_span, self.half_span, 0],
-                            chord=1.5*self.c,
+                            chord=self.c,
                             twist=0,
                             airfoil=self.tail_airfoil,
                         ),
@@ -487,13 +487,18 @@ class Control_Surface_Sizing():
         y_eng=fraction_outer_engine*self.half_span
         M_engine = T_eng*y_eng
         rho_cruise = 0.116
-        Cn_OEI = M_engine/(0.5*rho_cruise*self.op_point.velocity**2*self.S*self.b)
-        deflection_OEI = np.degrees(Cn_OEI/Cndr)
-        r_req = np.radians(5)   # roll  rate [rad/s]
+        k = 1.5
+        Cn_OEI = k*M_engine/(0.5*rho_cruise*self.op_point.velocity**2*self.S*self.b)
+        # deflection_OEI = np.degrees(-Cn_OEI/Cndr)
+        r_req = np.radians(5)   # yaw  rate [rad/s]
+        deflection_max = np.radians(30) 
+        Cndr_req = (Cnr * r_req - Cn_OEI)/deflection_max
+        # deflection_yaw_rate = np.degrees(r_req * (Cnr / Cndr) / self.b/(2*self.op_point.velocity))
+        # total_deflection = deflection_OEI + deflection_yaw_rate
 
         r = Cndr / Cnr * (np.radians(self.deflection_points[np.size(self.deflection_points) - 1])) * 2 * self.op_point.velocity / self.b
         print("R:", r, "rad/s")
-        print("Required rudder deflection for OEI:", deflection_OEI, "deg")
+        print("Required rudder effectiveness:", Cndr_req, "/rad")
 
         return r, r_req
 
@@ -668,4 +673,5 @@ if __name__ == "__main__":
     #cs.airplane.draw()
     # cs.Control_Coefficients()
     # cs.Control_Check()
-    cs.Control_Sizing()
+    # cs.Control_Sizing()
+    cs.Yaw_Check()
