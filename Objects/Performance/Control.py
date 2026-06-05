@@ -22,7 +22,8 @@ class Control_Surface_Sizing():
         self.dihedral = 0.0
         self.inner_elevon_frac = 0.05
         self.outer_elevon_frac = 0.25
-        self.height_winglet = 1.5    # height of winglet above main wing [m]
+        self.height_winglet = 1.0 # height of winglet above main wing [m]
+        self.rudder_frac = 0.8
         self.fraction_outer_engine = None
 
         self.half_span = self.b / 2
@@ -484,21 +485,21 @@ class Control_Surface_Sizing():
     def Yaw_Check(self, T_eng=17, fraction_outer_engine=0.6):
         Cndr, Cnr = self.Yawing_Coefficients()
         #OEI
-        y_eng=fraction_outer_engine*self.half_span
-        M_engine = T_eng*y_eng
-        rho_cruise = 0.116
-        k = 1.5
-        Cn_OEI = k*M_engine/(0.5*rho_cruise*self.op_point.velocity**2*self.S*self.b)
-        # deflection_OEI = np.degrees(-Cn_OEI/Cndr)
+        # y_eng=fraction_outer_engine*self.half_span
+        # M_engine = T_eng*-y_eng
+        # rho_cruise = 0.116
+        # k = 1.5
+        # Cn_OEI = k*M_engine/(0.5*rho_cruise*self.op_point.velocity**2*self.S*self.b)
+        # # deflection_OEI = np.degrees(-Cn_OEI/Cndr)
         r_req = np.radians(5)   # yaw  rate [rad/s]
-        deflection_max = np.radians(30) 
-        Cndr_req = (Cnr * r_req - Cn_OEI)/deflection_max
-        # deflection_yaw_rate = np.degrees(r_req * (Cnr / Cndr) / self.b/(2*self.op_point.velocity))
-        # total_deflection = deflection_OEI + deflection_yaw_rate
+        # deflection_max = np.radians(30)
+        # Cndr_req = (Cnr * r_req - Cn_OEI)/deflection_max
+        # # deflection_yaw_rate = np.degrees(r_req * (Cnr / Cndr) / self.b/(2*self.op_point.velocity))
+        # # total_deflection = deflection_OEI + deflection_yaw_rate
 
         r = Cndr / Cnr * (np.radians(self.deflection_points[np.size(self.deflection_points) - 1])) * 2 * self.op_point.velocity / self.b
         print("R:", r, "rad/s")
-        print("Required rudder effectiveness:", Cndr_req, "/rad")
+        # print("Required rudder effectiveness:", Cndr_req, "/rad")
 
         return r, r_req
 
@@ -642,17 +643,17 @@ class Control_Surface_Sizing():
 
 
         # todo OEI
-        r, r_req, = self.Yaw_Check()
-        d_size_rudder = 0.01
-        if r > r_req:
-            while self.r_check:
-                print("Rudder fraction", self.height_winglet/self.half_span)
-                self.height_winglet -= d_size_rudder*self.half_span
-                r, r_req = self.Yaw_Check()
-                if r < r_req:
-                    self.r_check = False
-                    print("Final rudder fraction:", (self.height_winglet+self.half_span*d_size_rudder)/self.half_span)
-                    cs.airplane.draw()
+        # r, r_req, = self.Yaw_Check()
+        # d_size_rudder = 0.01
+        # if r > r_req:
+        #     while self.r_check:
+        #         print("Rudder fraction", self.height_winglet/self.half_span)
+        #         self.height_winglet -= d_size_rudder*self.half_span
+        #         r, r_req = self.Yaw_Check()
+        #         if r < r_req:
+        #             self.r_check = False
+        #             print("Final rudder fraction:", (self.height_winglet+self.half_span*d_size_rudder)/self.half_span)
+        #             cs.airplane.draw()
 
 
         # todo controllability at forward cg
@@ -669,6 +670,6 @@ if __name__ == "__main__":
     #cs.airplane.draw()
     # cs.Control_Coefficients()
     # cs.Control_Check()
-    # cs.Control_Sizing()
-    cs.Yaw_Check()
+    cs.Control_Sizing()
+    # cs.Yaw_Check()
     # cs.Spiral_Check()
