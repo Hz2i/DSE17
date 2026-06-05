@@ -78,7 +78,6 @@ def bending_deflection(Bending_distribution, airframe): # find bending deflectio
     # Compute deflection using beam theory
 
     dz = airframe.b/(points_loads*2*np.cos(airframe.qc_sweep))
-    print(airframe.qc_sweep)
     dv2dz2 = Bending_distribution / (CFRP.E * I)
     plt.plot()
     dvdz = np.cumsum(dv2dz2) * dz
@@ -98,12 +97,11 @@ def torsional_stress(Torsion_distribution, airframe): # Compute torsional stress
     A_skin,_ = airfoil_properties(airframe.foil, airframe.c_r)
     t_skin = safety_factor*Torsion_distribution[0]/(2*A_skin*(max_shear))
     # 5x safety factor torque, min skin thickness calculated if skin carries all torque
-    return t_skin
+    return max(t_skin, 0.0002)
 
 def twist_deflection(Torsion_distribution, airframe, r_thickness=0.002, r_spar=0.04): # Compute twist deflection from torsion distribution
     # i guessed r_thickness and r_spar but you need to get those from bas
     t_skin = torsional_stress(Torsion_distribution, airframe) # get area from torsional loads
-    print(t_skin)
     mylar = Components_Materials.Mylar()
     CFRP = Components_Materials.CFRP()
     # considering all torsion carried by skin
