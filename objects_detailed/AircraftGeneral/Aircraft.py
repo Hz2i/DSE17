@@ -77,27 +77,16 @@ class Aircraft:
             if simulation_required:
                 self.airframe.compute_polar(alt=self.h, TAS=self.TAS)
 
-
-            #K = 0.38 # factor for viscous induced drag; For DC-8/9 family K=0.38, for sailplanes such as HAPS is likely lower
-
-            #self.e = 1/(K*self.CD0*np.pi*self.wing.AR + 1/(self.wing.e*(1-2*(self.fus.D/self.wing.b)**2))) * self.wing.k_e_dihedral
-
-            self.e = 0.85
-
-            CL_opt_1 = (3* self.CD0 * np.pi * self.wing.AR * self.e)**0.5
-            #self.CL_opt = (self.CD0 * np.pi * self.wing.AR * self.e)**0.5
-
+            self.CL_opt = (self.airframe.K1 + (self.airframe.K1**2 + 12*self.airframe.K2*self.airframe.CD0)**0.5)/(2 * self.airframe.K2)
             TAS_opt = (self.MTOW*self.const.g / (0.5 * am.Atmosphere(self.h).density[0] * self.wing.S * self.CL_opt))**0.5
 
             if TAS_opt > self.TAS:
                 CL_current = self.CL_opt
-                CD_current = self.CD0 + CL_current**2/(np.pi*self.wing.AR*self.e)
-                self.CL_CD = CL_current/CD_current
+                CD_current = self.airframe.CD0 + self.airframe.K1 * CL_current + self.airframe.K2 * CL_current**2
                 self.TAS_cruise = TAS_opt
             else:
                 CL_current = self.MTOW*self.const.g / (0.5 * am.Atmosphere(self.h).density[0] * self.TAS**2 * self.wing.S)
                 CD_current = self.CD0 + CL_current**2/(np.pi*self.wing.AR*self.e)
-                self.CL_CD = CL_current/CD_current
                 self.TAS_cruise = self.TAS
 
             if CL_current > 0.8* self.wing.CL_max:

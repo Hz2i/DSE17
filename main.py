@@ -26,14 +26,12 @@ DoD = 0.7
 night_time = 0.0
 
 S = 36.0
-Sh_S = 0 # 0.15
-Sv_S = 0 # 0.07
 
 
 # Flying wing planform:
 fus_geo = fuselage(D=0.5, L1=0.2, L2=0.6, L3=0.2)
 nac_geo = nacelles(nr_of_engines=4)
-structure = airframe(S=S, A=5.0, qc_sweep=0.0*np.pi/180, taper=0.455, dihedral=0.0*np.pi/180.0,fus=fus_geo, nac=nac_geo, display=True)
+structure = airframe(S=S, A=20.0, qc_sweep=15.0*np.pi/180, taper=1.0, dihedral=0.0*np.pi/180.0,fus=fus_geo, nac=nac_geo, display=True)
 
 
 K2 = structure.K2
@@ -41,16 +39,34 @@ print("Oswald efficiency: ", 1/(K2 * structure.AR * np.pi))
 print("Max CL/CD:", structure.CL_CD_max)
 
 
-aero = structure.llt_analysis(series=True, alpha=np.linspace(-10.0, 20.0, 30))
+# aero = structure.llt_analysis(series=True, alpha=np.linspace(-10.0, 20.0, 30))
+#
+# aero_single, llt_an = structure.llt_analysis(alpha=10.0)
+# print("Panel coords:", llt_an.front_left_vertices)
+#
+# lift = aero["CL"]
+# drag = aero["CD"]
+#
+# plt.plot(np.linspace(-10.0, 20.0, 30), lift)
+# plt.show()
+# plt.plot(lift, drag)
+# plt.plot(lift, structure.CD0 + structure.K1 * lift + structure.K2 * lift**2, c='r')
+# plt.show()
 
-aero_single, llt_an = structure.llt_analysis(alpha=10.0)
-print("Panel coords:", llt_an.front_left_vertices)
 
-lift = aero["CL"]
-drag = aero["CD"]
+F, M, coords = structure.compute_force_distribution(alpha=10)
 
-plt.plot(np.linspace(-10.0, 20.0, 30), lift)
+print("Force vectors:", F)
+print("Vortex coordinates:", coords)
+
+print("Span:", structure.b)
+
+
+plt.scatter(coords[:,1], F[:,0])
 plt.show()
-plt.plot(lift, drag)
-plt.plot(lift, structure.CD0 + structure.K1 * lift + structure.K2 * lift**2, c='r')
+
+plt.scatter(coords[:,1], F[:,1])
+plt.show()
+
+plt.scatter(coords[:,1], F[:,2])
 plt.show()
