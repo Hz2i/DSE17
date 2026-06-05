@@ -66,8 +66,17 @@ class airframe:
             wings = [
                 asb.Wing(
                     name="Main Planform",
-                    symmetric = True,
+                    symmetric = False,
                     xsecs=[
+                        # Left Half:
+                        asb.WingXSec(
+                            xyz_le=[(self.b/2) * np.tan(self.le_sweep),
+                                    -self.b/2,
+                                    (self.b/2) * np.tan(self.dihedral)],
+                            chord=self.c_t,
+                            twist=0,
+                            airfoil=self.foil),
+                        # Root Section::
                         asb.WingXSec(
                             xyz_le=[0.0,
                                     0.0,
@@ -75,6 +84,7 @@ class airframe:
                             chord=self.c_r,
                             twist=0,
                             airfoil=self.foil),
+                        # Right Half:
                         asb.WingXSec(
                             xyz_le=[(self.b/2) * np.tan(self.le_sweep),
                                     self.b/2,
