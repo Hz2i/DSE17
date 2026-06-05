@@ -492,15 +492,15 @@ class Control_Surface_Sizing():
     def Yaw_Check(self, T_eng=17, fraction_outer_engine=0.6):
         Cndr, Cnr = self.Yawing_Coefficients()
         #OEI
-        # y_eng=fraction_outer_engine*self.half_span
-        # M_engine = T_eng*y_eng
-        # rho_cruise = 0.116
-        # k = 2
-        # Cn_OEI_counter = -k*M_engine/(0.5*rho_cruise*self.op_point.velocity**2*self.S*self.b) # Required Cn to counteract OEI yawing moment
-        # # deflection_OEI = np.degrees(-Cn_OEI/Cndr)
+        y_eng=fraction_outer_engine*self.half_span
+        M_engine = T_eng*y_eng
+        rho_cruise = 0.116
+        k = 2
+        Cn_OEI_counter = -k*M_engine/(0.5*rho_cruise*self.op_point.velocity**2*self.S*self.b) # Required Cn to counteract OEI yawing moment
+        # deflection_OEI = np.degrees(-Cn_OEI/Cndr)
         r_req = np.radians(5)   # yaw  rate, now defined nose to left [rad/s]
-        # deflection_max = np.radians(30)
-        # Cndr_req = (Cnr * r_req + Cn_OEI_counter)/deflection_max # Worst case (right engine out, deflecting rudder to left)
+        deflection_max = np.radians(30)
+        Cndr_req = (Cnr * r_req + Cn_OEI_counter)/deflection_max # Worst case (right engine out, deflecting rudder to left)
         # # deflection_yaw_rate = np.degrees(r_req * (Cnr / Cndr) / self.b/(2*self.op_point.velocity))
         # # total_deflection = deflection_OEI + deflection_yaw_rate
 
@@ -508,7 +508,7 @@ class Control_Surface_Sizing():
         print("R:", r, "rad/s")
         # print("Required rudder effectiveness:", Cndr_req, "/rad")
 
-        return r, r_req
+        return r, r_req, Cndr_req
 
     def Spiral_Check(self):
         aero = self.vlm_run(
@@ -607,10 +607,11 @@ class Control_Surface_Sizing():
                         print("Final elevator fraction:", self.inner_elevon_frac)
                         #cs.airplane.draw()
 
-
-        r, r_req = self.Yaw_Check()
+# NOT FINAL YET
+        Cndr_req = self.Yaw_Check() # get required yaw rate
+        Cndr = self.Yawing_Coefficients()
         d_size_rudder = 0.1
-        if r > r_req:
+        if Cndr > Cndr_req:
             while self.r_check:
                 print("Rudder fraction:", self.rudder_frac)
                 self.rudder_frac -= d_size_rudder
@@ -619,8 +620,9 @@ class Control_Surface_Sizing():
                     self.rudder_frac += d_size_rudder/2
                     d_size_rudder = d_size_rudder/2
 
-                r, r_req = self.Yaw_Check()
-                if r < r_req:
+                Cndr_req = self.Yaw_Check() # get required yaw rate
+                Cndr = self.Yawing_Coefficients()
+                if Cndr < Cndr_req:
                     if d_size_rudder > 0.01:
                         d_size_rudder = d_size_rudder/ 2
                     else:
@@ -628,12 +630,13 @@ class Control_Surface_Sizing():
                         self.rudder_frac += d_size_rudder
                         print("Final rudder fraction:", self.rudder_frac)
                         cs.airplane.draw()
-        elif r < r_req:
+        elif Cndr < Cndr_req:
             while self.r_check:
                 print("Rudder fraction:", self.rudder_frac)
                 self.rudder_frac += d_size_rudder
-                r, r_req = self.Yaw_Check()
-                if r > r_req:
+                Cndr_req = self.Yaw_Check() # get required yaw rate
+                Cndr = self.Yawing_Coefficients()
+                if Cndr > Cndr_req:
                     if d_size_rudder > 0.01:
                         d_size_rudder = d_size_rudder / 2
                     else:
@@ -641,6 +644,40 @@ class Control_Surface_Sizing():
                         self.rudder_frac -= d_size_rudder
                         print("Final rudder fraction:", self.rudder_frac)
                         cs.airplane.draw()
+
+        # r, r_req = self.Yaw_Check()
+        # d_size_rudder = 0.1
+        # if r > r_req:
+        #     while self.r_check:
+        #         print("Rudder fraction:", self.rudder_frac)
+        #         self.rudder_frac -= d_size_rudder
+
+        #         if self.rudder_frac < 0.0001:
+        #             self.rudder_frac += d_size_rudder/2
+        #             d_size_rudder = d_size_rudder/2
+
+        #         r, r_req = self.Yaw_Check()
+        #         if r < r_req:
+        #             if d_size_rudder > 0.01:
+        #                 d_size_rudder = d_size_rudder/ 2
+        #             else:
+        #                 self.r_check = False
+        #                 self.rudder_frac += d_size_rudder
+        #                 print("Final rudder fraction:", self.rudder_frac)
+        #                 cs.airplane.draw()
+        # elif r < r_req:
+        #     while self.r_check:
+        #         print("Rudder fraction:", self.rudder_frac)
+        #         self.rudder_frac += d_size_rudder
+        #         r, r_req = self.Yaw_Check()
+        #         if r > r_req:
+        #             if d_size_rudder > 0.01:
+        #                 d_size_rudder = d_size_rudder / 2
+        #             else:
+        #                 self.r_check = False
+        #                 self.rudder_frac -= d_size_rudder
+        #                 print("Final rudder fraction:", self.rudder_frac)
+        #                 cs.airplane.draw()
 
         print("Final aileron fraction:", self.outer_elevon_frac)
         print("Final elevator fraction:", self.inner_elevon_frac)
@@ -674,12 +711,10 @@ class Control_Surface_Sizing():
 if __name__ == "__main__":
     print("Starting simulation")
     cs = Control_Surface_Sizing()
-    cs.Airplane_Geo()
-    cs.airplane.draw()
-    cs.Airplane_Geo()
-    cs.airplane.draw()
+    # cs.Airplane_Geo()
+    # cs.airplane.draw()
     # cs.Control_Coefficients()
     # cs.Control_Check()
-    # cs.Control_Sizing()
+    cs.Control_Sizing()
     # cs.Yaw_Check()
-    cs.Spiral_Check()
+    # cs.Spiral_Check()
