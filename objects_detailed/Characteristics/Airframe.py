@@ -202,7 +202,9 @@ class airframe:
 
         self.vortex_coords = llt_an.vortex_centers
 
-        self.panel_widths = abs(llt_an.front_right_vertices[:,1] - llt_an.front_left_vertices[:,1])
+        panel_widths = abs(llt_an.front_right_vertices[:,1] - llt_an.front_left_vertices[:,1])
+
+        self.panel_widths =panel_widths
 
         self.dFz_dy_current = total_F[:,2]/panel_widths
         self.dFx_dy_current = total_F[:,0]/panel_widths
