@@ -162,7 +162,7 @@ class Control_Surface_Sizing():
                         ),
 
                         asb.WingXSec(
-                            xyz_le=[(np.tan(self.wing_sweep) * self.half_span)+(np.tan(self.wing_sweep)), self.half_span, self.height_winglet],
+                            xyz_le=[(np.tan(self.wing_sweep) * self.half_span)+(np.tan(self.wing_sweep)*(self.rudder_frac * self.height_winglet)), self.half_span, self.rudder_frac * self.height_winglet],
                             chord=self.c,
                             twist=0,
                             airfoil=self.tail_airfoil,
