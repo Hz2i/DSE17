@@ -204,8 +204,12 @@ class airframe:
 
         panel_widths = abs(llt_an.front_right_vertices[:,1] - llt_an.front_left_vertices[:,1])
 
+        dFz_dy = total_F[:,2]/panel_widths
         dFx_dy = total_F[:,0]/panel_widths
         dFy_dy = total_F[:,1]/panel_widths
-        dFz_dy = total_F[:,2]/panel_widths
 
-        return dFx_dy, dFy_dy, dFz_dy, panel_widths, vortex_coords, llt_an
+        dMx_dy = total_M[:,0]/panel_widths
+        dMy_dy = total_M[:,1]/panel_widths
+        dMz_dy = total_M[:,2]/panel_widths
+
+        return dFx_dy, dFy_dy, dFz_dy, dMx_dy, dMy_dy, dMz_dy, panel_widths, vortex_coords, llt_an
