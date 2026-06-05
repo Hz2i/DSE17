@@ -615,7 +615,7 @@ class Control_Surface_Sizing():
                 print("Rudder fraction:", self.rudder_frac)
                 self.rudder_frac -= d_size_rudder
 
-                if self.rudder_frac < 0.:
+                if self.rudder_frac < 0.0001:
                     self.rudder_frac += d_size_rudder/2
                     d_size_rudder = d_size_rudder/2
 
@@ -644,7 +644,7 @@ class Control_Surface_Sizing():
 
         print("Final aileron fraction:", self.outer_elevon_frac)
         print("Final elevator fraction:", self.inner_elevon_frac)
-        print("Final rudder fraction:", self.height_winglet)
+        print("Final rudder fraction:", self.rudder_frac)
 
 
 
