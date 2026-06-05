@@ -19,7 +19,7 @@ class Control_Surface_Sizing():
         self.b = 28.80                # full span [m]
         self.c = 1.44                 # chord [m]
         self.S = self.b * self.c      # Wing area [m^2]
-        self.dihedral = np.radians(0.70975)
+        self.dihedral = np.radians(1.0)
         self.inner_elevon_frac = 0.05
         self.outer_elevon_frac = 0.25
         self.height_winglet = 1.0 # height of winglet above main wing [m]
@@ -68,7 +68,7 @@ class Control_Surface_Sizing():
 
         self.airplane = asb.Airplane(
             name="AHAPS",
-            xyz_ref=[1.0, 0, 0],   # CG at ~37% chord — adjust to your actual CG
+            xyz_ref=[0.45, 0, 0],   # CG at ~37% chord — adjust to your actual CG
             wings=[
                 asb.Wing(
                     name="Main Wing",
@@ -283,6 +283,7 @@ class Control_Surface_Sizing():
           2. Outer elevon (antisymmetric) → Cl — roll authority
           3. Rudder → Cn — yaw authority
         """
+        print("-------------------------------")
         print("Running inner elevon Cm sweep …")
         Cm_inner = self._sweep(
             self.deflection_points,
@@ -345,6 +346,7 @@ class Control_Surface_Sizing():
         return Cmde, Cmq
 
     def Rolling_Coefficients(self):
+        print("-------------------------------")
         print("Running outer elevon Cl sweep …")
         Cl_outer = self._sweep(
             self.deflection_points,
@@ -406,6 +408,7 @@ class Control_Surface_Sizing():
         return Clda, Clp
 
     def Yawing_Coefficients(self):
+        print("-------------------------------")
         print("Running rudder Cn sweep (antisymmetric / yaw) …")
         Cn_rudder = self._sweep(
             self.deflection_points,
@@ -475,7 +478,7 @@ class Control_Surface_Sizing():
         q_req = np.radians(7)  # pitch rate [rad/s]
 
         q = Cmde/Cmq*(np.radians(self.deflection_points[np.size(self.deflection_points)-1]))*self.op_point.velocity/self.c
-        print("Q:", q, "rad/s")
+        print("Q:", np.degrees(q), "deg/s")
 
         return q, q_req
 
@@ -485,7 +488,7 @@ class Control_Surface_Sizing():
 
         p = Clda / Clp * (np.radians(
             self.deflection_points[np.size(self.deflection_points) - 1])) * 2 * self.op_point.velocity / self.b
-        print("P:", p, "rad/s")
+        print("P:", np.degrees(p), "deg/s")
 
         return p, p_req
 
@@ -500,12 +503,12 @@ class Control_Surface_Sizing():
         k = 2
         Cn_OEI_counter = k*M_engine/(0.5*rho_cruise*self.op_point.velocity**2*self.S*self.b) # Required Cn to counteract OEI yawing moment
         deflection_OEI = -Cn_OEI_counter/Cndr
-        print(deflection_OEI)
+        print("OEI Deflection", np.degrees(deflection_OEI), "deg/s")
         deflection_max = np.radians(30)
 
         r = Cndr / Cnr * (deflection_max-deflection_OEI) * 2 * self.op_point.velocity / self.b
         # r = Cndr / Cnr * (np.radians(self.deflection_points[np.size(self.deflection_points) - 1])) * 2 * self.op_point.velocity / self.b
-        print("R:", r, "rad/s")
+        print("R:", np.degrees(r), "deg/s")
 
         return r, r_req
 
@@ -549,13 +552,16 @@ class Control_Surface_Sizing():
                 p, p_req = self.Roll_Check()
 
                 if p < p_req:
-                    if d_size_aileron > 0.01:
-                        d_size_aileron = d_size_aileron/2
+                    if d_size_aileron > 0.001:
+                        print("Aileron fraction failed guess:", self.outer_elevon_frac)
                         self.outer_elevon_frac += d_size_aileron #!!!!!
+                        d_size_aileron = d_size_aileron/2
                     else:
                         self.p_check = False
                         self.outer_elevon_frac += d_size_aileron
-                        print("Final aileron fraction:", self.outer_elevon_frac)
+                        p, p_req = self.Roll_Check()
+                        print("----Final aileron fraction:", self.outer_elevon_frac)
+                        print("----Final roll rate:", np.degrees(p), "deg/s")
                         # cs.airplane.draw()
         elif p < p_req:
             while self.p_check:
@@ -563,13 +569,16 @@ class Control_Surface_Sizing():
                 self.outer_elevon_frac += d_size_aileron
                 p, p_req = self.Roll_Check()
                 if p > p_req:
-                    if d_size_aileron > 0.01:
-                        d_size_aileron = d_size_aileron / 2
+                    if d_size_aileron > 0.001:
+                        print("Aileron fraction failed guess:", self.outer_elevon_frac)
                         self.outer_elevon_frac -= d_size_aileron #!!!!!
+                        d_size_aileron = d_size_aileron / 2
                     else:
                         self.p_check = False
                         self.outer_elevon_frac -= d_size_aileron
-                        print("Final aileron fraction:", self.outer_elevon_frac)
+                        p, p_req = self.Roll_Check()
+                        print("----Final aileron fraction:", self.outer_elevon_frac)
+                        print("----Final roll rate:", np.degrees(p), "deg/s")
                         # cs.airplane.draw()
 
 
@@ -586,13 +595,16 @@ class Control_Surface_Sizing():
 
                 q, q_req = self.Pitch_Check()
                 if q < q_req:
-                    if d_size_elevator > 0.01:
-                        d_size_elevator = d_size_elevator/ 2
+                    if d_size_elevator > 0.001:
+                        print("Elevator fraction failed guess:", self.inner_elevon_frac)
                         self.inner_elevon_frac += d_size_elevator #!!!!!
+                        d_size_elevator = d_size_elevator/ 2
                     else:
                         self.q_check = False
                         self.inner_elevon_frac += d_size_elevator
-                        print("Final elevator fraction:", self.inner_elevon_frac)
+                        q, q_req = self.Pitch_Check()
+                        print("----Final elevator fraction:", self.inner_elevon_frac)
+                        print("----Final pitch rate:", np.degrees(q), "deg/s")
                         #cs.airplane.draw()
 
         elif q < q_req:
@@ -601,13 +613,16 @@ class Control_Surface_Sizing():
                 self.inner_elevon_frac += d_size_elevator
                 q, q_req = self.Pitch_Check()
                 if q > q_req:
-                    if d_size_elevator > 0.01:
-                        d_size_elevator = d_size_elevator/ 2
+                    if d_size_elevator > 0.001:
+                        print("Elevator fraction failed guess:", self.inner_elevon_frac)
                         self.inner_elevon_frac -= d_size_elevator #!!!!!
+                        d_size_elevator = d_size_elevator/ 2
                     else:
                         self.q_check = False
                         self.inner_elevon_frac -= d_size_elevator
-                        print("Final elevator fraction:", self.inner_elevon_frac)
+                        q, q_req = self.Pitch_Check()
+                        print("----Final elevator fraction:", self.inner_elevon_frac)
+                        print("----Final pitch rate:", np.degrees(q), "deg/s")
                         #cs.airplane.draw()
 
         r, r_req = self.Yaw_Check()
@@ -623,13 +638,16 @@ class Control_Surface_Sizing():
 
                 r, r_req = self.Yaw_Check()
                 if r < r_req:
-                    if d_size_rudder > 0.01:
-                        d_size_rudder = d_size_rudder/ 2
+                    if d_size_rudder > 0.001:
+                        print("Rudder fraction failed guess:", self.rudder_frac)
                         self.rudder_frac += d_size_rudder #!!!!!
+                        d_size_rudder = d_size_rudder/ 2
                     else:
                         self.r_check = False
                         self.rudder_frac += d_size_rudder
-                        print("Final rudder fraction:", self.rudder_frac)
+                        r, r_req = self.Yaw_Check()
+                        print("----Final rudder fraction:", self.rudder_frac)
+                        print("----Final yaw rate:", np.degrees(r), "deg/s")
                         cs.airplane.draw()
         elif r < r_req:
             while self.r_check:
@@ -637,18 +655,25 @@ class Control_Surface_Sizing():
                 self.rudder_frac += d_size_rudder
                 r, r_req = self.Yaw_Check()
                 if r > r_req:
-                    if d_size_rudder > 0.01:
-                        d_size_rudder = d_size_rudder / 2
+                    if d_size_rudder > 0.001:
+                        print("Rudder fraction failed guess:", self.rudder_frac)
                         self.rudder_frac -= d_size_rudder #!!!!!
+                        d_size_rudder = d_size_rudder / 2
                     else:
                         self.r_check = False
                         self.rudder_frac -= d_size_rudder
-                        print("Final rudder fraction:", self.rudder_frac)
+                        r, r_req = self.Yaw_Check()
+                        print("----Final rudder fraction:", self.rudder_frac)
+                        print("----Final yaw rate:", np.degrees(r), "deg/s")
                         cs.airplane.draw()
 
+        print("------------Final Values--------------")
         print("Final aileron fraction:", self.outer_elevon_frac)
+        print("----Final roll rate:", np.degrees(p), "deg/s")
         print("Final elevator fraction:", self.inner_elevon_frac)
+        print("----Final pitch rate:", np.degrees(q), "deg/s")
         print("Final rudder fraction:", self.rudder_frac)
+        print("----Final yaw rate:", np.degrees(r), "deg/s")
 
 
 
@@ -670,4 +695,4 @@ if __name__ == "__main__":
     # cs.Control_Coefficients()
     # cs.Control_Check()
     cs.Control_Sizing()
-    cs.Spiral_Check()
+    # cs.Spiral_Check()
