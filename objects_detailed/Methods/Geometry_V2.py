@@ -573,7 +573,7 @@ if __name__ == "__main__":
     airfoil_geometry = {
         "airfoil": asb.Airfoil("e344"),  # Use NACA 2412 as an example
         "chord_length": 1.2,  #m
-        "Available width": 0.1,  #Fraction of chord length
+        "Available width": 0.2,  #Fraction of chord length
         "t_skin_airfoil": 0.0002,  #m
     }
     optimize_variables = {
@@ -604,7 +604,7 @@ if __name__ == "__main__":
         "span": 30.1, #m
         "sweep": 15.0, #degrees
     }
-    constraint_geometry = AirfoilGeometry(airfoil_geometry, plot=False)
+    constraint_geometry = AirfoilGeometry(airfoil_geometry, plot=True)
     #Assume Centroid in middle of main spar
     geometry_optimizer = SparGeometryOptimization(minimum_eccentricity_factor, required_geometry, wing_properties, constraint_geometry, optimize_variables, determined_geometry, material_properties)
     optimized_geometry = geometry_optimizer.optimize_geometry_H_clamp_with_asb()
