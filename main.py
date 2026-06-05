@@ -53,21 +53,21 @@ print("Max CL/CD:", structure.CL_CD_max)
 # plt.plot(lift, structure.CD0 + structure.K1 * lift + structure.K2 * lift**2, c='r')
 # plt.show()
 
-
-dFx_dy, dFy_dy, dFz_dy, widths, coords = structure.compute_force_distribution(alpha=10.0, TAS=35.0)
-
-print("Force vectors:", F)
-print("Vortex coordinates:", coords)
-
-print("Total normal force:", np.sum(F[:,2]))
-print("Span:", structure.b)
+structure.compute_force_distribution(alpha=10.0, TAS=35.0)
 
 
-plt.scatter(coords[:,1], dFx_dy)
+# print("Force vectors:", F)
+# print("Vortex coordinates:", coords)
+
+# print("Total normal force:", np.sum(F[:,2]))
+# print("Span:", structure.b)
+
+
+plt.scatter(structure.vortex_coords[:,1], structure.dFx_dy_current)
 plt.show()
 
-plt.scatter(coords[:,1], dFy_dy)
+plt.scatter(structure.vortex_coords[:,1], structure.dFy_dy_current)
 plt.show()
 
-plt.scatter(coords[:,1], dFz_dy)
+plt.scatter(structure.vortex_coords[:,1], structure.dFz_dy_current)
 plt.show()
