@@ -276,7 +276,7 @@ class Control_Surface_Sizing():
     # ------------------------------------------------------------------
     # Main analysis
     # ------------------------------------------------------------------
-    def Pitching_Coefficients(self):
+    def Pitching_Coefficients(self, print_plots=False):
         """
         Three sweeps:
           1. Inner elevon (symmetric) → Cm — pitch authority
@@ -302,7 +302,7 @@ class Control_Surface_Sizing():
             coeff_key="x_np",
         )
 
-        if self.print_plots:
+        if print_plots:
             # ── Plot ──────────────────────────────────────────────────────
             fig, axes = plt.subplots(1, 2, figsize=(12, 5))
             fig.suptitle("Elevon Control Effectiveness  (V=" + str(self.op_point.velocity) + "m/s, α=" + str(
@@ -575,7 +575,7 @@ class Control_Surface_Sizing():
                         d_size_aileron = d_size_aileron / 2
                     else:
                         self.p_check = False
-                        self.outer_elevon_frac -= d_size_aileron
+                        # self.outer_elevon_frac -= d_size_aileron
                         p, p_req = self.Roll_Check()
                         print("----Final aileron fraction:", self.outer_elevon_frac)
                         print("----Final roll rate:", np.degrees(p), "deg/s")
@@ -619,7 +619,7 @@ class Control_Surface_Sizing():
                         d_size_elevator = d_size_elevator/ 2
                     else:
                         self.q_check = False
-                        self.inner_elevon_frac -= d_size_elevator
+                        # self.inner_elevon_frac -= d_size_elevator
                         q, q_req = self.Pitch_Check()
                         print("----Final elevator fraction:", self.inner_elevon_frac)
                         print("----Final pitch rate:", np.degrees(q), "deg/s")
@@ -661,7 +661,7 @@ class Control_Surface_Sizing():
                         d_size_rudder = d_size_rudder / 2
                     else:
                         self.r_check = False
-                        self.rudder_frac -= d_size_rudder
+                        # self.rudder_frac -= d_size_rudder
                         r, r_req = self.Yaw_Check()
                         print("----Final rudder fraction:", self.rudder_frac)
                         print("----Final yaw rate:", np.degrees(r), "deg/s")
@@ -692,7 +692,7 @@ if __name__ == "__main__":
     cs = Control_Surface_Sizing()
     # cs.Airplane_Geo()
     # cs.airplane.draw()
-    # cs.Control_Coefficients()
     # cs.Control_Check()
     cs.Control_Sizing()
+    cs.Pitching_Coefficients(print_plots=True)
     # cs.Spiral_Check()
