@@ -158,10 +158,17 @@ class Control_Surface_Sizing():
                             chord=self.c,
                             twist=0,
                             airfoil=self.tail_airfoil,
+                        ),
+
+                        asb.WingXSec(
+                            xyz_le=[(np.tan(self.wing_sweep) * self.half_span)+(np.tan(self.wing_sweep)), self.half_span, self.height_winglet],
+                            chord=self.c,
+                            twist=0,
+                            airfoil=self.tail_airfoil,
                             control_surfaces=[
                                 asb.ControlSurface(
                                     name="rudder_left",
-                                    hinge_point=0.6,
+                                    hinge_point=0.8,
                                     deflection=delta_rudder,
                                     trailing_edge=True,
                                     symmetric=False,
@@ -487,12 +494,12 @@ class Control_Surface_Sizing():
         y_eng=fraction_outer_engine*self.half_span
         M_engine = T_eng*y_eng
         rho_cruise = 0.116
-        k = 1.5
-        Cn_OEI = k*M_engine/(0.5*rho_cruise*self.op_point.velocity**2*self.S*self.b)
+        k = 2
+        Cn_OEI_counter = -k*M_engine/(0.5*rho_cruise*self.op_point.velocity**2*self.S*self.b) # Required Cn to counteract OEI yawing moment
         # deflection_OEI = np.degrees(-Cn_OEI/Cndr)
-        r_req = np.radians(5)   # yaw  rate [rad/s]
+        r_req = np.radians(5)   # yaw  rate, now defined nose to left [rad/s]
         deflection_max = np.radians(30) 
-        Cndr_req = (Cnr * r_req - Cn_OEI)/deflection_max
+        Cndr_req = (Cnr * r_req + Cn_OEI_counter)/deflection_max # Worst case (right engine out, deflecting rudder to left)
         # deflection_yaw_rate = np.degrees(r_req * (Cnr / Cndr) / self.b/(2*self.op_point.velocity))
         # total_deflection = deflection_OEI + deflection_yaw_rate
 
@@ -669,5 +676,5 @@ if __name__ == "__main__":
     #cs.airplane.draw()
     # cs.Control_Coefficients()
     # cs.Control_Check()
-    # cs.Control_Sizing()
-    cs.Yaw_Check()
+    cs.Control_Sizing()
+    # cs.Yaw_Check()
