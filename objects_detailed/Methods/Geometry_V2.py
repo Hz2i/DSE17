@@ -3,7 +3,7 @@ import aerosandbox as asb
 import matplotlib.patches as pth
 import matplotlib.pyplot as plt
 import scipy.interpolate as interpolate
-from StructuralAnalysis import airfoil_properties
+
 # import sys
 # import os
 # # Add the folder containing characteristics_airframe.py to the Python path
@@ -166,11 +166,14 @@ class AirfoilGeometry:
         plt.show()
 
 class SparGeometryOptimization:
-    def __init__(self, required_geometry, wing_properties, airfoil_geometry, optimize_variables, determined_geometry, material_properties):
+    def __init__(self, min_eccentricity_factor, required_geometry, wing_properties, airfoil_geometry, optimize_variables, determined_geometry, material_properties):
         self.I_xx_spar_req = required_geometry.get("I_xx_spar")
         self.I_yy_spar_req = required_geometry.get("I_yy_spar")
         self.I_xx_sleeve_req = required_geometry.get("I_xx_sleeve")
         self.I_yy_sleeve_req = required_geometry.get("I_yy_sleeve")
+
+        #Min Eccentricity Factor for Ribs
+        self.min_eccentricity_factor = min_eccentricity_factor        
 
         #Initial Guess Geometry
         self.t_spar = optimize_variables.get("t_spar")
@@ -321,7 +324,7 @@ class SparGeometryOptimization:
         t_spar = opti.variable(init_guess=float(self.t_spar), lower_bound=self.CFRP_LIMIT_t, upper_bound=0.02)
         t_sleeve = opti.variable(init_guess=float(self.t_sleeve), lower_bound=self.GLARE_LIMIT_t, upper_bound=0.02)
         clamp_width = opti.variable(init_guess=float(self.t_connection), lower_bound=0.02, upper_bound=min(self.Available_width, 0.3))
-        eccentricity_factor = opti.variable(init_guess=float(self.eccentricity_factor), lower_bound=1.1, upper_bound=3.0)
+        eccentricity_factor = opti.variable(init_guess=float(self.eccentricity_factor), lower_bound=self.min_eccentricity_factor, upper_bound=10.0)
 
         g = self.calc_geometry_H_clamp(t_spar, t_sleeve, clamp_width, eccentricity_factor)
 
@@ -416,13 +419,12 @@ class SparGeometryOptimization:
                             edgecolor='green', facecolor='white', linestyle=':', alpha=1, label='Spar Inner')
         plt.gca().add_patch(spar_in)
         
-        plt.title("Optimized H-Clamp Geometry")
+        plt.title(f"Optimized H-Clamp Geometry with Eccentricity: {eccentricity_factor:.2f}")
         plt.xlabel("x (m)")
         plt.ylabel("y (m)")
         plt.legend()
         plt.axis('equal')
         plt.grid()
-        plt.show()
 
     def calc_Mass_structure_span(self, n_sections, optimized_geometry):
         total_lenght_inc_clamp = n_sections*(self.l_clamp*3)
@@ -491,18 +493,18 @@ class SparGeometryOptimization:
 
         area_airfoil_skin = area_airfoil_total - area_airfoil_offset
         
-        plt.figure(figsize=(10, 5))
-        plt.plot(x_total, y_total, color='blue', label="Outer Airfoil Contour")
-        plt.plot(x_offset, y_offset, color='red', label="Inner Airfoil Contour (offset by skin thickness)")
-        plt.fill_between(x_total, y_total, color='blue', alpha=0.3, label=f'Outer Airfoil Area: {area_airfoil_total:.4f} m^2')
-        plt.fill_between(x_offset, y_offset, color='red', alpha=0.3, label=f'Inner Airfoil Area: {area_airfoil_offset:.4f} m^2')
-        plt.title(f"Airfoil Contours and Skin Area, total skin area = {area_airfoil_skin:.4f} m^2")
-        plt.xlabel("x (m)")
-        plt.ylabel("y (m)")
-        plt.legend()
-        plt.axis('equal')
-        plt.grid()
-        plt.show()
+        # plt.figure(figsize=(10, 5))
+        # plt.plot(x_total, y_total, color='blue', label="Outer Airfoil Contour")
+        # plt.plot(x_offset, y_offset, color='red', label="Inner Airfoil Contour (offset by skin thickness)")
+        # plt.fill_between(x_total, y_total, color='blue', alpha=0.3, label=f'Outer Airfoil Area: {area_airfoil_total:.4f} m^2')
+        # plt.fill_between(x_offset, y_offset, color='red', alpha=0.3, label=f'Inner Airfoil Area: {area_airfoil_offset:.4f} m^2')
+        # plt.title(f"Airfoil Contours and Skin Area, total skin area = {area_airfoil_skin:.4f} m^2")
+        # plt.xlabel("x (m)")
+        # plt.ylabel("y (m)")
+        # plt.legend()
+        # plt.axis('equal')
+        # plt.grid()
+        # plt.show()
 
         clamp_occupied_volume = (optimized_geometry["Clamp_width"] - optimized_geometry["r_top"]*2) * self.t_skin * total_length_inc_clamp  # Approximate volume occupied by clamp within the skin area
         volume_airfoil_skin = area_airfoil_skin * self.slanted_span - clamp_occupied_volume
@@ -510,16 +512,63 @@ class SparGeometryOptimization:
 
         return weight_airfoil_skin
 
+def ShowEcc_vs_Mass(required_geometry, wing_properties, airfoil_geometry, optimize_variables, determined_geometry, material_properties):
+    eccentricity_factors = np.linspace(1.1, 6.0, 100)
+    Total_weights = []
+    Skin_weights = []
+    Spar_Structure_weights = []
+    for ef in eccentricity_factors:
+        geometry = SparGeometryOptimization(ef, required_geometry, wing_properties, airfoil_geometry, optimize_variables, determined_geometry, material_properties)
+        optimized_geometry = geometry.optimize_geometry_H_clamp_with_asb()
+        weight_spar_structure, l_inc_clamp, l_exc_clamp = geometry.calc_Mass_structure_span(n_sections=4, optimized_geometry=optimized_geometry)
+        weight_airfoil_skin = geometry.calculate_airfoil_skin_weight(optimized_geometry, total_length_inc_clamp=l_inc_clamp, total_span_exc_clamp=l_exc_clamp)
+        Total_weights.append(weight_spar_structure + weight_airfoil_skin)
+        Spar_Structure_weights.append(weight_spar_structure)
+        Skin_weights.append(weight_airfoil_skin)
+        geometry.Plot_optimized_geometry(optimized_geometry["r_top"], optimized_geometry["t_spar"], optimized_geometry["t_sleeve"], optimized_geometry["Clamp_width"], optimized_geometry["eccentricity_factor"])
+    # plt.show()
+    plt.figure(figsize=(10, 5))
+
+    # Three subplots: Total Weight, Spar Structure Weight, Skin Weight
+
+    plt.subplot(1, 3, 1)
+    plt.plot(eccentricity_factors, Total_weights, marker='o', label="Total Weight")
+    plt.title("Total Mass vs Eccentricity Factor")
+    plt.xlabel("Eccentricity Factor (a/b)")
+    plt.ylabel("Total Mass of Clamp + Sleeve + Spar (kg/m)")
+    plt.grid()
+    plt.legend()
+
+    plt.subplot(1, 3, 2)
+    plt.plot(eccentricity_factors, Spar_Structure_weights,
+            marker='o', color='orange', label="Spar Structure Weight")
+    plt.title("Spar Structure Mass vs Eccentricity Factor")
+    plt.xlabel("Eccentricity Factor (a/b)")
+    plt.ylabel("Mass of Spar + Sleeve (kg/m)")
+    plt.grid()
+    plt.legend()
+
+    plt.subplot(1, 3, 3)
+    plt.plot(eccentricity_factors, Skin_weights,
+            marker='o', color='green', label="Skin Weight")
+    plt.title("Airfoil Skin Mass vs Eccentricity Factor")
+    plt.xlabel("Eccentricity Factor (a/b)")
+    plt.ylabel("Mass of Airfoil Skin (kg/m)")
+    plt.grid()
+    plt.legend()
+
+    plt.show()
         
 
 
 
 if __name__ == "__main__":
+    minimum_eccentricity_factor = 1.1  # Minimum eccentricity factor to ensure the sleeve is not too close to circular, which would reduce the difference between I_xx and I_yy and limit design flexibility
     required_geometry = {
         "I_xx_spar": 1e-7, #m^4
-        "I_yy_spar": 1e-7, #m^4
+        "I_yy_spar": 0.5e-7, #m^4
         "I_xx_sleeve": 1e-7, #m^4
-        "I_yy_sleeve": 1e-7, #m^4
+        "I_yy_sleeve": 0.5e-7, #m^4
     }
     airfoil_geometry = {
         "airfoil": asb.Airfoil("e344"),  # Use NACA 2412 as an example
@@ -557,7 +606,7 @@ if __name__ == "__main__":
     }
     constraint_geometry = AirfoilGeometry(airfoil_geometry, plot=False)
     #Assume Centroid in middle of main spar
-    geometry_optimizer = SparGeometryOptimization(required_geometry, wing_properties, constraint_geometry, optimize_variables, determined_geometry, material_properties)
+    geometry_optimizer = SparGeometryOptimization(minimum_eccentricity_factor, required_geometry, wing_properties, constraint_geometry, optimize_variables, determined_geometry, material_properties)
     optimized_geometry = geometry_optimizer.optimize_geometry_H_clamp_with_asb()
     print("Optimized Geometry:", optimized_geometry)
     geometry_optimizer.Plot_optimized_geometry(
@@ -567,7 +616,10 @@ if __name__ == "__main__":
         optimized_geometry["Clamp_width"],
         optimized_geometry["eccentricity_factor"]
     )
+    plt.show()
     weight_spar_structure, l_inc_clamp, l_exc_clamp = geometry_optimizer.calc_Mass_structure_span(n_sections=4, optimized_geometry=optimized_geometry)
     weight_airfoil_skin = geometry_optimizer.calculate_airfoil_skin_weight(optimized_geometry, total_length_inc_clamp=l_inc_clamp, total_span_exc_clamp=l_exc_clamp)
     print("Estimated Mass of Structural Components Along Span:", weight_spar_structure, "kg")
     print("Estimated Mass of Airfoil Skin:", weight_airfoil_skin, "kg")
+    print(f"Total Estimated Mass of Spar Structure + Airfoil Skin: {weight_spar_structure + weight_airfoil_skin:.2f} kg")
+    # ShowEcc_vs_Mass(required_geometry, wing_properties, constraint_geometry, optimize_variables, determined_geometry, material_properties)
