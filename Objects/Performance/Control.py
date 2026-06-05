@@ -19,7 +19,7 @@ class Control_Surface_Sizing():
         self.b = 28.80                # full span [m]
         self.c = 1.44                 # chord [m]
         self.S = self.b * self.c      # Wing area [m^2]
-        self.dihedral = 0.0
+        self.dihedral = np.radians(0.70975)
         self.inner_elevon_frac = 0.05
         self.outer_elevon_frac = 0.25
         self.height_winglet = 1.0 # height of winglet above main wing [m]
@@ -87,7 +87,7 @@ class Control_Surface_Sizing():
                             xyz_le=[
                                 np.tan(self.wing_sweep) * self.start_inner_elevon,
                                 self.start_inner_elevon,
-                                self.dihedral,
+                                np.tan(self.dihedral)*self.start_inner_elevon,
                             ],
                             chord=self.c,
                             twist=0,
@@ -108,7 +108,7 @@ class Control_Surface_Sizing():
                             xyz_le=[
                                 np.tan(self.wing_sweep) * self.elevon_connection,
                                 self.elevon_connection,
-                                self.dihedral,
+                                np.tan(self.dihedral)*self.elevon_connection,
                             ],
                             chord=self.c,
                             twist=0,
@@ -129,7 +129,7 @@ class Control_Surface_Sizing():
                             xyz_le=[
                                 np.tan(self.wing_sweep) * self.end_outer_elevon,
                                 self.end_outer_elevon,
-                                self.dihedral,
+                                np.tan(self.dihedral)*self.end_outer_elevon,
                             ],
                             chord=self.c,
                             twist=0,
@@ -141,7 +141,7 @@ class Control_Surface_Sizing():
                             xyz_le=[
                                 np.tan(self.wing_sweep) * self.half_span,
                                 self.half_span,
-                                self.dihedral,
+                                np.tan(self.dihedral)*self.half_span,
                             ],
                             chord=self.c,
                             twist=0,
@@ -155,14 +155,14 @@ class Control_Surface_Sizing():
                     symmetric=True,
                     xsecs=[
                         asb.WingXSec(
-                            xyz_le=[(np.tan(self.wing_sweep) * self.half_span)+(np.tan(self.wing_sweep) * self.height_winglet), self.half_span, self.height_winglet],
+                            xyz_le=[(np.tan(self.wing_sweep) * self.half_span)+(np.tan(self.wing_sweep) * self.height_winglet), self.half_span, self.height_winglet+(np.tan(self.dihedral)*self.half_span)],
                             chord=self.c,
                             twist=0,
                             airfoil=self.tail_airfoil,
                         ),
 
                         asb.WingXSec(
-                            xyz_le=[(np.tan(self.wing_sweep) * self.half_span)+(np.tan(self.wing_sweep)*(self.rudder_frac * self.height_winglet)), self.half_span, self.rudder_frac * self.height_winglet],
+                            xyz_le=[(np.tan(self.wing_sweep) * self.half_span)+(np.tan(self.wing_sweep)*(self.rudder_frac * self.height_winglet)), self.half_span, self.rudder_frac * self.height_winglet+(np.tan(self.dihedral)*self.half_span)],
                             chord=self.c,
                             twist=0,
                             airfoil=self.tail_airfoil,
@@ -177,7 +177,7 @@ class Control_Surface_Sizing():
                             ],
                         ),
                         asb.WingXSec(
-                            xyz_le=[np.tan(self.wing_sweep) * self.half_span, self.half_span, 0],
+                            xyz_le=[np.tan(self.wing_sweep) * self.half_span, self.half_span, np.tan(self.dihedral)*self.half_span],
                             chord=self.c,
                             twist=0,
                             airfoil=self.tail_airfoil,
@@ -615,7 +615,7 @@ class Control_Surface_Sizing():
                 print("Rudder fraction:", self.rudder_frac)
                 self.rudder_frac -= d_size_rudder
 
-                if self.rudder_frac < 0.:
+                if self.rudder_frac < 0.0001:
                     self.rudder_frac += d_size_rudder/2
                     d_size_rudder = d_size_rudder/2
 
@@ -674,9 +674,10 @@ class Control_Surface_Sizing():
 if __name__ == "__main__":
     print("Starting simulation")
     cs = Control_Surface_Sizing()
-    #cs.Airplane_Geo()
-    #cs.airplane.draw()
+    cs.Airplane_Geo()
+    cs.airplane.draw()
     # cs.Control_Coefficients()
     # cs.Control_Check()
-    cs.Control_Sizing()
+    # cs.Control_Sizing()
     # cs.Yaw_Check()
+    cs.Spiral_Check()
