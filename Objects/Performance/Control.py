@@ -676,6 +676,8 @@ if __name__ == "__main__":
     cs = Control_Surface_Sizing()
     cs.Airplane_Geo()
     cs.airplane.draw()
+    cs.Airplane_Geo()
+    cs.airplane.draw()
     # cs.Control_Coefficients()
     # cs.Control_Check()
     # cs.Control_Sizing()
