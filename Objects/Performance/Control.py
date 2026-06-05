@@ -22,7 +22,8 @@ class Control_Surface_Sizing():
         self.dihedral = 0.0
         self.inner_elevon_frac = 0.05
         self.outer_elevon_frac = 0.25
-        self.height_winglet = 1.5    # height of winglet above main wing [m]
+        self.height_winglet = 1.0 # height of winglet above main wing [m]
+        self.rudder_frac = 0.8
         self.fraction_outer_engine = None
 
         self.half_span = self.b / 2
@@ -505,7 +506,7 @@ class Control_Surface_Sizing():
 
         r = Cndr / Cnr * (np.radians(self.deflection_points[np.size(self.deflection_points) - 1])) * 2 * self.op_point.velocity / self.b
         print("R:", r, "rad/s")
-        print("Required rudder effectiveness:", Cndr_req, "/rad")
+        # print("Required rudder effectiveness:", Cndr_req, "/rad")
 
         return r, r_req
 
@@ -649,17 +650,17 @@ class Control_Surface_Sizing():
 
 
         # todo OEI
-        r, r_req, = self.Yaw_Check()
-        d_size_rudder = 0.01
-        if r > r_req:
-            while self.r_check:
-                print("Rudder fraction", self.height_winglet/self.half_span)
-                self.height_winglet -= d_size_rudder*self.half_span
-                r, r_req = self.Yaw_Check()
-                if r < r_req:
-                    self.r_check = False
-                    print("Final rudder fraction:", (self.height_winglet+self.half_span*d_size_rudder)/self.half_span)
-                    cs.airplane.draw()
+        # r, r_req, = self.Yaw_Check()
+        # d_size_rudder = 0.01
+        # if r > r_req:
+        #     while self.r_check:
+        #         print("Rudder fraction", self.height_winglet/self.half_span)
+        #         self.height_winglet -= d_size_rudder*self.half_span
+        #         r, r_req = self.Yaw_Check()
+        #         if r < r_req:
+        #             self.r_check = False
+        #             print("Final rudder fraction:", (self.height_winglet+self.half_span*d_size_rudder)/self.half_span)
+        #             cs.airplane.draw()
 
 
         # todo controllability at forward cg
