@@ -92,9 +92,9 @@ def bending_deflection(Bending_distribution, airframe): # find bending deflectio
 
 
 def torsional_stress(Torsion_distribution, airframe): # Compute torsional stresses from torsion distribution
-    PETa = Components_Materials.PET()
+    mylar = Components_Materials.Mylar()
     safety_factor = 5
-    max_shear = PETa.shear
+    max_shear = mylar.shear
     A_skin,_ = airfoil_properties(airframe.foil, airframe.c_r)
     t_skin = safety_factor*Torsion_distribution[0]/(2*A_skin*(max_shear))
     # 5x safety factor torque, min skin thickness calculated if skin carries all torque
@@ -103,7 +103,8 @@ def torsional_stress(Torsion_distribution, airframe): # Compute torsional stress
 def twist_deflection(Torsion_distribution, airframe, r_thickness=0.002, r_spar=0.04): # Compute twist deflection from torsion distribution
     # i guessed r_thickness and r_spar but you need to get those from bas
     t_skin = torsional_stress(Torsion_distribution, airframe) # get area from torsional loads
-    PET = Components_Materials.PET()
+    print(t_skin)
+    mylar = Components_Materials.Mylar()
     CFRP = Components_Materials.CFRP()
     # considering all torsion carried by skin
     airfoil_max_thickness = airframe.foil.max_thickness()
@@ -116,7 +117,7 @@ def twist_deflection(Torsion_distribution, airframe, r_thickness=0.002, r_spar=0
     A_spar = np.pi*r_spar**2 # conservative estimation
     int_t_ds = np.pi*2*r_spar/r_thickness # calculate torsional constant by conservative approximation of min thickness all around, with assumption of 50% area efficiency (i.e. same area as square, twice the perimter)
     dtheta_dz = sp.Symbol('dtheta_dz')  # Common twist rate (not solved for)
-    eq1 = sp.Eq(dtheta_dz, (Torsion_distribution[0] - T_spar)*skin_int_t_ds / (4 * PET.G * A_skin**2))  # Skin equation
+    eq1 = sp.Eq(dtheta_dz, (Torsion_distribution[0] - T_spar)*skin_int_t_ds / (4 * mylar.G * A_skin**2))  # Skin equation
     eq2 = sp.Eq(dtheta_dz,  T_spar*int_t_ds/ (4 * CFRP.G*A_spar**2))  # Spar equation
     solution = sp.solve([eq1, eq2], (T_spar,dtheta_dz))
     if len(solution) == 0:
@@ -133,6 +134,7 @@ def twist_deflection(Torsion_distribution, airframe, r_thickness=0.002, r_spar=0
     #plt.ylim((0,len(theta)*dz))
     #plt.show()
     return theta[-1]#in degrees
+
 
 
 def shear_force(Lift_distribution, airframe, t_spar, t_sleeve): #returns true if it passes this test #input drag works too

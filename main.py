@@ -31,7 +31,7 @@ S = 36.0
 # Flying wing planform:
 fus_geo = fuselage(D=0.5, L1=0.2, L2=0.6, L3=0.2)
 nac_geo = nacelles(nr_of_engines=4)
-structure = airframe(S=S, A=5.0, qc_sweep=0.0*np.pi/180, taper=0.455, dihedral=0.0*np.pi/180.0,fus=fus_geo, nac=nac_geo, display=True)
+structure = airframe(S=S, A=20.0, qc_sweep=15.0*np.pi/180, taper=1.0, dihedral=0.0*np.pi/180.0,fus=fus_geo, nac=nac_geo, display=True)
 
 
 K2 = structure.K2
@@ -54,11 +54,19 @@ print("Max CL/CD:", structure.CL_CD_max)
 # plt.show()
 
 
-F, M, coords = structure.compute_force_distribution()
+F, M, coords = structure.compute_force_distribution(alpha=10)
 
 print("Force vectors:", F)
 print("Vortex coordinates:", coords)
 
+print("Span:", structure.b)
 
-# plt.plot(coords[:][1], F[:][2])
-# plt.show()
+
+plt.scatter(coords[:,1], F[:,0])
+plt.show()
+
+plt.scatter(coords[:,1], F[:,1])
+plt.show()
+
+plt.scatter(coords[:,1], F[:,2])
+plt.show()

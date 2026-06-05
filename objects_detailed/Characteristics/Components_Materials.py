@@ -38,14 +38,18 @@ class CFRP:
         self.poisson = 0.297#https://www.sciencedirect.com/science/article/pii/S0142941824000321
         self.G = self.E/(2*(1+self.poisson)) # Shear modulus [Pa]
 
-class PET:
+class Mylar:#change to mylar
     def __init__(self, E=2.8e9, rho=1380.0):                 # Provide method to define PET with certain parameters
-        self.E = 2.95e9                      # Young's modulus [Pa]
-        self.shear = 55e6 #max shear stress PEThttps://www.ensinger-pc.com/injection-molding-materials/our-plastic-stock-shapes/pet-thermoplastic-polyester/
-        self.G = 1.375e9#https://designerdata.nl/materials/plastics/thermo-plastics/polyethylene-terephthalate
-        self.rho = 1200
+        self.E = 9.80665*510e6                      # Young's modulus [Pa]
+        self.shear = 9.80665*15e6 #max shear stress PET
+        self.poisson = 0.38
+        self.G = self.E/(2*(1+self.poisson)) # Shear modulus [Pa]
+        self.rho = 1390#https://stenbacka.fi/wp-content/uploads/sites/3/2016/07/mylar_a_fysikaaliset_ominaisuudet.pdf
 
 class GLARE:
     def __init__(self):                 # Provide method to define GLARE with certain parameters
         self.sigma=403.66e6#https://www.academia.edu/104528943/ON_FABRICATION_AND_TESTING_OF_GLARE
         self.rho=2400#https://www.researchgate.net/figure/Properties-of-Glare-components_tbl1_343586328
+
+        #mylar + ressst subsystems in code
+
