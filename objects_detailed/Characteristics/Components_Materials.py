@@ -37,6 +37,7 @@ class CFRP:
         self.ply_thickness = 0.000335
         self.poisson = 0.297#https://www.sciencedirect.com/science/article/pii/S0142941824000321
         self.G = self.E/(2*(1+self.poisson)) # Shear modulus [Pa]
+        self.min_thickness = 0.0005
 
 class Mylar:#change to mylar
     def __init__(self, E=2.8e9, rho=1380.0):                 # Provide method to define PET with certain parameters
@@ -45,11 +46,21 @@ class Mylar:#change to mylar
         self.poisson = 0.38
         self.G = self.E/(2*(1+self.poisson)) # Shear modulus [Pa]
         self.rho = 1390#https://stenbacka.fi/wp-content/uploads/sites/3/2016/07/mylar_a_fysikaaliset_ominaisuudet.pdf
+        self.min_thickness = 0.0001 #Still Determine
 
 class GLARE:
     def __init__(self):                 # Provide method to define GLARE with certain parameters
         self.sigma=403.66e6#https://www.academia.edu/104528943/ON_FABRICATION_AND_TESTING_OF_GLARE
         self.rho=2400#https://www.researchgate.net/figure/Properties-of-Glare-components_tbl1_343586328
-
+        self.min_thickness=0.0005
         #mylar + ressst subsystems in code
 
+class Silicone_Rubber:
+    def __init__(self):
+        self.E = 0.05e9                     # Young's modulus [Pa]
+        self.poisson = 0.33
+        self.rho = 1100  # Density [kg/m^3]
+
+class Aluminum7075: #https://www.jeelix.com/7075-t6-aluminum-material-properties/
+    def __init__(self):
+        self.rho = 2810   # Density [kg/m^3]
