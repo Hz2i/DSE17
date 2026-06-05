@@ -200,16 +200,16 @@ class airframe:
         total_F = llt_an.forces_inviscid_geometry + llt_an.forces_profile_geometry
         total_M = llt_an.moments_inviscid_geometry + llt_an.moments_profile_geometry
 
-        vortex_coords = llt_an.vortex_centers
+        self.vortex_coords = llt_an.vortex_centers
 
-        panel_widths = abs(llt_an.front_right_vertices[:,1] - llt_an.front_left_vertices[:,1])
+        self.panel_widths = abs(llt_an.front_right_vertices[:,1] - llt_an.front_left_vertices[:,1])
 
-        dFz_dy = total_F[:,2]/panel_widths
-        dFx_dy = total_F[:,0]/panel_widths
-        dFy_dy = total_F[:,1]/panel_widths
+        self.dFz_dy_current = total_F[:,2]/panel_widths
+        self.dFx_dy_current = total_F[:,0]/panel_widths
+        self.dFy_dy_current = total_F[:,1]/panel_widths
 
-        dMx_dy = total_M[:,0]/panel_widths
-        dMy_dy = total_M[:,1]/panel_widths
-        dMz_dy = total_M[:,2]/panel_widths
+        self.dMx_dy_current = total_M[:,0]/panel_widths
+        self.dMy_dy_current = total_M[:,1]/panel_widths
+        self.dMz_dy_current = total_M[:,2]/panel_widths
 
-        return dFx_dy, dFy_dy, dFz_dy, dMx_dy, dMy_dy, dMz_dy, panel_widths, vortex_coords, llt_an
+        # return dFx_dy, dFy_dy, dFz_dy, dMx_dy, dMy_dy, dMz_dy, panel_widths, vortex_coords, llt_an
