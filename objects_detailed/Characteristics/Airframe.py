@@ -91,7 +91,7 @@ class airframe:
                                     (self.b/2) * np.tan(self.dihedral)],
                             chord=self.c_t,
                             twist=0,
-                            airfoil=self.foil)
+                            airfoil=self.foil),
                             ]
                         )
                     ],
@@ -202,4 +202,10 @@ class airframe:
 
         vortex_coords = llt_an.vortex_centers
 
-        return total_F, total_M, vortex_coords
+        panel_widths = abs(llt_an.front_right_vertices[:,1] - llt_an.front_left_vertices[:,1])
+
+        dFx_dy = total_F[:,0]/panel_widths
+        dFy_dy = total_F[:,1]/panel_widths
+        dFz_dy = total_F[:,2]/panel_widths
+
+        return dFx_dy, dFy_dy, dFz_dy, panel_widths, vortex_coords, llt_an
