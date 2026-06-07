@@ -20,7 +20,10 @@ class Control_Surface_Sizing():
         self.c = 1.44                 # chord [m]
         self.S = self.b * self.c      # Wing area [m^2]
         self.dihedral = np.radians(1.0)
-        self.inner_elevon_frac = 0.05
+
+        self.x_cg = 2.275
+
+        self.inner_elevon_frac = 0.07
         self.outer_elevon_frac = 0.25
         self.height_winglet = 1.0 # height of winglet above main wing [m]
         self.rudder_frac = 0.8
@@ -68,7 +71,7 @@ class Control_Surface_Sizing():
 
         self.airplane = asb.Airplane(
             name="AHAPS",
-            xyz_ref=[0.45, 0, 0],   # CG at ~37% chord — adjust to your actual CG
+            xyz_ref=[self.x_cg, 0, 0],   # CG at ~37% chord — adjust to your actual CG
             wings=[
                 asb.Wing(
                     name="Main Wing",
@@ -675,6 +678,24 @@ class Control_Surface_Sizing():
         print("Final rudder fraction:", self.rudder_frac)
         print("----Final yaw rate:", np.degrees(r), "deg/s")
 
+    def Cm_check(self):
+        cg_range = np.linspace(0., 3., 30)
+        cm_list = []
+        for i in cg_range:
+            self.x_cg = i
+            cs.Airplane_Geo()
+            cm = cs._sweep_single(self.deflection_points,
+            delta_inner_fn=lambda i: 0,
+            delta_outer_fn=lambda i: 0,
+            delta_rudder_fn=lambda i: 0,
+            outer_symmetric=False,
+            coeff_key="Cm"
+            )
+            cm_list.append(cm)
+
+        plt.plot(cg_range, cm_list)
+        plt.show()
+
 
 
 
@@ -693,6 +714,7 @@ if __name__ == "__main__":
     # cs.Airplane_Geo()
     # cs.airplane.draw()
     # cs.Control_Check()
-    cs.Control_Sizing()
-    cs.Pitching_Coefficients(print_plots=True)
+    # cs.Control_Sizing()
+    # cs.Pitching_Coefficients(print_plots=True)
     # cs.Spiral_Check()
+    cs.Cm_check()
