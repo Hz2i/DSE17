@@ -18,6 +18,7 @@ atmo = asb.Atmosphere(altitude=altitude)
 rho = atmo.density() 
 speed_of_sound = atmo.speed_of_sound()
 mach_number = v_inf / speed_of_sound
+dynamic_viscosity = atmo.dynamic_viscosity() # Added for accurate Re calculation
 
 # Propeller Architecture
 Nb = 2            # Number of blades
@@ -35,13 +36,6 @@ def size_propeller_diameter(J_target, airfoil_name, total_thrust_required, num_e
     # AF polars
     alphas_sweep = np.linspace(-30, 30, 250)
     airfoil = asb.Airfoil(airfoil_name)
-    aero_data = airfoil.get_aero_from_neuralfoil(
-        alpha=alphas_sweep,
-        Re=100_000,
-        mach=mach_number
-    )
-    cl_interp = interp1d(alphas_sweep, aero_data['CL'], kind='cubic', bounds_error=False, fill_value="extrapolate")
-    cd_interp = interp1d(alphas_sweep, aero_data['CD'], kind='cubic', bounds_error=False, fill_value="extrapolate")
 
     # --- Performance at ref 2.0 m diameter ---
     D_ref = 2.0
@@ -56,10 +50,36 @@ def size_propeller_diameter(J_target, airfoil_name, total_thrust_required, num_e
     omega_ref = 2 * np.pi * n_ref
     phi_0_rad = np.arctan(v_inf / (omega_ref * r_abs_ref))
     
+    # --- Compute Local Velocity and Local Reynolds Number Arrays ---
+    v_local_ref = np.sqrt(v_inf**2 + (omega_ref * r_abs_ref)**2)
+    Re_dist_ref = (rho * v_local_ref * b_ref) / dynamic_viscosity
+    
+    # --- ADDED: Local Reynolds Number Print Block ---
+    print(f"\n=======================================================")
+    print(f"      LOCAL REYNOLDS NUMBERS ALONG SPAN ({airfoil_name})")
+    print(f"=======================================================")
+    for rad, local_re in zip(r, Re_dist_ref):
+        print(f"r/R: {rad:.3f} | Local Re: {local_re:,.0f}")
+    print(f"=======================================================\n")
+    # ------------------------------------------------
+    
     dT_dr_ref = np.zeros_like(r_abs_ref)
     dM_dr_ref = np.zeros_like(r_abs_ref)
     
     for i in range(len(r_abs_ref)):
+        
+        # --- DYNAMIC AERO LOOKUP ---
+        # Fetching polars specifically for this blade element's local Reynolds number
+        aero_data = airfoil.get_aero_from_neuralfoil(
+            alpha=alphas_sweep,
+            Re=Re_dist_ref[i],
+            mach=mach_number # Keeping freestream mach as originally requested
+        )
+        
+        cl_interp = interp1d(alphas_sweep, aero_data['CL'], kind='cubic', bounds_error=False, fill_value="extrapolate")
+        cd_interp = interp1d(alphas_sweep, aero_data['CD'], kind='cubic', bounds_error=False, fill_value="extrapolate")
+        # ---------------------------
+
         def equilibrium_equation(alpha_guess):
             cl_val = cl_interp(alpha_guess)
             phi_guess_rad = np.radians(beta_deg[i] - alpha_guess)
@@ -74,7 +94,6 @@ def size_propeller_diameter(J_target, airfoil_name, total_thrust_required, num_e
             
             cl_local = cl_interp(true_alpha_deg)
             cd_local = cd_interp(true_alpha_deg)
-            
             
             # Compute Momentum parameter
             K = (cl_local * Nb * b_ref[i] * np.cos(true_phi_rad)) / (8 * np.pi * r_abs_ref[i] * (np.sin(true_phi_rad)**2))
@@ -136,7 +155,7 @@ def size_propeller_diameter(J_target, airfoil_name, total_thrust_required, num_e
 # !!!!!!SPECS!!!!!!!
 # ===========================================================================
 sizing_results = size_propeller_diameter(
-    J_target= 0.754, 
+    J_target= 0.686, 
     airfoil_name="SD7037", 
     total_thrust_required=52.0, 
     num_engines=4
