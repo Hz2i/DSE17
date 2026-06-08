@@ -21,12 +21,12 @@ class Control_Surface_Sizing():
         self.S = self.b * self.c      # Wing area [m^2]
         self.dihedral = np.radians(2.0)
 
-        self.x_cg = 2.18
+        self.x_cg = 2.19
 
         self.inner_elevon_frac = 0.06
-        self.outer_elevon_frac = 0.193
+        self.outer_elevon_frac = 0.191
         self.height_winglet = 1.5 # height of winglet above main wing [m]
-        self.rudder_frac = 0.67
+        self.rudder_frac = 0.68
         self.fraction_outer_engine = None
 
         self.half_span = self.b / 2
@@ -725,10 +725,10 @@ if __name__ == "__main__":
     print("Starting simulation")
     cs = Control_Surface_Sizing()
     cs.Airplane_Geo()
-    cs.airplane.draw()
+    # cs.airplane.draw()
     # cs.Control_Check()
     # cs.Control_Sizing()
     # cs.Pitching_Coefficients(print_plots=True)
-    cs.Spiral_Check()
-    # cs.Cm_check()
+    # cs.Spiral_Check()
+    cs.Cm_check()
     # cs._sweep_single()
