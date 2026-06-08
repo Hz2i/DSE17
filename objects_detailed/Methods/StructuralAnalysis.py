@@ -112,9 +112,9 @@ def bending_stress_lift(airframe, ult_safety_factor=5, drag=False):    # Compute
     # find min I from connection using same method, looking at stress
     return I_lift_spar, I_lift_connection
 
-def bending_stress_drag(airframe, safety_factor=5):    # Compute bending stresses from bending distribution
+def bending_stress_drag(airframe, ult_safety_factor=5):    # Compute bending stresses from bending distribution
     # returns as follows, return I_drag_spar, I_drag_connection
-    return bending_stress_lift(airframe, safety_factor, drag=True)
+    return bending_stress_lift(airframe, ult_safety_factor, drag=True)
 
 def bending_deflection_lift(airframe, drag=False): # find bending deflection in either direction
  # get bending distribution from VLM analysis, interpolated to match points_loads
