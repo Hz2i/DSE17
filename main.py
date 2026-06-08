@@ -59,14 +59,16 @@ iterations = 0
 while monitoring_var > 5e-3 or iterations < 5:
     AHAPS = Aircraft(MTOW_guess=MTOW, TAS=TAS_initial, gamma=gamma, lat=lat, day_margin=day_margin, DoD=DoD, airframe=planform, use_batt=use_batt, energy_delta=energy_delta)
 
-    pow_frac = (AHAPS.pow_store.mass + AHAPS.solar.mass)/AHAPS.MTOW
-    payload_frac = AHAPS.payload.mass / AHAPS.MTOW
-    struct_frac = AHAPS.internal_struct.total_structure_weight / AHAPS.MTOW
-    gen_subsys_frac = AHAPS.compute_subsys_mass() / AHAPS.MTOW
+    MTOW_current = AHAPS.pow_store.mass + AHAPS.solar.mass + AHAPS.payload.mass + AHAPS.internal_struct.total_structure_weight + AHAPS.compute_subsys_mass()
+
+    pow_frac = (AHAPS.pow_store.mass + AHAPS.solar.mass)/MTOW_current
+    payload_frac = AHAPS.payload.mass / MTOW_current
+    struct_frac = AHAPS.internal_struct.total_structure_weight / MTOW_current
+    gen_subsys_frac = AHAPS.compute_subsys_mass() / MTOW_current
 
     error = abs(pow_frac - pow_frac_prev)/pow_frac_prev + abs(payload_frac - payload_frac_prev)/payload_frac_prev + abs(struct_frac - struct_frac_prev)/struct_frac_prev + abs(gen_subsys_frac - gen_subsys_frac_prev)/gen_subsys_frac_prev
 
-    MTOW += (MTOW - AHAPS.pow_store.mass + AHAPS.solar.mass + AHAPS.payload.mass + AHAPS.internal_struct.total_structure_weight + AHAPS.compute_subsys_mass()) * 0.1
+    MTOW += (MTOW_current-MTOW) * 0.1
     planform.S = AHAPS.airframe.S
 
     pow_frac_prev = pow_frac
