@@ -498,18 +498,18 @@ class SparGeometryOptimization:
 
         area_airfoil_skin = area_airfoil_total - area_airfoil_offset
         
-        # plt.figure(figsize=(10, 5))
-        # plt.plot(x_total, y_total, color='blue', label="Outer Airfoil Contour")
-        # plt.plot(x_offset, y_offset, color='red', label="Inner Airfoil Contour (offset by skin thickness)")
-        # plt.fill_between(x_total, y_total, color='blue', alpha=0.3, label=f'Outer Airfoil Area: {area_airfoil_total:.4f} m^2')
-        # plt.fill_between(x_offset, y_offset, color='red', alpha=0.3, label=f'Inner Airfoil Area: {area_airfoil_offset:.4f} m^2')
-        # plt.title(f"Airfoil Contours and Skin Area, total skin area = {area_airfoil_skin:.4f} m^2")
-        # plt.xlabel("x (m)")
-        # plt.ylabel("y (m)")
-        # plt.legend()
-        # plt.axis('equal')
-        # plt.grid()
-        # plt.show()
+        plt.figure(figsize=(10, 5))
+        plt.plot(x_total, y_total, color='blue', label="Outer Airfoil Contour")
+        plt.plot(x_offset, y_offset, color='red', label="Inner Airfoil Contour (offset by skin thickness)")
+        plt.fill_between(x_total, y_total, color='blue', alpha=0.3, label=f'Outer Airfoil Area: {area_airfoil_total:.4f} m^2')
+        plt.fill_between(x_offset, y_offset, color='red', alpha=0.3, label=f'Inner Airfoil Area: {area_airfoil_offset:.4f} m^2')
+        plt.title(f"Airfoil Contours and Skin Area, total skin area = {area_airfoil_skin:.4f} m^2")
+        plt.xlabel("x (m)")
+        plt.ylabel("y (m)")
+        plt.legend()
+        plt.axis('equal')
+        plt.grid()
+        plt.show()
 
         clamp_occupied_volume = (optimized_geometry["Clamp_width"] - optimized_geometry["r_top"]*2) * self.t_skin * total_length_inc_clamp  # Approximate volume occupied by clamp within the skin area
         volume_airfoil_skin = area_airfoil_skin * self.slanted_span - clamp_occupied_volume
