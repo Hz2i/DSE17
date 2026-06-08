@@ -56,7 +56,7 @@ def internal_loading_dMx(airframe):             # Implement method for computing
     internal_load = np.zeros_like(spanwise_pos)
     internal_load[1:] = np.cumsum((dT_dy[:-1] + dT_dy[1:]) / 2 * np.diff(spanwise_pos))
 
-    return abs(internal_load[::-1])
+    return abs(internal_load[::-1]), spanwise_pos
 
 
 def internal_loading_dMZ(airframe):             # Implement method for computing internal loading (lift distribution potentially taken from VLM analysis)
@@ -69,7 +69,7 @@ def internal_loading_dMZ(airframe):             # Implement method for computing
     internal_load = np.zeros_like(spanwise_pos)
     internal_load[1:] = np.cumsum((dT_dy[:-1] + dT_dy[1:]) / 2 * np.diff(spanwise_pos))
 
-    return abs(internal_load[::-1])
+    return abs(internal_load[::-1]), spanwise_pos
 
 def internal_loading_dT(airframe):             # Implement method for computing internal loading (lift distribution potentially taken from VLM analysis)
     half_point=int(round(len(airframe.dMx_dy_current)/2,0))
@@ -83,7 +83,7 @@ def internal_loading_dT(airframe):             # Implement method for computing 
     internal_load = np.zeros_like(spanwise_pos)
     internal_load[1:] = np.cumsum((dT_dy[:-1] + dT_dy[1:]) / 2 * np.diff(spanwise_pos))
 
-    return abs(internal_load[::-1])
+    return abs(internal_load[::-1]), spanwise_pos
 
 def pos_first_connection(airframe):
     dz = airframe.b/(points_loads*2)
@@ -94,20 +94,20 @@ def pos_first_connection(airframe):
     x_max_connection = int(np.round((wingbox_length +sections_length/2-connection_length/2)/dz,0))
     return x_max_connection
 
-def bending_stress_lift(airframe, safety_factor=5, drag=False):    # Compute bending stresses from bending distribution
-    Bending_distribution = internal_loading_dMx(airframe)
+def bending_stress_lift(airframe, ult_safety_factor=5, drag=False):    # Compute bending stresses from bending distribution
+    Bending_distribution,_ = internal_loading_dMx(airframe)
     if  drag:
-        Bending_distribution = internal_loading_dMZ(airframe)
+        Bending_distribution,_ = internal_loading_dMZ(airframe)
     CFRP = Components_Materials.CFRP()
     GLARE = Components_Materials.GLARE()
     yield_stress = CFRP.sigma
     chord=airframe.c_r
     max_thickness = airframe.foil.max_thickness()
-    min_I = safety_factor*Bending_distribution[0]*chord*max_thickness/2/(yield_stress) # calcaulte max normal stress by using airfoil thickness/2 as max possible y 
+    min_I = ult_safety_factor*Bending_distribution[0]*chord*max_thickness/2/(yield_stress) # calcaulte max normal stress by using airfoil thickness/2 as max possible y 
     # find position where connection first starts taking (all) load
     x_max_connection=pos_first_connection(airframe)
     yield_stress = GLARE.sigma
-    min_connection = safety_factor*Bending_distribution[x_max_connection]*chord*max_thickness/2/(yield_stress) # find I for connection
+    min_connection = ult_safety_factor*Bending_distribution[x_max_connection]*chord*max_thickness/2/(yield_stress) # find I for connection
     return min_I, min_connection
 
 def bending_stress_drag(airframe, safety_factor=5):    # Compute bending stresses from bending distribution
@@ -115,9 +115,9 @@ def bending_stress_drag(airframe, safety_factor=5):    # Compute bending stresse
 
 def bending_deflection_lift(airframe, drag=False): # find bending deflection in either direction
  # get bending distribution from VLM analysis, interpolated to match points_loads
-    Bending_distribution = internal_loading_dMx(airframe) # get bending distribution from bending moment distribution
+    Bending_distribution, pos = internal_loading_dMx(airframe) # get bending distribution from bending moment distribution
     if  drag:
-        Bending_distribution = internal_loading_dMZ(airframe)
+        Bending_distribution, pos = internal_loading_dMZ(airframe)
     spar_I, connection_I = bending_stress_lift(airframe) # get I from bending loads
     CFRP = Components_Materials.CFRP()
     I = min(spar_I, connection_I) # conservative estimate, difference is small as connections length are minimal, with small change in I
@@ -133,22 +133,23 @@ def bending_deflection_lift(airframe, drag=False): # find bending deflection in 
     #plt.ylim((0,len(z)*dz))
     #plt.show()
     # plot if 1:1 axes to see realistic deflection
-    return z
+    return z, pos
 
 def bending_deflection_drag(airframe): # find bending deflection in either direction
     return bending_deflection_lift(airframe, drag=True)
 
-def torsional_stress(airframe, safety_factor = 5): # Compute torsional stresses from torsion distribution
-    Torsion_distribution = internal_loading_dT(airframe)
+def torsional_stress(airframe, ult_safety_factor = 5): # Compute torsional stresses from torsion distribution
+    Torsion_distribution,_ = internal_loading_dT(airframe)
     mylar = Components_Materials.Mylar()
     max_shear = mylar.shear
     A_skin,_ = airfoil_properties(airframe.foil, airframe.c_r)
-    t_skin = safety_factor*Torsion_distribution[0]/(2*A_skin*(max_shear))
+    t_skin = ult_safety_factor*Torsion_distribution[0]/(2*A_skin*(max_shear))
     # 5x safety factor torque, min skin thickness calculated if skin carries all torque
     return max(t_skin, 0.0002)
 
-def torsional_deflection(airframe, r_thickness=0.002, r_spar=0.04): # Compute twist deflection from torsion distribution
-    Torsion_distribution = internal_loading_dT(airframe)
+def torsional_deflection(airframe, r_thickness=0.002, a_spar=0.04, b_spar = 0.04): # Compute twist deflection from torsion distribution
+    # parameters given from bas' code
+    Torsion_distribution, pos = internal_loading_dT(airframe)
     # i guessed r_thickness and r_spar but you need to get those from bas
     t_skin = torsional_stress(airframe) # get area from torsional loads
     mylar = Components_Materials.Mylar()
@@ -161,8 +162,8 @@ def torsional_deflection(airframe, r_thickness=0.002, r_spar=0.04): # Compute tw
     T_spar = sp.Symbol('T_spar')  # Unknown torque carried by the skin
     A_skin, p_skin = airfoil_properties(airframe.foil, chord) # calculate area and perimeter of airfoil for skin torsion calculation
     skin_int_t_ds = p_skin/t_skin # 
-    A_spar = np.pi*r_spar**2 # conservative estimation
-    int_t_ds = np.pi*2*r_spar/r_thickness # calculate torsional constant by conservative approximation of min thickness all around, with assumption of 50% area efficiency (i.e. same area as square, twice the perimter)
+    A_spar = np.pi*a_spar*b_spar # conservative estimation
+    int_t_ds = np.pi*2*(a_spar+b_spar)/r_thickness # calculate torsional constant by conservative approximation of min thickness all around, with assumption of 50% area efficiency (i.e. same area as square, twice the perimter)
     dtheta_dz = sp.Symbol('dtheta_dz')  # Common twist rate (not solved for)
     eq1 = sp.Eq(dtheta_dz, (Torsion_distribution[0] - T_spar)*skin_int_t_ds / (4 * mylar.G * A_skin**2))  # Skin equation
     eq2 = sp.Eq(dtheta_dz,  T_spar*int_t_ds/ (4 * CFRP.G*A_spar**2))  # Spar equation
@@ -181,9 +182,7 @@ def torsional_deflection(airframe, r_thickness=0.002, r_spar=0.04): # Compute tw
     #plt.plot(np.linspace(0,len(theta)*dz,len(theta)), theta)
     #plt.ylim((0,len(theta)*dz))
     #plt.show()
-    return theta#in rad
-
-
+    return theta, pos#in rad
 
 
 def shear_force(Lift_distribution, airframe, t_spar, t_sleeve): #returns true if it passes this test #input drag works too
