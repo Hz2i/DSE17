@@ -53,7 +53,7 @@ print("Max CL/CD:", structure.CL_CD_max)
 # plt.plot(lift, structure.CD0 + structure.K1 * lift + structure.K2 * lift**2, c='r')
 # plt.show()
 
-structure.compute_force_distribution(alpha=10.0, TAS=35.0)
+structure.compute_load_distribution(alpha=10.0, TAS=35.0)
 
 
 # print("Force vectors:", F)
