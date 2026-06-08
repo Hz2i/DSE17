@@ -131,8 +131,8 @@ class AirfoilGeometry:
 
         #Find Coordinates Based on Available Width
         x_max_thickness = self.Airfoil.local_thickness(np.linspace(0, 1, 1001)).argmax()/1000*self.chord_length
-        print(f"Max thickness location: {x_max_thickness:.4f} m from LE")
-        print(f"Thickness at that location: {self.Airfoil.max_thickness()/self.chord_length:.4f} fraction of chord")
+        #print(f"Max thickness location: {x_max_thickness:.4f} m from LE")
+        #print(f"Thickness at that location: {self.Airfoil.max_thickness()/self.chord_length:.4f} fraction of chord")
         #Define interval around max thickness location
         interval = self.Available_width * self.chord_length / 2
         x_min = x_max_thickness - interval
@@ -236,7 +236,7 @@ class SparGeometryOptimization:
 
         #Optimized Geometry
         self.optimized_geometry = self.optimize_geometry_H_clamp_with_asb()
-        print(f"Optimized Geometry: {self.optimized_geometry}")
+        #print(f"Optimized Geometry: {self.optimized_geometry}")
         self.total_mass_spar, self.total_length_inc_clamp, self.total_span_exc_sleeve_clamp = self.calc_Mass_structure_span(self.optimized_geometry)
         self.Weight_skin = self.calculate_airfoil_skin_weight(self.optimized_geometry, self.total_length_inc_clamp, self.total_span_exc_sleeve_clamp)
         self.total_structure_weight = self.total_mass_spar + self.Weight_skin
@@ -525,11 +525,11 @@ class SparGeometryOptimization:
         area_airfoil_skin = perimeter_airfoil * self.t_skin  # Approximate skin area as perimeter times thickness, which is reasonable for thin skins around complex shapes like airfoils
         clamp_occupied_volume = (optimized_geometry["Clamp_width"] - optimized_geometry["r_top"]*2) * self.t_skin * total_length_inc_clamp  # Approximate volume occupied by clamp within the skin area
         volume_airfoil_skin = area_airfoil_skin * self.slanted_span - clamp_occupied_volume
-        print(f"Total Airfoil Skin Area: {area_airfoil_skin:.4f} m^2")
-        print(f"Total Airfoil Skin Volume (minus clamp cutout): {volume_airfoil_skin:.4f} m^3")
-        print(f"Clamp Occupied Volume within Skin Area: {clamp_occupied_volume:.4f} m^3")
+        #print(f"Total Airfoil Skin Area: {area_airfoil_skin:.4f} m^2")
+        #print(f"Total Airfoil Skin Volume (minus clamp cutout): {volume_airfoil_skin:.4f} m^3")
+        #print(f"Clamp Occupied Volume within Skin Area: {clamp_occupied_volume:.4f} m^3")
         weight_airfoil_skin = volume_airfoil_skin * self.Mylar_rho  # Use Mylar density for skin weight estimation, as it's a common lightweight material for aerodynamic skins
-        print(f"Estimated Airfoil Skin Weight: {weight_airfoil_skin:.4f} kg")
+        #print(f"Estimated Airfoil Skin Weight: {weight_airfoil_skin:.4f} kg")
         return weight_airfoil_skin
 
 
