@@ -167,7 +167,7 @@ class Aircraft:
 
 
     def compute_subsys_pow(self):
-        return self.comp.comp_total_power + self.comms.comms_total_power + self.flight_con.FCS_total_power+ self.payload.PS_total_power + self.ctrls.CS_total_power
+        return self.comp.power + self.comms.power + self.flight_con.power+ self.payload.power + self.ctrls.power
 
     def compute_subsys_mass(self):
-        return self.comp.comp_total_mass + self.comms.comms_total_mass + self.flight_con.FCS_total_mass + self.payload.PS_total_mass + self.ctrls.CS_total_mass
+        return self.comp.mass + self.comms.mass + self.flight_con.mass + self.ctrls.mass

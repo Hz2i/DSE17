@@ -58,11 +58,11 @@ while monitoring_var > 5e-3 or iterations < 5:
     AHAPS = Aircraft(MTOW_guess=MTOW, TAS=TAS_initial, gamma=gamma, lat=lat, day_margin=day_margin, DoD=DoD, airframe=planform, use_batt=use_batt, energy_delta=energy_delta)
 
     pow_frac = (AHAPS.pow_store.mass + AHAPS.solar.mass)/MTOW
-    payload_frac = AHAPS.payload.mass_payload / MTOW
+    payload_frac = AHAPS.payload.mass / MTOW
     struct_frac = AHAPS.internal_struct.total_structure_weight / MTOW
     gen_subsys_frac = AHAPS.compute_subsys_mass() / MTOW
 
-    MTOW = AHAPS.pow_store.mass + AHAPS.solar.mass + AHAPS.payload.mass_payload
+    MTOW = AHAPS.pow_store.mass + AHAPS.solar.mass + AHAPS.payload.mass + AHAPS.internal_struct.total_structure_weight + AHAPS.compute_subsys_mass()
 
     iterations += 1
     error_vec = np.roll(error_vec, 1)
