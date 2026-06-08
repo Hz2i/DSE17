@@ -9,7 +9,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../Characteristics')))
 from Airframe import airframe as Airframe
 from Components_Materials import CFRP, GLARE, Aluminum7075, Mylar, Silicone_Rubber
-import StructuralAnalysis as sa
+import objects_detailed.Methods.StructuralAnalysis as sa
 
 optimize_variables = {
         "t_spar": 0.005,  #m

@@ -153,7 +153,7 @@ class Aircraft:
             I_xx_sleeve_req=I_lift_connection,
             I_yy_sleeve_req=I_drag_connection,
             n_sections=6,
-            min_eccentricity_factor=1.5,
+            min_eccentricity_factor=1.1,
             airframe=self.airframe,
             airfoil_geometry=airfoil_geometry,
             Plot=False
