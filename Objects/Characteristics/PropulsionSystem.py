@@ -196,14 +196,12 @@ class PropulsionSystem:
         # ========================================================
         m_esc = 0.523 # esc kg
         m_motor = 0.8 # motor kg
-        m_add = 0.5 # cables, rod, insulation, etc. 200 gram nacelle 100 gram cable 200 gram insulation, etc
+        m_add = 0.4 # cables, rod, insulation, etc. 200 gram nacelle 100 gram cable 100 gram insulation, etc
         m_rod = 1200 * (0.025/2)**2*np.pi*0.5  # density * volume of a 0.5m long, 25mm diameter lightweight carbon rod, 300 grams
         m_hub = 6.36*0.20 * (self.D)/(2.1357) # 20 percent of kg from CAD
         m_blades = 2.89*0.7 * (self.D)/(2.1357)# 70 percent of kg from CAD
-        m_total_per_engine = m_esc + m_motor + m_add + m_hub + m_blades
+        m_total_per_engine = m_esc + m_motor + m_add + m_rod +  m_hub + m_blades
         m_total_all_engines = m_total_per_engine * self.num_engines
-        print(f"""\nEstimated Mass per Engine (Motor + ESC + Propeller + Additions): {m_total_per_engine:.2f} kg""")
-        print(f"Total Mass for All Engines: {m_total_all_engines:.2f} kg")
 
         # =========================================================
         # REPORT
@@ -245,7 +243,13 @@ class PropulsionSystem:
         print(f"  Total Electrical Power : {(P_elec_to * self.num_engines) / 1000.0:.3f} kW")
         print("=======================================================\n")
 
-
+        print("\n=======================================================")
+        print(f"                    MASS ESTIMATE")
+        print("=======================================================")
+        print(f"""Estimated Mass per Engine: {m_total_per_engine:.2f} kg""")
+        print(f"Total Mass for All Engines: {m_total_all_engines:.2f} kg")
+        print("=======================================================\n")
+        
 if __name__ == "__main__":
     ahaps = PropulsionSystem(
         v_inf_cruise=27.6, 
