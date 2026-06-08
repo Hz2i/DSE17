@@ -18,7 +18,7 @@ payload_frac_prev = 0.1
 struct_frac_prev = 0.35
 gen_subsys_frac_prev = 0.05
 
-MTOW_initial = 200.0
+MTOW_initial = 120.0
 TAS_initial = 25.0
 gamma = 0.0
 h_cruise = 18500.0

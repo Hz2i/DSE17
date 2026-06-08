@@ -128,6 +128,7 @@ class Aircraft:
 
                 iterations += 1
                 print("Inner iteration:", iterations)
+                print("Wing surface:", self.airframe.S)
                 print("Surface difference:", self.solar.area - self.airframe.S)
         '''
         print("Optimal CL:", self.CL_opt)
@@ -145,7 +146,12 @@ class Aircraft:
         I_drag_spar, I_drag_connection = bending_stress_drag(airframe=self.airframe)
         t_skin = torsional_stress(airframe=self.airframe)
 
-        airfoil_geometry = AirfoilGeometry(self.airframe, t_skin_airfoil=t_skin, plot=False)
+        print("I_xx_spar_req:", I_lift_spar)
+        print("I_yy_spar_req:", I_drag_spar)
+        print("I_xx_sleeve_req:", I_lift_connection)
+        print("I_yy_sleeve_req:", I_drag_connection)
+
+        airfoil_geometry = AirfoilGeometry(self.airframe, t_skin_airfoil=t_skin, Available_width=0.1, plot=False)
 
         self.internal_struct = SparGeometryOptimization(
             I_xx_spar_req=I_lift_spar,
