@@ -12,7 +12,7 @@ class Control_Surface_Sizing():
     def __init__(self):
         self.coeff = None
         self.airplane = None
-        self.wing_airfoil = asb.Airfoil("e344")
+        self.wing_airfoil = asb.Airfoil("mh91")
         self.tail_airfoil = asb.Airfoil("naca0012")
 
         self.wing_sweep = 0.2618      # radians
@@ -727,9 +727,9 @@ if __name__ == "__main__":
     cs = Control_Surface_Sizing()
     cs.Airplane_Geo()
     cs.airplane.draw()
-    cs.airplane.draw()
-    # cs.Control_Check()
-    # cs.Control_Sizing()
-    # cs.Pitching_Coefficients(print_plots=True)
-    # cs.Spiral_Check()
-    # cs.Cm_check()
+    #cs.airplane.draw()
+    #cs.Control_Check()
+    cs.Control_Sizing()
+    #cs.Pitching_Coefficients(print_plots=True)
+    cs.Spiral_Check()
+    #cs.Cm_check()
