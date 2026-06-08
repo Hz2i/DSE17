@@ -142,9 +142,9 @@ class Aircraft:
     def size_structure(self):
         self.airframe.compute_load_distribution(alpha=self.alpha, TAS=self.TAS_cruise, alt=self.h, res=20)
 
-        I_lift_spar, I_lift_connection = bending_stress_lift(airframe=self.airframe, ult_safety_factor=2.0)
-        I_drag_spar, I_drag_connection = bending_stress_drag(airframe=self.airframe, ult_safety_factor=2.0)
-        t_skin = torsional_stress(airframe=self.airframe, ult_safety_factor=2.0)
+        I_lift_spar, I_lift_connection = bending_stress_lift(airframe=self.airframe, ult_safety_factor=1.5)
+        I_drag_spar, I_drag_connection = bending_stress_drag(airframe=self.airframe, ult_safety_factor=1.5)
+        t_skin = torsional_stress(airframe=self.airframe, ult_safety_factor=1.5)
 
         print("I_xx_spar_req:", I_lift_spar)
         print("I_yy_spar_req:", I_drag_spar)

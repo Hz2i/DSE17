@@ -35,7 +35,7 @@ S = 36.0
 # Flying wing planform:
 fus_geo = fuselage(D=0.5, L1=0.2, L2=0.6, L3=0.2)
 nac_geo = nacelles(nr_of_engines=4)
-planform = airframe(S=S, A=28.0, qc_sweep=15.0*np.pi/180, taper=0.455, dihedral=0.0*np.pi/180.0,fus=fus_geo, nac=nac_geo, display=False, init_polar=False)
+planform = airframe(S=S, A=28.0, qc_sweep=15.0*np.pi/180, taper=0.455, dihedral=0.0*np.pi/180.0,fus=fus_geo, nac=nac_geo, display=False, init_polar=True)
 
 
 MTOW = MTOW_initial
@@ -79,7 +79,7 @@ while monitoring_var > 5e-3 or iterations < 5:
     iterations += 1
     error_vec = np.roll(error_vec, 1)
     error_vec[0] = error
-    monitoring_var = np.linalg.norm(abs(error_vec - error))
+    monitoring_var = np.linalg.norm(abs(error_vec - np.mean(error)))
 
     print("Iteration:", iterations)
     print("Monitoring variable:", monitoring_var)
