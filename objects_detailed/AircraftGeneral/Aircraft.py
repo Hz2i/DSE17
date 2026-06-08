@@ -50,6 +50,7 @@ class Aircraft:
         self.CL_opt = None
 
         self.size_wing()
+        self.size_structure()
 
     def update_flight_conditions(self, TAS_new=20.0, h_new=18000.0, gamma_new=0.0):
         self.TAS = TAS_new
@@ -138,14 +139,6 @@ class Aircraft:
         '''
 
     def size_structure(self):
-        pass
-
-
-    def compute_subsys_pow(self):
-        return self.comp.comp_electrical_power_required + self.comms.comms_electrical_power_required + self.flight_con.FCS_power_required + self.payload.power_required + self.ctrls.power_required
-
-
-    def compute_total_mass(self):
         self.airframe.compute_load_distribution(alpha=self.alpha, TAS=self.TAS_cruise, alt=self.h, res=20)
 
         I_lift_spar, I_lift_connection = bending_stress_lift(airframe=self.airframe)
@@ -154,7 +147,7 @@ class Aircraft:
 
         airfoil_geometry = AirfoilGeometry(self.airframe, t_skin_airfoil=t_skin, plot=False)
 
-        spar_optimizer = SparGeometryOptimization(
+        self.internal_struct = SparGeometryOptimization(
             I_xx_spar_req=I_lift_spar,
             I_yy_spar_req=I_drag_spar,
             I_xx_sleeve_req=I_lift_connection,
@@ -167,5 +160,8 @@ class Aircraft:
         )
 
 
-    def compute_total_volume(self):
+    def compute_subsys_pow(self):
+        return self.comp.comp_electrical_power_required + self.comms.comms_electrical_power_required + self.flight_con.FCS_power_required + self.payload.power_required + self.ctrls.power_required
+
+    def compute_subsys_mass(self):
         pass
