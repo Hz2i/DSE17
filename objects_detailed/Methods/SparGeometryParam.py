@@ -175,12 +175,13 @@ class AirfoilGeometry:
         plt.show()
 
 class SparGeometryOptimization:
-    def __init__(self, I_xx_spar_req, I_yy_spar_req, I_xx_sleeve_req, I_yy_sleeve_req, airframe = Airframe.airframe(), airfoil_geometry = AirfoilGeometry(), min_eccentricity_factor=2, optimize_variables = optimize_variables, determined_geometry = determined_geometry):
+    def __init__(self, I_xx_spar_req, I_yy_spar_req, I_xx_sleeve_req, I_yy_sleeve_req, n_sections, airframe = Airframe.airframe(), airfoil_geometry = AirfoilGeometry(), min_eccentricity_factor=2, optimize_variables = optimize_variables, determined_geometry = determined_geometry):
         self.I_xx_spar_req = I_xx_spar_req
         self.I_yy_spar_req = I_yy_spar_req
         self.I_xx_sleeve_req = I_xx_sleeve_req
         self.I_yy_sleeve_req = I_yy_sleeve_req
-
+        #Number of Sections
+        self.n_sections = n_sections
         #Min Eccentricity Factor for Ribs
         self.min_eccentricity_factor = min_eccentricity_factor        
 
@@ -436,16 +437,19 @@ class SparGeometryOptimization:
         plt.axis('equal')
         plt.grid()
 
-    def calc_Mass_structure_span(self, n_sections, optimized_geometry):
-        total_length_inc_clamp = n_sections*(self.l_clamp*3)
-        total_length_sleeved = self.l_sleeve*n_sections - total_length_inc_clamp
+    def calc_Mass_structure_span(self, optimized_geometry):
+        total_length_inc_clamp = self.n_sections*(self.l_clamp*3)
+        total_length_sleeved = self.l_sleeve*self.n_sections - total_length_inc_clamp
         total_span_exc_sleeve_clamp = self.slanted_span - total_length_inc_clamp - total_length_sleeved
         mass_per_clamped_cross_section = optimized_geometry["total_weight"]
         mass_per_unclamped_sleeved_cross_section = optimized_geometry["total_sl_and_sp_weight"]  # Only include sleeve weight for unclamped sections, as clamp occupies the space of the spar in those sections
         mass_per_unclamped_unsleeved_cross_section = optimized_geometry["weight_spar"]  # Exclude clamp weight for unclamped sections
+        #Assumption Second Spar is as heavy as sleeve length*cross_section_weight, as it is of similar dimensions and material to the sleeve, and provides similar contribution to inertia
+        mass_per_second_spar = mass_per_clamped_cross_section  * self.l_sleeve
         total_mass_spar = (total_length_inc_clamp * mass_per_clamped_cross_section +
                           total_length_sleeved * mass_per_unclamped_sleeved_cross_section +
-                          total_span_exc_sleeve_clamp * mass_per_unclamped_unsleeved_cross_section)
+                          total_span_exc_sleeve_clamp * mass_per_unclamped_unsleeved_cross_section +
+                          mass_per_second_spar)
         return total_mass_spar, total_length_inc_clamp, total_span_exc_sleeve_clamp
     
     def closed_contour_area(self,xu, yu, xl, yl):
