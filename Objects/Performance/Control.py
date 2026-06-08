@@ -19,15 +19,15 @@ class Control_Surface_Sizing():
         self.b = 28.80                # full span [m]
         self.c = 1.44                 # chord [m]
         self.S = self.b * self.c      # Wing area [m^2]
-        self.dihedral = np.radians(1.0)
+        self.dihedral = np.radians(2.0)
         self.twist = 2.0
 
-        self.x_cg = 2.25
+        self.x_cg = 2.18
 
-        self.inner_elevon_frac = 0.05
-        self.outer_elevon_frac = 0.20
-        self.height_winglet = 1.0 # height of winglet above main wing [m]
-        self.rudder_frac = 0.8
+        self.inner_elevon_frac = 0.06
+        self.outer_elevon_frac = 0.193
+        self.height_winglet = 1.5 # height of winglet above main wing [m]
+        self.rudder_frac = 0.67
         self.fraction_outer_engine = None
 
         self.half_span = self.b / 2
@@ -43,7 +43,8 @@ class Control_Surface_Sizing():
         self.r_check = True
 
         self.d_deflect = 5
-        self.deflection_points = np.arange(-25, 25 + self.d_deflect, self.d_deflect) # don't use floats with arange
+        self.deflection_points = np.arange(-20, 20 + self.d_deflect, self.d_deflect) # don't use floats with arange
+        self.rudder_deflection_points = np.arange(-30, 30 + self.d_deflect, self.d_deflect) # don't use floats with arange
         self.print_plots = False
 
         self.T_eng = None
@@ -415,7 +416,7 @@ class Control_Surface_Sizing():
         print("-------------------------------")
         print("Running rudder Cn sweep (antisymmetric / yaw) …")
         Cn_rudder = self._sweep(
-            self.deflection_points,
+            self.rudder_deflection_points,
             delta_inner_fn=lambda i: 0,
             delta_outer_fn=lambda i: 0,
             delta_rudder_fn=lambda i: i,
@@ -423,7 +424,7 @@ class Control_Surface_Sizing():
             coeff_key="Cn",
         )
         x_np_rudder = self._sweep(
-            self.deflection_points,
+            self.rudder_deflection_points,
             delta_inner_fn=lambda i: 0,
             delta_outer_fn=lambda i: 0,
             delta_rudder_fn=lambda i: i,
@@ -438,7 +439,7 @@ class Control_Surface_Sizing():
             fig.suptitle("Elevon Control Effectiveness  (V=" + str(self.op_point.velocity) + "m/s, α=" + str(self.op_point.alpha) + "°)")
 
             # Right: yaw sweep
-            axes[0].plot(self.deflection_points, Cn_rudder, color="green", label="Cn — rudder (antisym)")
+            axes[0].plot(self.rudder_deflection_points, Cn_rudder, color="green", label="Cn — rudder (antisym)")
             axes[0].axhline(0, color="black", linewidth=0.8, linestyle="--")
             axes[0].set_xlabel("Elevon deflection [deg]")
             axes[0].set_ylabel("Cn")
@@ -446,7 +447,7 @@ class Control_Surface_Sizing():
             # axes[0, 2].legend()
             axes[0].grid(True)
 
-            axes[1].plot(self.deflection_points, x_np_rudder)
+            axes[1].plot(self.rudder_deflection_points, x_np_rudder)
             axes[1].axhline(0, color="black", linewidth=0.8, linestyle="--")
             axes[1].set_xlabel("Elevon deflection [deg]")
             axes[1].set_ylabel("x_np")
@@ -458,11 +459,11 @@ class Control_Surface_Sizing():
             plt.show()
 
         # ── Control Coefficient Linearisation ─────────────────────────
-        Cndr = (Cn_rudder[np.size(self.deflection_points)-1] - Cn_rudder[0])/np.radians(self.deflection_points[np.size(self.deflection_points)-1] - self.deflection_points[0])
+        Cndr = (Cn_rudder[np.size(self.rudder_deflection_points)-1] - Cn_rudder[0])/np.radians(self.rudder_deflection_points[np.size(self.rudder_deflection_points)-1] - self.rudder_deflection_points[0])
 
         print("Running Cmq sweep …")
         Cnr = self._sweep_single(
-            self.deflection_points,
+            self.rudder_deflection_points,
             delta_inner_fn=lambda i: 0,
             delta_outer_fn=lambda i: 0,
             delta_rudder_fn=lambda i: 0,
@@ -508,7 +509,7 @@ class Control_Surface_Sizing():
         Cn_OEI_counter = k*M_engine/(0.5*rho_cruise*self.op_point.velocity**2*self.S*self.b) # Required Cn to counteract OEI yawing moment
         deflection_OEI = -Cn_OEI_counter/Cndr
         print("OEI Deflection", np.degrees(deflection_OEI), "deg/s")
-        deflection_max = np.radians(30)
+        deflection_max = np.radians(self.rudder_deflection_points[np.size(self.rudder_deflection_points) - 1])
 
         r = Cndr / Cnr * (deflection_max-deflection_OEI) * 2 * self.op_point.velocity / self.b
         # r = Cndr / Cnr * (np.radians(self.deflection_points[np.size(self.deflection_points) - 1])) * 2 * self.op_point.velocity / self.b
@@ -725,6 +726,7 @@ if __name__ == "__main__":
     print("Starting simulation")
     cs = Control_Surface_Sizing()
     cs.Airplane_Geo()
+    cs.airplane.draw()
     cs.airplane.draw()
     # cs.Control_Check()
     # cs.Control_Sizing()
