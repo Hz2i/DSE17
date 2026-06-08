@@ -95,22 +95,25 @@ def pos_first_connection(airframe):
     return x_max_connection
 
 def bending_stress_lift(airframe, ult_safety_factor=5, drag=False):    # Compute bending stresses from bending distribution
-    Bending_distribution,_ = internal_loading_dMx(airframe)
+    Bending_distribution,_ = internal_loading_dMx(airframe) # gets bending distribution (from airframe)
     if  drag:
-        Bending_distribution,_ = internal_loading_dMZ(airframe)
-    CFRP = Components_Materials.CFRP()
+        Bending_distribution,_ = internal_loading_dMZ(airframe) # for the drag function, gets that instead
+    CFRP = Components_Materials.CFRP() # imports materials
     GLARE = Components_Materials.GLARE()
-    yield_stress = CFRP.sigma
+    yield_stress = CFRP.sigma 
     chord=airframe.c_r
     max_thickness = airframe.foil.max_thickness()
-    min_I = ult_safety_factor*Bending_distribution[0]*chord*max_thickness/2/(yield_stress) # calcaulte max normal stress by using airfoil thickness/2 as max possible y 
+    I_lift_spar = ult_safety_factor*Bending_distribution[0]*chord*max_thickness/2/(yield_stress) 
+    # calcaulte min I by using bending stress, with yield stress, safety factor and max y of half airfoil thickness
     # find position where connection first starts taking (all) load
     x_max_connection=pos_first_connection(airframe)
     yield_stress = GLARE.sigma
-    min_connection = ult_safety_factor*Bending_distribution[x_max_connection]*chord*max_thickness/2/(yield_stress) # find I for connection
-    return min_I, min_connection
+    I_lift_connection = ult_safety_factor*Bending_distribution[x_max_connection]*chord*max_thickness/2/(yield_stress) # find I for connection
+    # find min I from connection using same method, looking at stress
+    return I_lift_spar, I_lift_connection
 
 def bending_stress_drag(airframe, safety_factor=5):    # Compute bending stresses from bending distribution
+    # returns as follows, return I_drag_spar, I_drag_connection
     return bending_stress_lift(airframe, safety_factor, drag=True)
 
 def bending_deflection_lift(airframe, drag=False): # find bending deflection in either direction
@@ -139,13 +142,14 @@ def bending_deflection_drag(airframe): # find bending deflection in either direc
     return bending_deflection_lift(airframe, drag=True)
 
 def torsional_stress(airframe, ult_safety_factor = 5): # Compute torsional stresses from torsion distribution
-    Torsion_distribution,_ = internal_loading_dT(airframe)
-    mylar = Components_Materials.Mylar()
+    Torsion_distribution,_ = internal_loading_dT(airframe) # import torsion distribution
+    mylar = Components_Materials.Mylar() # import material
     max_shear = mylar.shear
     A_skin,_ = airfoil_properties(airframe.foil, airframe.c_r)
-    t_skin = ult_safety_factor*Torsion_distribution[0]/(2*A_skin*(max_shear))
+    t_airfoil_skin = ult_safety_factor*Torsion_distribution[0]/(2*A_skin*(max_shear)) # uses shear stress formula to find min thickness, similarly to I calculations
     # 5x safety factor torque, min skin thickness calculated if skin carries all torque
-    return max(t_skin, 0.0002)
+    # returns min airfoil thickness, unless its smaller than the minimum provided
+    return max(t_airfoil_skin, 0.0002)
 
 def torsional_deflection(airframe, r_thickness=0.002, a_spar=0.04, b_spar = 0.04): # Compute twist deflection from torsion distribution
     # parameters given from bas' code

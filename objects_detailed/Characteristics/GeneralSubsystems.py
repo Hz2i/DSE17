@@ -69,15 +69,19 @@ class CommunicationSystem:
         self.comms_mass_density = comms_mass_density            # kg/W, typical for HAPS
         self.comms_volume_density = comms_volume_density        # m^3/W Catalani et al. 2020
         self.comms_x_pos = comms_x_pos                          # Needs implementation
-        self.adsb_power = adsb_power                            #W, ping 20Si
-        self.adsb_mass = adsb_mass                              #kg, ping 20Si
-        self.adsb_volume = adsb_volume                          #m^3, ping 20Si
-        self.elt_power = elt_power                              #W Artex ELT 345
-        self.elt_mass = elt_mass                                #kg Artex ELT 345
-        self.elt_volume = elt_volume                            #m^3 Artex ELT 345
-        self.ssr_power = ssr_power                              #W, Garmin GTX 345 maximum
-        self.ssr_mass = ssr_mass                                #kg, Garmin GTX 345
-        self.ssr_volume = ssr_volume                            #m^3, Garmin GTX 345
+        self.redundancy = 2.0 # factor everything is multiplied by if redundancy is added                           # Initialise with proper values
+        self.antenna_power =0.49                                     # 1621 Chelton
+        self.antenna_mass=0.005579247
+        self.antenna_volume =0.0005
+        self.adsb_power = 20                            #W, ping 20Si
+        self.adsb_mass = 0.02                             #kg, ping 20Si
+        self.adsb_volume = 0.0000215                          #m^3, ping 20Si
+        self.elt_power = 5                              #W Artex ELT 345
+        self.elt_mass = 0.90719                                #kg Artex ELT 345
+        self.elt_volume = 0.001173842                            #m^3 Artex ELT 345
+        self.ssr_power = 18                              #W, Garmin GTX 345 maximum
+        self.ssr_mass = 1.04                                #kg, Garmin GTX 345
+        self.ssr_volume = 0.01709952                            #m^3, Garmin GTX 345
 
         self.compute_communication_system()
 
@@ -85,43 +89,47 @@ class CommunicationSystem:
         """Compute all relevant characteristics of the communication system, 
         by simple summation of the characteristics of the individual components, 
         plus the contribution from the transmit power""" 
-        self.comms_mass = self.adsb_mass + self.elt_mass + self.ssr_mass + self.comms_mass_density * self.transmit_power
-        self.comms_volume = self.adsb_volume + self.elt_volume + self.ssr_volume + self.comms_volume_density * self.transmit_power
+        self.comms_mass = (self.adsb_mass + self.elt_mass + self.ssr_mass + self.antenna_mass)*self.redundancy #+ self.comms_mass_density * self.transmit_power)
+        self.comms_volume = (self.adsb_volume + self.elt_volume + self.ssr_volume +self.antenna_volume)*self.redundancy#+ self.comms_volume_density * self.transmit_power
         self.comms_x_pos = 0.0  # Needs implementation
-        self.comms_electrical_power_required = self.adsb_power + self.elt_power + self.ssr_power + self.transmit_power * self.transmit_efficiency
+        self.comms_electrical_power_required = self.adsb_power + self.elt_power + self.ssr_power + self.antenna_power#
+        self.transmit_power * self.transmit_efficiency
         # return self.comms_mass
 
 class FlightConditionsSystem:
-    def __init__(self):                                     # Initialise with proper values
+    def __init__(self):          
+        self.redundancy = 2.0 # factor everything is multiplied by if redundancy is added                           # Initialise with proper values
         self.mass = 0.0                                     # Currently initialised with 0; Class 2 estimation methods required!
         self.volume = 0.0
         self.x_pos = 0.0
         self.power_required = 0.0
-        self.IMU_mass = 0.055 #kg, STIM320
-        self.IMU_volume = 3.5 * 10**(-7) #m^3, STIM320
-        self.IMU_power_required = 1.5 #W, STIM320
+        self.IMU_mass = 0.006 #kg, pixhawk, includes imu, magnetometer, barometer
+        self.IMU_volume = 4.63e-5 #m^3, 
+        self.IMU_power_required = 7.5 #W, 
         self.GNSS_mass = 0.0068 #kg, mosaic-x5
-        self.GNSS_volume = 0.031 * 0.031 * 0.004 #m^3, mosaic-x5
-        self.GNSS_power_required = 0.6 #W, mosaic-x5
-        self.pitot_mass = 0.160 #kg, heated pitot tube
-        self.pitot_volume = 0.19 * 0.019 * 0.019 #m^3, heated pitot tube
-        self.pitot_power_required = 30 #W, heated pitot tube heating estimate
+        self.GNSS_volume = 3.84e-6 #m^3, mosaic-x5
+        self.GNSS_power_required = 1.1 #W, mosaic-x5
+        self.pitot_mass = 0.455 #kg, heated pitot tube
+        self.pitot_volume = 0.00728 #m^3, heated pitot tube
+        self.pitot_power_required = 68.6 #W, heated pitot tube heating estimate
+
 
         self.compute_flight_conditions_system()
 
     def compute_flight_conditions_system(self):
-        self.FCS_mass = self.mass + self.IMU_mass + self.GNSS_mass + self.pitot_mass
-        self.FCS_volume = self.volume + self.IMU_volume + self.GNSS_volume + self.pitot_volume
-        self.FCS_power_required = self.power_required + self.IMU_power_required + self.GNSS_power_required + self.pitot_power_required
+        self.FCS_mass = (self.mass + self.IMU_mass + self.GNSS_mass + self.pitot_mass)*self.redundancy
+        self.FCS_volume = (self.volume + self.IMU_volume + self.GNSS_volume + self.pitot_volume)*self.redundancy
+        self.FCS_power_required = self.power_required + self.IMU_power_required + self.GNSS_power_required + self.pitot_power_required # dont multiply power with redundancy, as you only send power to one
         # return self.FCS_mass, self.FCS_volume, self.FCS_power_required
 
-class PayloadSystem:
+class PayloadSystem: # finish cables here
     def __init__(self):                                     # Initialise with proper values
         self.volume = 0.01 #m^3 common aerospace values
         self.x_pos = 0.0
         self.mass_payload = 20.0 #kg
         self.power_required = 100.0
         self.mass_connector = 0.050 #kg, MIL-DTL 38999 Series III
+        self.volume_connector = 3.12e-5
         self.mass_cables = 0.020 #kg/m AWG16
         self.resistance_cable = 0.013 #Ohm/m AWG16
         self.current_cable = 35 #A, AWG16 maximum current
