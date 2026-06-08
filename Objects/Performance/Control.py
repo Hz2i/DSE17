@@ -22,7 +22,7 @@ class Control_Surface_Sizing():
         self.dihedral = np.radians(2.0)
         self.twist = 2.0
 
-        self.x_cg = 2.18
+        self.x_cg = 2.19
 
         self.inner_elevon_frac = 0.06
         self.outer_elevon_frac = 0.193
