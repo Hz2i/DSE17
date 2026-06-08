@@ -9,6 +9,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../Characteristics')))
 from Airframe import airframe as Airframe
 from Components_Materials import CFRP, GLARE, Aluminum7075, Mylar, Silicone_Rubber
+import StructuralAnalysis as sa
 
 optimize_variables = {
         "t_spar": 0.005,  #m
@@ -203,6 +204,7 @@ class SparGeometryOptimization:
         self.l_sleeve = determined_geometry.get("l_sleeve")
 
         #Constraint Geometry
+        self.airframe = airframe
         self.airfoil_geometry = airfoil_geometry
         self.t_skin = self.airfoil_geometry.t_skin_airfoil
         self.Available_width = self.airfoil_geometry.Available_width * self.airfoil_geometry.chord_length
@@ -519,44 +521,21 @@ class SparGeometryOptimization:
 
         return area, x, y
     def calculate_airfoil_skin_weight(self, optimized_geometry, total_length_inc_clamp, total_span_exc_clamp):
-        xu, yu = self.airfoil_geometry.xu, self.airfoil_geometry.yu
-        xl, yl = self.airfoil_geometry.xl, self.airfoil_geometry.yl
-
-        area_airfoil_total,x_total, y_total = self.closed_contour_area(xu, yu, xl, yl)
-
-        xu_off, yu_off = self.airfoil_geometry.xu_off, self.airfoil_geometry.yu_off
-        xl_off, yl_off = self.airfoil_geometry.xl_off, self.airfoil_geometry.yl_off
-
-        area_airfoil_offset, x_offset, y_offset = self.closed_contour_area(
-            xu_off, yu_off,
-            xl_off, yl_off
-        )
-
-        area_airfoil_skin = area_airfoil_total - area_airfoil_offset
-        
-        # plt.figure(figsize=(10, 5))
-        # plt.plot(x_total, y_total, color='blue', label="Outer Airfoil Contour")
-        # plt.plot(x_offset, y_offset, color='red', label="Inner Airfoil Contour (offset by skin thickness)")
-        # plt.fill_between(x_total, y_total, color='blue', alpha=0.3, label=f'Outer Airfoil Area: {area_airfoil_total:.4f} m^2')
-        # plt.fill_between(x_offset, y_offset, color='red', alpha=0.3, label=f'Inner Airfoil Area: {area_airfoil_offset:.4f} m^2')
-        # plt.title(f"Airfoil Contours and Skin Area, total skin area = {area_airfoil_skin:.4f} m^2")
-        # plt.xlabel("x (m)")
-        # plt.ylabel("y (m)")
-        # plt.legend()
-        # plt.axis('equal')
-        # plt.grid()
-        # plt.show()
-
+        area_airfoil, perimeter_airfoil = sa.airfoil_properties(self.airframe.foil, chord_length=self.airfoil_geometry.chord_length)
+        area_airfoil_skin = perimeter_airfoil * self.t_skin  # Approximate skin area as perimeter times thickness, which is reasonable for thin skins around complex shapes like airfoils
         clamp_occupied_volume = (optimized_geometry["Clamp_width"] - optimized_geometry["r_top"]*2) * self.t_skin * total_length_inc_clamp  # Approximate volume occupied by clamp within the skin area
         volume_airfoil_skin = area_airfoil_skin * self.slanted_span - clamp_occupied_volume
+        print(f"Total Airfoil Skin Area: {area_airfoil_skin:.4f} m^2")
+        print(f"Total Airfoil Skin Volume (minus clamp cutout): {volume_airfoil_skin:.4f} m^3")
+        print(f"Clamp Occupied Volume within Skin Area: {clamp_occupied_volume:.4f} m^3")
         weight_airfoil_skin = volume_airfoil_skin * self.Mylar_rho  # Use Mylar density for skin weight estimation, as it's a common lightweight material for aerodynamic skins
-
+        print(f"Estimated Airfoil Skin Weight: {weight_airfoil_skin:.4f} kg")
         return weight_airfoil_skin
 
 
 if __name__ == "__main__":
     airframe = Airframe()
-    airfoil_geometry = AirfoilGeometry(Airframe(),t_skin_airfoil=0.001, plot=True)
+    airfoil_geometry = AirfoilGeometry(Airframe(),t_skin_airfoil=0.0002, plot=True)
     #Components
     spar_optimizer = SparGeometryOptimization(
         I_xx_spar_req=1e-7,  # Placeholder values for required inertia, these should be calculated based on load cases
