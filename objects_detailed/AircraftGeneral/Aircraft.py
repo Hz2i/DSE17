@@ -11,6 +11,9 @@ from objects_detailed.Characteristics.PowerSystem_sizing import power_storage, p
 from objects_detailed.Characteristics.PropulsionSystem import PropulsionSystem
 from objects_detailed.Constants import Constants
 
+from objects_detailed.Methods.StructuralAnalysis import bending_stress_lift, bending_stress_drag, torsional_stress
+from objects_detailed.Methods.SparGeometryParam import SparGeometryOptimization, optimize_variables, determined_geometry
+
 
 # Note for Stefan: REFACTOR CODE TO FIT NEW FLOW DIAGRAM
 # It can be assumed that the general logic of this class (at least pertaining to airframe sizing) shall not significantly change.
@@ -47,6 +50,7 @@ class Aircraft:
         self.CL_opt = None
 
         self.size_wing()
+        self.size_structure()
 
     def update_flight_conditions(self, TAS_new=20.0, h_new=18000.0, gamma_new=0.0):
         self.TAS = TAS_new
@@ -134,15 +138,30 @@ class Aircraft:
         print("Propulsive efficiency:", self.prop.overall_eff)
         '''
 
-    def size_structure()
+    def size_structure(self):
+        self.airframe.compute_load_distribution(alpha=self.alpha, TAS=self.TAS_cruise, alt=self.h, res=20)
+
+        I_lift_spar, I_lift_connection = bending_stress_lift(airframe=self.airframe)
+        I_drag_spar, I_drag_connection = bending_stress_drag(airframe=self.airframe)
+        t_skin = torsional_stress(airframe=self.airframe)
+
+        airfoil_geometry = AirfoilGeometry(self.airframe, t_skin_airfoil=t_skin, plot=False)
+
+        self.internal_struct = SparGeometryOptimization(
+            I_xx_spar_req=I_lift_spar,
+            I_yy_spar_req=I_drag_spar,
+            I_xx_sleeve_req=I_lift_connection,
+            I_yy_sleeve_req=I_drag_connection,
+            n_sections=6,
+            min_eccentricity_factor=1.5,
+            airframe=self.airframe,
+            airfoil_geometry=airfoil_geometry,
+            Plot=False
+        )
 
 
     def compute_subsys_pow(self):
         return self.comp.comp_electrical_power_required + self.comms.comms_electrical_power_required + self.flight_con.FCS_power_required + self.payload.power_required + self.ctrls.power_required
 
-
-    def compute_total_mass(self):
-        pass
-
-    def compute_total_volume(self):
+    def compute_subsys_mass(self):
         pass
