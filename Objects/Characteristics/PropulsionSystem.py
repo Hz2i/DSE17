@@ -1,247 +1,258 @@
-from pathlib import Path
+import aerosandbox as asb
+import aerosandbox.numpy as np
+from scipy.integrate import trapezoid
+from scipy.interpolate import interp1d
+from scipy.optimize import brentq, minimize_scalar
+import warnings
 
-import numpy as np
-import ambiance as am
-import matplotlib.pyplot as plt
-import pandas as pd
-#Get Data Points First
-
+warnings.filterwarnings("ignore")
 
 class PropulsionSystem:
-    def __init__(self, plotdata=False, T=0.0, velocity=0.0, alt=0.0, rpm=0.0, torque=0.0, motor_temp=0.0, propeller_diameter=2.5):                                     # Initialise with proper values
-        self.mass = None  # kg, estimated mass of the propulsion system
-        self.alt = alt  # Altitude in meters
-        self.velocity = velocity  # m/s, cruise airspeed
-        self.T = T
+    def __init__(self, v_inf_cruise, required_thrust_cruise, m_TO, S, CL_max):
+        # ---------------------------------------------------------
+        # Input config
+        # ---------------------------------------------------------
+        self.v_inf_cr = v_inf_cruise
+        self.thrust_req_cr = required_thrust_cruise
+        self.m_TO = m_TO  # Take-Off Mass (kg)
+        self.S = S        # Wing Reference Area (m^2)
+        self.CL_max = CL_max  # Maximum Lift Coefficient
+        # ---------------------------------------------------------
+        # Trade-off parameters
+        # ---------------------------------------------------------
+        self.airfoil_name = "SD7037"
+        self.Nb = 2
+        self.num_engines = 4
         
-        #Motor characteristics
-        self.motor_temp = motor_temp
+        # Drivetrain Efficiencies
+        self.eta_motor = 0.90
+        self.eta_esc = 0.99
+        self.eta_elec = self.eta_motor * self.eta_esc  # Combined Electrical Efficiency
         
-        # self.q = 0  # Dynamic pressure, to be calculated based on altitude and velocity
-        # Propeller characteristics for a HAPS-scale low-speed propeller
-        self.propeller_diameter = propeller_diameter  # meters
-        self.propeller_area = np.pi * (self.propeller_diameter / 2) ** 2
-        self.velocity = velocity  # m/s, cruise airspeed
-        self.lambda_adv = None  # Advance ratio, to be calculated based on velocity and propeller characteristics
+        # Cruise (18,288 m) 60,000ft
+        self.atmo_cr = asb.Atmosphere(altitude=18288)
+        self.rho_cr = self.atmo_cr.density()
+        self.mach_cr = self.v_inf_cr / self.atmo_cr.speed_of_sound()
         
-        #Efficiencies
-        self.rpm_out = rpm  # Initialize RPM output (assuming direct drive, no gearbox)
-        self.motor_eff = self.calc_motor_eff(motor_temp, rpm, torque, plotdata)
-        self.gearbox_eff = self.calc_gearbox_eff()
-        self.propeller_eff = self.calc_propeller_eff()
-        self.overall_eff = self.calc_overall_eff()
+        # Take-Off (Sea Level)
+        self.atmo_to = asb.Atmosphere(altitude=0)
+        self.rho_to = self.atmo_to.density()
+        
+        # ---------------------------------------------------------
+        # Geometry
+        # ---------------------------------------------------------
+        self.r = np.linspace(0.1, 1.0, 100)
+        self.beta_07 = 20.5
+        # The chord polynomial (b) will be multiplied by the sized Diameter (D) later
+        self.b_unscaled = (0.084241 - 0.85789*self.r + 4.7176*self.r**2 - 9.6225*self.r**3 + 8.5004*self.r**4 - 2.7959*self.r**5)
+        self.beta_deg = self.beta_07 + (0.4387 + 0.3040*self.r - 3.9616*self.r**2 + 5.1180*self.r**3 - 1.6284*self.r**4 - 0.3244*self.r**5) * (180/np.pi)
+        
+        # State Variables initialized
+        self.optimal_J = None
+        self.D = None
 
-        #Power Required
-        self.power_required = self.Calc_Power_Req()
-    
-    def calc_motor_eff(self, motor_temp, rpm, torque, plotdata):                          # Compute all relevant characteristics of the propulsion system
-        def convex_hull(points):
-            pts = np.unique(points, axis=0)
-            if len(pts) <= 2:
-                return pts
-
-            pts = pts[np.lexsort((pts[:, 1], pts[:, 0]))]
-
-            def cross(o, a, b):
-                return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
-
-            lower = []
-            for p in pts:
-                while len(lower) >= 2 and cross(lower[-2], lower[-1], p) <= 0:
-                    lower.pop()
-                lower.append(p)
-
-            upper = []
-            for p in reversed(pts):
-                while len(upper) >= 2 and cross(upper[-2], upper[-1], p) <= 0:
-                    upper.pop()
-                upper.append(p)
-
-            return np.array(lower[:-1] + upper[:-1])
-
-        # Build closed contour polygons from datapoints and classify the input point.
-        data_dir = Path(__file__).resolve().parent / 'MotorData'
-        data_94_minus40C = pd.read_csv(data_dir / 'minus40_94.csv', delimiter=';')
-        data_93_plus20C = pd.read_csv(data_dir / 'plus20_93.csv', delimiter=';')
-        x_minus40C = data_94_minus40C['RPM'].values
-        y_minus40C = data_94_minus40C['TORQUE'].values
-        x_plus20C = data_93_plus20C['RPM'].values
-        y_plus20C = data_93_plus20C['TORQUE'].values
-        from matplotlib.path import Path as MplPath
-
-        points_minus40C = np.column_stack((x_minus40C, y_minus40C))
-        points_plus20C = np.column_stack((x_plus20C, y_plus20C))
-
-        hull_minus40C = convex_hull(points_minus40C)
-        hull_plus20C = convex_hull(points_plus20C)
-
-        contour_minus40C = MplPath(hull_minus40C, closed=True)
-        contour_plus20C = MplPath(hull_plus20C, closed=True)
-
-        if motor_temp == -40:
-            selected_contour = contour_minus40C
-            selected_eff = 0.94
-            selected_hull = hull_minus40C
-            selected_points = points_minus40C
-            selected_label = '-40C contour (0.94)'
-            selected_color = 'blue'
-        elif motor_temp == 20:
-            selected_contour = contour_plus20C
-            selected_eff = 0.93
-            selected_hull = hull_plus20C
-            selected_points = points_plus20C
-            selected_label = '+20C contour (0.93)'
-            selected_color = 'orange'
-        else:
-            raise ValueError('motor_temp must be either -40 or 20.')
-
-        input_point = np.array([[rpm, torque]])
-        in_selected_contour = selected_contour.contains_points(input_point)[0]
-        motor_eff = selected_eff if in_selected_contour else 0.0
-
-        if plotdata:
-            plt.figure()
-            plt.fill(selected_hull[:, 0], selected_hull[:, 1], color=selected_color, alpha=0.2, label=selected_label)
-            plt.plot(
-                np.r_[selected_hull[:, 0], selected_hull[0, 0]],
-                np.r_[selected_hull[:, 1], selected_hull[0, 1]],
-                color=selected_color
-            )
-            plt.scatter(selected_points[:, 0], selected_points[:, 1], color=selected_color, s=18, alpha=0.7)
-            plt.scatter([rpm], [torque], color='red', s=40, label=f'Input point -> eff={motor_eff:.2f}')
-            plt.xlabel('RPM')
-            plt.ylabel('Torque')
-            plt.title(f'Motor Efficiency Contour at {motor_temp}C')
-            plt.legend()
-            plt.grid()
-            plt.show()
-        return motor_eff
-    
-    def calc_gearbox_eff(self):
-        gearbox_eff = 0.95
-        return gearbox_eff
-    
-    def calc_propeller_eff(self):
+    def _evaluate_bemt(self, v_inf, rpm, D, rho, cl_interp, cd_interp):
         """
-        Calculate propeller efficiency using Truckenbrodt 1999 formula (eq. 3.5).
-         
-        η_prop ≈ 2·(1-λ²·ln(1 + 1/λ²)) / (1 + √(1 + T/(q·A) - 2·λ²·ln(1 + 1/λ²)))
-        
-        where:
-            λ = advance ratio = V / (n·D)
-            q = dynamic pressure = 0.5·ρ·V²
-            T = thrust
-            A = propeller disk area
+        BEMT solver for cruise and take-off conditions. Returns Thrust, Torque, Mechanical Power, and Efficiency.
         """
-        # Calculate parameters
-        n_hz = self.rpm_out / 60.0  # rotational frequency [Hz]
-        self.lambda_adv = self.velocity / (n_hz * self.propeller_diameter * np.pi)  # advance ratio λ = V / (n·D)
-        q = 0.5 * am.Atmosphere(self.alt).density[0] * self.velocity ** 2  # dynamic pressure [Pa]
+        n_rps = rpm / 60.0
+        omega = 2 * np.pi * n_rps
+        J = v_inf / (n_rps * D)
         
-        # Compute ln term (appears twice in formula)
-        ln_term = np.log(1.0 + 1.0 / (self.lambda_adv ** 2))
+        R_abs = D / 2.0
+        r_abs = self.r * R_abs
+        b_actual = self.b_unscaled * D
         
-        # Numerator: 2·(1 - λ²·ln(...))
-        numerator = 2.0 * (1.0 - self.lambda_adv ** 2 * ln_term)
+        phi_0_rad = np.arctan(v_inf / (omega * r_abs))
+        dT_dr = np.zeros_like(r_abs)
+        dM_dr = np.zeros_like(r_abs)
         
-        # Denominator: 1 + √(1 + T/(q·A) - 2·λ²·ln(...))
-        # Disc loading: T/(q·A) [Pa]
-        disc_loading = self.T / (q * self.propeller_area) if q > 0 else 0.0
-        inner = np.sqrt(1.0 + disc_loading) - 2.0 * self.lambda_adv ** 2 * ln_term
-        denominator = 1.0 + inner
+        for i in range(len(r_abs)):
+            def equilibrium_equation(alpha_guess):
+                cl_val = cl_interp(alpha_guess)
+                phi_guess_rad = np.radians(self.beta_deg[i] - alpha_guess)
+                lhs = cl_val * (self.Nb * b_actual[i]) / (2 * np.pi * r_abs[i])
+                rhs = 4 * np.sin(phi_guess_rad) * np.tan(phi_guess_rad - phi_0_rad[i])
+                return lhs - rhs
+            
+            try:
+                # Primary attempt: perfect mathematical root crossing
+                true_alpha_deg = brentq(equilibrium_equation, -35, 80)
+            except ValueError:
+                # Fallback: Deep stall minimizer (Crucial for Take-Off)
+                res = minimize_scalar(lambda a: abs(equilibrium_equation(a)), bounds=(-35, 80), method='bounded')
+                true_alpha_deg = res.x
+                
+            try:
+                true_phi_rad = np.radians(self.beta_deg[i] - true_alpha_deg)
+                cl_local = cl_interp(true_alpha_deg)
+                cd_local = cd_interp(true_alpha_deg)
+                
+                # Induction Parameter (No F)
+                K = (cl_local * self.Nb * b_actual[i] * np.cos(true_phi_rad)) / (8 * np.pi * r_abs[i] * (np.sin(true_phi_rad)**2))
+                K_effective = np.clip(K, -0.5, 0.5)
+                one_plus_a = 1.0 / (1.0 - K_effective)
+                velocity_term = (one_plus_a**2) / (np.sin(true_phi_rad)**2)
+                
+                # Prandtl Tip Loss (Applied directly to physical forces)
+                f_prandtl = (self.Nb / 2.0) * (R_abs - r_abs[i]) / (R_abs * np.sin(true_phi_rad))
+                f_prandtl = np.clip(f_prandtl, 0.0, 100.0)
+                F_local = (2.0 / np.pi) * np.arccos(np.clip(np.exp(-f_prandtl), 0.0, 1.0))
+                
+                dT_dr[i] = b_actual[i] * velocity_term * (cl_local * np.cos(true_phi_rad) - cd_local * np.sin(true_phi_rad)) * F_local
+                dM_dr[i] = b_actual[i] * velocity_term * (cl_local * np.sin(true_phi_rad) + cd_local * np.cos(true_phi_rad)) * r_abs[i] * F_local
+                
+            except ZeroDivisionError:
+                dT_dr[i] = 0.0
+                dM_dr[i] = 0.0
+                
+        # Integration
+        F0 = 0.5 * rho * (v_inf**2) * self.Nb
+        Total_Thrust = F0 * trapezoid(dT_dr, r_abs)
+        Total_Torque = F0 * trapezoid(dM_dr, r_abs)
+        Mech_Power = Total_Torque * omega
         
-        eta_prop = numerator / denominator
+        C_T = Total_Thrust / (rho * n_rps**2 * D**4)
+        C_P = Mech_Power / (rho * n_rps**3 * D**5)
+        eta = (J * C_T) / C_P if C_P > 0 else 0.0
         
-        # Clamp to valid range [0, 1]
-        return float(eta_prop)
-    
-    def calc_overall_eff(self):
-        # Implement method to calculate overall efficiency based on motor, gearbox, and propeller efficiencies
-        if self.motor_eff is not None and self.gearbox_eff is not None and self.propeller_eff is not None:
-            return self.motor_eff * self.gearbox_eff * self.propeller_eff
-        else:
-            return None
+        return Total_Thrust, Total_Torque, Mech_Power, eta
+
+    def run_full_analysis(self):
+        """
+        Cruise Optimization -> Propeller Sizing -> Take-Off Analysis.
+        """
         
-    def Calc_Power_Req(self):
-        # Implement method to calculate power required based on thrust and velocity
-        return float(self.T * self.velocity / self.overall_eff)
+        # =========================================================
+        # Highest Efficiency Cruise Advance Ratio Search
+        # =========================================================
+        alphas_cr = np.linspace(-30, 85, 250)
+        aero_cr = asb.Airfoil(self.airfoil_name).get_aero_from_neuralfoil(alpha=alphas_cr, Re=100_000, mach=self.mach_cr)
+        cl_interp_cr = interp1d(alphas_cr, aero_cr['CL'], kind='cubic', fill_value="extrapolate")
+        cd_interp_cr = interp1d(alphas_cr, aero_cr['CD'], kind='cubic', fill_value="extrapolate")
+        
+        J_sweep = np.linspace(0.4, 0.9, 25)
+        efficiencies = []
+        D_ref = 2.0
+        
+        for J in J_sweep:
+            rpm_sweep = (self.v_inf_cr / (J * D_ref)) * 60.0
+            _, _, _, eta = self._evaluate_bemt(self.v_inf_cr, rpm_sweep, D_ref, self.rho_cr, cl_interp_cr, cd_interp_cr)
+            efficiencies.append(eta)
+            
+        self.optimal_J = J_sweep[np.argmax(efficiencies)]
+        
+        # =========================================================
+        # Propeller Sizing for Required Cruise Thrust
+        # =========================================================
+        thrust_target_per_prop = self.thrust_req_cr / self.num_engines
+        rpm_ref = (self.v_inf_cr / (self.optimal_J * D_ref)) * 60.0
+        
+        # Reference values for scaling
+        T_ref, M_ref, P_mech_ref, _ = self._evaluate_bemt(self.v_inf_cr, rpm_ref, D_ref, self.rho_cr, cl_interp_cr, cd_interp_cr)
+        
+        # Scaling Diameter according to Thrust
+        self.D = D_ref * np.sqrt(thrust_target_per_prop / T_ref)
+        
+        # Re-evaluate
+        cruise_rpm = (self.v_inf_cr / (self.optimal_J * self.D)) * 60.0
+        T_cr, M_cr, P_mech_cr, eta_cr = self._evaluate_bemt(self.v_inf_cr, cruise_rpm, self.D, self.rho_cr, cl_interp_cr, cd_interp_cr)
+        
+        # motor + ESC losses
+        P_elec_cr = P_mech_cr / self.eta_elec
+        P_available_cr = P_mech_cr * eta_cr
+        
+        # =========================================================
+        # Take-Off Analysis
+        # =========================================================
+        s_TOG = 20
+        C_L_TO = 0.8 * self.CL_max
+        f_LW = 1.2
+        
+        v_TO = f_LW * np.sqrt(2 * 9.81 * self.m_TO / (C_L_TO * self.rho_to * self.S))
+        P_TO_Total_Watts = ((self.m_TO * 9.81)**2) / (s_TOG * self.rho_to * self.S * C_L_TO)
+        
+        res_power_per_motor = P_TO_Total_Watts / self.num_engines
+        
+        alphas_to = np.linspace(-30, 85, 300)
+        aero_to = asb.Airfoil(self.airfoil_name).get_aero_from_neuralfoil(alpha=alphas_to, Re=1_000_000, mach=0.05)
+        # Linear interp safeguards against runaway values in deep stall
+        cl_interp_to = interp1d(alphas_to, aero_to['CL'], kind='linear', fill_value="extrapolate")
+        cd_interp_to = interp1d(alphas_to, aero_to['CD'], kind='linear', fill_value="extrapolate")
+        
+        # Optimizer to find the precise RPM that absorbs the available Roskam Take-Off Power
+        def power_residual(rpm_guess):
+            _, _, P_mech_guess, eta_guess = self._evaluate_bemt(v_TO, rpm_guess, self.D, self.rho_to, cl_interp_to, cd_interp_to)
+            return P_mech_guess - res_power_per_motor*eta_guess
+            
+        takeoff_rpm = brentq(power_residual, 100, 3000)
+        
+        # Final evaluation at the exact Take-Off RPM
+        T_to, M_to, P_mech_to, eta_to = self._evaluate_bemt(v_TO, takeoff_rpm, self.D, self.rho_to, cl_interp_to, cd_interp_to)
+        P_elec_to = P_mech_to / self.eta_elec
+
+        # ========================================================
+        # mass estimate
+        # ========================================================
+        m_esc = 0.523 # esc kg
+        m_motor = 0.8 # motor kg
+        m_add = 0.5 # cables, rod, insulation, etc. 200 gram nacelle 100 gram cable 200 gram insulation, etc
+        m_rod = 1200 * (0.025/2)**2*np.pi*0.5  # density * volume of a 0.5m long, 25mm diameter lightweight carbon rod, 300 grams
+        m_hub = 6.36*0.20 * (self.D)/(2.1357) # 20 percent of kg from CAD
+        m_blades = 2.89*0.7 * (self.D)/(2.1357)# 70 percent of kg from CAD
+        m_total_per_engine = m_esc + m_motor + m_add + m_hub + m_blades
+        m_total_all_engines = m_total_per_engine * self.num_engines
+        print(f"""\nEstimated Mass per Engine (Motor + ESC + Propeller + Additions): {m_total_per_engine:.2f} kg""")
+        print(f"Total Mass for All Engines: {m_total_all_engines:.2f} kg")
+
+        # =========================================================
+        # REPORT
+        # =========================================================
+        print("\n=======================================================")
+        print(f"                        CRUISE")
+        print("=======================================================")
+        print(f"Design Airspeed          : {self.v_inf_cr} m/s")
+        print(f"Optimal Advance Ratio (J): {self.optimal_J:.3f}")
+        print(f"Sized Propeller Diameter : {self.D:.4f} m")
+        print(f"Cruise Rotational Speed  : {cruise_rpm:.0f} RPM")
+        print("-------------------------------------------------------")
+        print(f"Thrust per Prop          : {T_cr:.2f} N")
+        print(f"Torque per Prop          : {M_cr:.2f} Nm")
+        print(f"Mechanical Shaft Power   : {P_mech_cr:.2f} W")
+        print(f"Electrical Power Draw    : {P_elec_cr:.2f} W  (Motor={self.eta_motor}, ESC={self.eta_esc})")
+        print(f"Propeller Aerodynamic Eff: {eta_cr * 100:.2f} %")
+        print(f"Total Aircraft Elec Pwr  : {(P_elec_cr * self.num_engines) / 1000.0:.3f} kW")
+        print(f"Total Power Available at Propeller: {(P_available_cr * self.num_engines) / 1000.0:.3f} kW")
+        
+        print("\n=======================================================")
+        print(f"                      TAKE-OFF")
+        print("=======================================================")
+        print(f"Take-Off Mass (m_TO)     : {self.m_TO} kg")
+        print(f"Wing Reference Area (S)  : {self.S} m²")
+        print(f"Calculated T.O. Speed    : {v_TO:.2f} m/s")
+        print(f"Total Roskam Power       : {P_TO_Total_Watts / 1000.0:.3f} kW")
+        print(f"Corresponding T.O. RPM   : {takeoff_rpm:.0f} RPM")
+        print("-------------------------------------------------------")
+        print(f"PER MOTOR / PROPELLER:")
+        print(f"  Take-Off Thrust        : {T_to:.2f} N")
+        print(f"  Torque                 : {M_to:.2f} Nm")
+        print(f"  Mechanical Shaft Power : {P_mech_to:.2f} W")
+        print(f"  Electrical Power Draw  : {P_elec_to:.2f} W")
+        print(f"  Propeller Aerodynamic Eff: {eta_to * 100:.2f} %")
+        print("-------------------------------------------------------")
+        print(f"TOTAL AIRCRAFT (4 Engines):")
+        print(f"  Total Take-Off Thrust  : {T_to * self.num_engines:.2f} N")
+        print(f"  Total Electrical Power : {(P_elec_to * self.num_engines) / 1000.0:.3f} kW")
+        print("=======================================================\n")
+
 
 if __name__ == "__main__":
-    #Example Inputs
-    velocity = 25.0  # m/s, cruise airspeed
-    alt = 18000 # m, altitude
-    propeller_diameter = 2.5  # m
-    rpm = 1000
-    torque = 4  # Nm, torque of the motor
-    motor_temp = -40  # °C, motor temperature
-    gamma = 2.5  # degrees, flight path angle
-    W = 1500  # N, weight of the aircraft
-    CD = 0.04 # Drag coefficient
-    S = 36.0  # m², reference area for drag calculation
-    Thrust = 30 # N
+    ahaps = PropulsionSystem(
+        v_inf_cruise=27.6, 
+        required_thrust_cruise=52.0, 
+        m_TO=198.0, 
+        S=41.5,
+        CL_max= 1/0.8
+    )
 
-    # Example usage
-    propulsion_system = PropulsionSystem(plotdata=True, velocity=velocity, alt=alt, rpm=rpm, torque=torque, motor_temp=motor_temp, propeller_diameter=propeller_diameter)
-    
-    # Print calculated efficiencies
-    print("Propulsion System Characteristics:")
-    print(f"Motor Efficiency: {propulsion_system.motor_eff:.2f}")
-    print(f"Gearbox Efficiency: {propulsion_system.gearbox_eff:.2f}")
-    print(f"Propeller Efficiency: {propulsion_system.propeller_eff:.2f}")
-    print(f"Overall Efficiency: {propulsion_system.overall_eff:.2f}")
-    print(f"Power Required: {propulsion_system.power_required:.2f} W")
-    print(f"Advance Ratio (λ): {propulsion_system.lambda_adv:.2f}")
-    
-    #Plot Changes in Alt with same velocity
-    altitudes = np.linspace(0, 20000, 5)  # Alt
-    powers = []
-    efficiencies = []
-    for alt in altitudes:
-        propulsion_system.alt = alt
-        propulsion_system.T = Thrust
-        propulsion_system.propeller_eff = propulsion_system.calc_propeller_eff()
-        propulsion_system.overall_eff = propulsion_system.calc_overall_eff()
-        power_req = propulsion_system.Calc_Power_Req()
-        powers.append(power_req)
-        efficiencies.append(propulsion_system.propeller_eff)
-    plt.figure()
-    plt.subplot(2, 1, 1)
-    plt.plot(altitudes, powers, marker='o')
-    plt.xlabel('Altitude (m)')
-    plt.ylabel('Power Required (W)')
-    plt.title('Power Required vs Altitude at Constant Velocity')
-    plt.grid()
-    plt.subplot(2, 1, 2)
-    plt.plot(altitudes, efficiencies, marker='o')
-    plt.xlabel('Altitude (m)')
-    plt.ylabel('Propeller Efficiency')
-    plt.title('Propeller Efficiency vs Altitude at Constant Velocity')
-    plt.grid()
-    plt.show()
-
-    #plot changes in velocity with same altitude
-    velocities = np.linspace(10, 50, 5)  # m/s
-    powers = []
-    efficiencies = []
-    for velocity in velocities:
-        propulsion_system.velocity = velocity
-        propulsion_system.T = Thrust
-        propulsion_system.propeller_eff = propulsion_system.calc_propeller_eff()
-        propulsion_system.overall_eff = propulsion_system.calc_overall_eff()
-        power_req = propulsion_system.Calc_Power_Req()
-        powers.append(power_req)
-        efficiencies.append(propulsion_system.propeller_eff)
-    plt.figure()
-    plt.subplot(2, 1, 1)
-    plt.plot(velocities, powers, marker='o')
-    plt.xlabel('Velocity (m/s)')
-    plt.ylabel('Power Required (W)')
-    plt.title('Power Required vs Velocity at Constant Altitude')
-    plt.grid()
-    plt.subplot(2, 1, 2)
-    plt.plot(velocities, efficiencies, marker='o')
-    plt.xlabel('Velocity (m/s)')
-    plt.ylabel('Propeller Efficiency')
-    plt.title('Propeller Efficiency vs Velocity at Constant Altitude')
-    plt.grid()
-    plt.show()
+    ahaps.run_full_analysis()
