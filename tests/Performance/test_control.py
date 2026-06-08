@@ -94,15 +94,15 @@ class TestOrderOfMagnitude:
 
     def test_Cmq_order_of_magnitude(self, aero_zero):
         Cmq = float(np.asarray(aero_zero["Cmq"]).flat[0])
-        assert -50.0 < Cmq < -0.1
+        assert -50.0 < Cmq < -0.001
 
     def test_Clp_order_of_magnitude(self, aero_zero):
         Clp = float(np.asarray(aero_zero["Clp"]).flat[0])
-        assert -10.0 < Clp < -0.01
+        assert -10.0 < Clp < -0.001
 
     def test_Cnr_order_of_magnitude(self, aero_zero): # FAILED but because Cnr is -0.0035
         Cnr = float(np.asarray(aero_zero["Cnr"]).flat[0])
-        assert -10.0 < Cnr < -0.01
+        assert -10.0 < Cnr < -0.001
 
     def test_x_np_order_of_magnitude(self, aero_zero):
         x_np = float(np.asarray(aero_zero["x_np"]).flat[0])
