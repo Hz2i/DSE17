@@ -187,6 +187,7 @@ class SparGeometryOptimization:
         self.l_clamp = self.t_bolts * determined_geometry.get( "Clamp_width_safety_factor")  # Clamp width must be large enough to accommodate bolts with safety factor
         self.t_rubber = determined_geometry.get("t_rubber")
         self.clamp_minimum_thickness = self.t_bolts * determined_geometry.get("Clamp_thickness_fraction_of_t_bolt")  # Minimum clamp thickness to ensure structural integrity and accommodate bolts
+        self.l_sleeve = determined_geometry.get("l_sleeve")
 
         #Constraint Geometry
         self.airfoil_geometry = airfoil_geometry
@@ -271,7 +272,7 @@ class SparGeometryOptimization:
         weight_sleeve = A_sleeve * self.GLARE_rho
         weight_spar = A_spar * self.CFRP_rho
         weight_rubber = A_rubber * self.Rubber_rho
-        total_sl_and_sp_weight = weight_sleeve + weight_spar
+        total_sl_and_sp_weight = weight_sleeve + weight_spar + weight_rubber
         total_weight = weight_clamp + weight_sleeve + weight_spar + weight_rubber
 
         return {
@@ -348,7 +349,7 @@ class SparGeometryOptimization:
         opti.minimize(g["total_weight"])
 
         # ===== SOLVE =====
-        sol = opti.solve(verbose=True)  # Add verbose to see solver output
+        sol = opti.solve()  # Add verbose to see solver output
         
         result = {}
         for k, v in g.items():
@@ -427,12 +428,16 @@ class SparGeometryOptimization:
         plt.grid()
 
     def calc_Mass_structure_span(self, n_sections, optimized_geometry):
-        total_lenght_inc_clamp = n_sections*(self.l_clamp*3)
-        total_span_exc_clamp = self.slanted_span - total_lenght_inc_clamp
+        total_length_inc_clamp = n_sections*(self.l_clamp*3)
+        total_length_sleeved = self.l_sleeve*n_sections - total_length_inc_clamp
+        total_span_exc_sleeve_clamp = self.slanted_span - total_length_inc_clamp - total_length_sleeved
         mass_per_clamped_cross_section = optimized_geometry["total_weight"]
-        mass_per_unclamped_cross_section = optimized_geometry["total_sl_and_sp_weight"]  # Exclude clamp weight for unclamped sections
-        total_mass_spar = (total_span_exc_clamp * mass_per_unclamped_cross_section) + (total_lenght_inc_clamp * mass_per_clamped_cross_section)
-        return total_mass_spar, total_lenght_inc_clamp, total_span_exc_clamp
+        mass_per_unclamped_sleeved_cross_section = optimized_geometry["total_sl_and_sp_weight"]  # Only include sleeve weight for unclamped sections, as clamp occupies the space of the spar in those sections
+        mass_per_unclamped_unsleeved_cross_section = optimized_geometry["weight_spar"]  # Exclude clamp weight for unclamped sections
+        total_mass_spar = (total_length_inc_clamp * mass_per_clamped_cross_section +
+                          total_length_sleeved * mass_per_unclamped_sleeved_cross_section +
+                          total_span_exc_sleeve_clamp * mass_per_unclamped_unsleeved_cross_section)
+        return total_mass_spar, total_length_inc_clamp, total_span_exc_sleeve_clamp
     
     def closed_contour_area(self,xu, yu, xl, yl):
         xu = np.asarray(xu)
@@ -589,6 +594,7 @@ if __name__ == "__main__":
         "Clamp_width_safety_factor": 5.0, #dimensionless
         "Clamp_thickness_fraction_of_t_bolt": 0.33, #dimensionless
         "t_rubber": 0.001, #m
+        "l_sleeve": 1.0, #Sleeve length as a factor of clamp width to ensure proper load transfer and structural integrity
     }
     material_properties = {
         "density_titanium": 4500.0, #kg/m^3
