@@ -8,11 +8,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from objects_detailed.Characteristics.Airframe import airframe
 from objects_detailed.Characteristics.GeneralSubsystems import ComputerSystem, CommunicationSystem, FlightConditionsSystem, PayloadSystem, ControlSystem
 from objects_detailed.Characteristics.PowerSystem_sizing import power_storage, power_generation
-from objects_detailed.Characteristics.PropulsionSystem import PropulsionSystem
+from Objects.Characteristics.PropulsionSystem import PropulsionSystem
 from objects_detailed.Constants import Constants
 
 from objects_detailed.Methods.StructuralAnalysis import bending_stress_lift, bending_stress_drag, torsional_stress
-from objects_detailed.Methods.SparGeometryParam import SparGeometryOptimization, optimize_variables, determined_geometry
+from objects_detailed.Methods.SparGeometryParam import SparGeometryOptimization, AirfoilGeometry, optimize_variables, determined_geometry
 
 
 # Note for Stefan: REFACTOR CODE TO FIT NEW FLOW DIAGRAM
@@ -85,14 +85,14 @@ class Aircraft:
                 simulation_required = False
 
             self.CL_opt = (self.airframe.K1 + (self.airframe.K1**2 + 12*self.airframe.K2*self.airframe.CD0)**0.5)/(2 * self.airframe.K2)
-            TAS_opt = (self.MTOW*self.const.g / (0.5 * am.Atmosphere(self.h).density[0] * self.wing.S * self.CL_opt))**0.5
+            TAS_opt = (self.MTOW*self.const.g / (0.5 * am.Atmosphere(self.h).density[0] * self.airframe.S * self.CL_opt))**0.5
 
             if TAS_opt > self.TAS:
                 CL_current = self.CL_opt
                 CD_current = self.airframe.CD0 + self.airframe.K1 * CL_current + self.airframe.K2 * CL_current**2
                 self.TAS_cruise = TAS_opt
             else:
-                CL_current = self.MTOW*self.const.g / (0.5 * am.Atmosphere(self.h).density[0] * self.TAS**2 * self.wing.S)
+                CL_current = self.MTOW*self.const.g / (0.5 * am.Atmosphere(self.h).density[0] * self.TAS**2 * self.airframe.S)
                 CD_current = self.airframe.CD0 + self.airframe.K1 * CL_current + self.airframe.K2 * CL_current**2
                 self.TAS_cruise = self.TAS
 
@@ -100,7 +100,7 @@ class Aircraft:
                 CL_current = 0.8* self.airframe.CL_max
                 CD_current = self.airframe.CD0 + self.airframe.K1 * CL_current + self.airframe.K2 * CL_current**2
                 self.CL_CD = CL_current/CD_current
-                self.TAS_cruise = (self.MTOW*self.const.g / (0.5 * am.Atmosphere(self.h).density[0] * self.wing.S * CL_current))**0.5
+                self.TAS_cruise = (self.MTOW*self.const.g / (0.5 * am.Atmosphere(self.h).density[0] * self.airframe.S * CL_current))**0.5
 
             self.alpha = (CL_current - self.airframe.CL0)/self.airframe.CL_alpha
 
@@ -117,18 +117,18 @@ class Aircraft:
 
             if self.solar.area < self.airframe.S/1.025:
                 surface_check = False
-                final_sim = !final_sim
+                final_sim = ~final_sim
             else:
                 surface_check = True
                 final_sim = False
-                self.airframe.S += damping * (1.025 * self.solar.area - self.airframe.S)
+                self.airframe.S += np.maximum(0.01, damping * (1.025 * self.solar.area - self.airframe.S))
 
                 if (self.airframe.S - S_simulated)/S_simulated > 0.25:
                     simulation_required = True
 
                 iterations += 1
-                # print("Inner iteration:", iterations)
-                # print("Surface difference:", self.solar.area - self.wing.S)
+                print("Inner iteration:", iterations)
+                print("Surface difference:", self.solar.area - self.airframe.S)
         '''
         print("Optimal CL:", self.CL_opt)
         print("CL:", CL_current)
@@ -161,7 +161,7 @@ class Aircraft:
 
 
     def compute_subsys_pow(self):
-        return self.comp.comp_electrical_power_required + self.comms.comms_electrical_power_required + self.flight_con.FCS_power_required + self.payload.power_required + self.ctrls.power_required
+        return self.comp.comp_total_power + self.comms.comms_total_power + self.flight_con.FCS_total_power+ self.payload.PS_total_power + self.ctrls.CS_total_power
 
     def compute_subsys_mass(self):
-        pass
+        return self.comp.comp_total_mass + self.comms.comms_total_mass + self.flight_con.FCS_total_mass + self.payload.PS_total_mass + self.ctrls.CS_total_mass
