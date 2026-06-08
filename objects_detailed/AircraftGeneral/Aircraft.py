@@ -16,14 +16,11 @@ from objects_detailed.Constants import Constants
 # It can be assumed that the general logic of this class (at least pertaining to airframe sizing) shall not significantly change.
 
 class Aircraft:
-    def __init__(self, MTOW_guess=100.0, TAS=20.0, h=18000.0, gamma=0.0, lat=50.0, day_margin=0, DoD=0.8, Sh_S = 0.15, Sv_S = 0.1, wing=wing(), fus=fuselage(), emp=empennage(), nac=nacelles(), comp=ComputerSystem(), comms=CommunicationSystem(), flight_con=FlightConditionsSystem(), payload=PayloadSystem(), ctrls=ControlSystem(), use_batt=True, energy_delta=0.0):
+    def __init__(self, MTOW_guess=200.0, TAS=25.0, h=18500.0, gamma=0.0, lat=30.0, day_margin=0, DoD=0.8, airframe=airframe(), comp=ComputerSystem(), comms=CommunicationSystem(), flight_con=FlightConditionsSystem(), payload=PayloadSystem(), ctrls=ControlSystem(), use_batt=True, energy_delta=0.0):
         self.MTOW = MTOW_guess
         self.const = Constants()
 
-        self.wing = wing
-        self.fus = fus
-        self.emp = emp
-        self.nac = nac
+        self.airframe = airframe
         self.comp = comp
         self.comms = comms
         self.flight_con = flight_con
@@ -36,8 +33,6 @@ class Aircraft:
         self.energy_delta = energy_delta
         self.prop = None
 
-        self.Sh_S = Sh_S
-        self.Sv_S = Sv_S
         self.TAS = TAS
         self.TAS_cruise = TAS
         self.h = h
@@ -68,58 +63,47 @@ class Aircraft:
         surface_check = True
 
         # Ensure the first iteration of area sizing undershoots:
-        self.wing.S = self.wing.S / 5.0
+        self.airframe.S = self.airframe.S / 5.0
 
         # Ensure current Cl and CD values are in scope:
         CL_current = None
         CD_current = None
 
-        while surface_check:
-            self.emp.Sh = self.wing.S * self.Sh_S
-            self.emp.Sv = self.wing.S * self.Sv_S
-            self.wing.compute_required_coefficients()
-            self.emp.compute_required_coefficients()
-            self.wing.compute_oswald_eff()
-            self.wing.compute_CL_max()
-            self.wing.zero_lift_drag(rho_cruise=am.Atmosphere(self.h).density[0], V_cruise=self.TAS, M=0.1)
-            self.fus.zero_lift_drag(rho_cruise=am.Atmosphere(self.h).density[0], V_cruise=self.TAS)
-            self.emp.zero_lift_drag(rho_cruise=am.Atmosphere(self.h).density[0], V_cruise=self.TAS, M=0.1)
-            self.nac.zero_lift_drag(rho_cruise=am.Atmosphere(self.h).density[0], V_cruise=self.TAS)
+        simulation_required = True
+        S_simulated = self.airframe.S
+        final_sim = False
 
-            self.CD0 = (self.fus.CD0 + self.wing.CD0 + self.emp.CD0 + self.nac.CD0)/self.wing.S
+        while surface_check or final_sim:
+            self.airframe.define_geometry()
+            if simulation_required or final_sim:
+                self.airframe.compute_polar(alt=self.h, TAS=self.TAS, res=5)
+                S_simulated = self.airframe.S
+                simulation_required = False
 
-            #K = 0.38 # factor for viscous induced drag; For DC-8/9 family K=0.38, for sailplanes such as HAPS is likely lower
-
-            #self.e = 1/(K*self.CD0*np.pi*self.wing.AR + 1/(self.wing.e*(1-2*(self.fus.D/self.wing.b)**2))) * self.wing.k_e_dihedral
-
-            self.e = 0.85
-
-            self.CL_opt = (3* self.CD0 * np.pi * self.wing.AR * self.e)**0.5
-            #self.CL_opt = (self.CD0 * np.pi * self.wing.AR * self.e)**0.5
-
+            self.CL_opt = (self.airframe.K1 + (self.airframe.K1**2 + 12*self.airframe.K2*self.airframe.CD0)**0.5)/(2 * self.airframe.K2)
             TAS_opt = (self.MTOW*self.const.g / (0.5 * am.Atmosphere(self.h).density[0] * self.wing.S * self.CL_opt))**0.5
 
             if TAS_opt > self.TAS:
                 CL_current = self.CL_opt
-                CD_current = self.CD0 + CL_current**2/(np.pi*self.wing.AR*self.e)
-                self.CL_CD = CL_current/CD_current
+                CD_current = self.airframe.CD0 + self.airframe.K1 * CL_current + self.airframe.K2 * CL_current**2
                 self.TAS_cruise = TAS_opt
             else:
                 CL_current = self.MTOW*self.const.g / (0.5 * am.Atmosphere(self.h).density[0] * self.TAS**2 * self.wing.S)
-                CD_current = self.CD0 + CL_current**2/(np.pi*self.wing.AR*self.e)
-                self.CL_CD = CL_current/CD_current
+                CD_current = self.airframe.CD0 + self.airframe.K1 * CL_current + self.airframe.K2 * CL_current**2
                 self.TAS_cruise = self.TAS
 
-            if CL_current > 0.8* self.wing.CL_max:
-                CL_current = 0.8* self.wing.CL_max
-                CD_current = self.CD0 + CL_current**2/(np.pi*self.wing.AR*self.e)
+            if CL_current > 0.8* self.airframe.CL_max:
+                CL_current = 0.8* self.airframe.CL_max
+                CD_current = self.airframe.CD0 + self.airframe.K1 * CL_current + self.airframe.K2 * CL_current**2
                 self.CL_CD = CL_current/CD_current
                 self.TAS_cruise = (self.MTOW*self.const.g / (0.5 * am.Atmosphere(self.h).density[0] * self.wing.S * CL_current))**0.5
 
-            self.T_req = (self.MTOW*self.const.g/self.CL_CD + self.MTOW*self.const.g * np.sin(np.radians(self.gamma)))/self.nac.nr_of_engines
+            self.alpha = (CL_current - self.airframe.CL0)/self.airframe.CL_alpha
+
+            self.T_req = (self.MTOW*self.const.g/self.CL_CD + self.MTOW*self.const.g * np.sin(np.radians(self.gamma)))/self.airframe.nacelles.nr_of_engines
             self.prop = PropulsionSystem(T=self.T_req, velocity=self.TAS_cruise, alt=self.h, rpm=1000.0, torque=4.0, motor_temp=-40.0,propeller_diameter=1.5)
 
-            self.Pow_motor = self.prop.power_required * self.nac.nr_of_engines
+            self.Pow_motor = self.prop.power_required * self.airframe.nacelles.nr_of_engines
             self.Pow_req = self.compute_subsys_pow() + self.Pow_motor
 
             self.pow_store = power_storage(self.Pow_req, latitude=self.lat, days_from_solstice=self.day_margin, DOD=self.DoD, batteries_used=self.use_batt, energy_delta=self.energy_delta)
@@ -127,10 +111,17 @@ class Aircraft:
             self.solar = power_generation(self.Pow_req, latitude=self.lat, days_from_solstice=self.day_margin, energy_delta=self.energy_delta)
             self.solar.compute_weight_surface()
 
-            if self.solar.area < self.wing.S/1.025:
+            if self.solar.area < self.airframe.S/1.025:
                 surface_check = False
+                final_sim = !final_sim
             else:
-                self.wing.S += np.maximum(0.1, damping * (self.solar.area - self.wing.S))
+                surface_check = True
+                final_sim = False
+                self.airframe.S += damping * (1.025 * self.solar.area - self.airframe.S)
+
+                if (self.airframe.S - S_simulated)/S_simulated > 0.25:
+                    simulation_required = True
+
                 iterations += 1
                 # print("Inner iteration:", iterations)
                 # print("Surface difference:", self.solar.area - self.wing.S)
@@ -142,6 +133,8 @@ class Aircraft:
         print("Oswald efficiency:", self.e)
         print("Propulsive efficiency:", self.prop.overall_eff)
         '''
+
+    def size_structure()
 
 
     def compute_subsys_pow(self):

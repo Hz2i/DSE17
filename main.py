@@ -1,5 +1,6 @@
 import numpy as np
 import aerosandbox as asb
+import matplotlib.pyplot as plt
 
 from objects_detailed.Characteristics.Airframe import airframe, fuselage, nacelles
 from objects_detailed.Characteristics.GeneralSubsystems import ComputerSystem, CommunicationSystem, FlightConditionsSystem, PayloadSystem, ControlSystem
@@ -25,14 +26,48 @@ DoD = 0.7
 night_time = 0.0
 
 S = 36.0
-Sh_S = 0 # 0.15
-Sv_S = 0 # 0.07
 
 
 # Flying wing planform:
 fus_geo = fuselage(D=0.5, L1=0.2, L2=0.6, L3=0.2)
 nac_geo = nacelles(nr_of_engines=4)
-structure = airframe(S=S, A=20.0, qc_sweep=15.0*np.pi/180, taper=1.0, dihedral=0.0*np.pi/180.0,fus=fus_geo, nac=nac_geo, display=False)
+structure = airframe(S=S, A=20.0, qc_sweep=0.0*np.pi/180, taper=1.0, dihedral=0.0*np.pi/180.0,fus=fus_geo, nac=nac_geo, display=False)
 
 
-print(structure.llt_analysis(series=True, alpha=np.linspace(0.0, 10.0, 10)))
+K2 = structure.K2
+print("Oswald efficiency: ", 1/(K2 * structure.AR * np.pi))
+print("Max CL/CD:", structure.CL_CD_max)
+
+
+# aero = structure.llt_analysis(series=True, alpha=np.linspace(-10.0, 20.0, 30))
+#
+# aero_single, llt_an = structure.llt_analysis(alpha=10.0)
+# print("Panel coords:", llt_an.front_left_vertices)
+#
+# lift = aero["CL"]
+# drag = aero["CD"]
+#
+# plt.plot(np.linspace(-10.0, 20.0, 30), lift)
+# plt.show()
+# plt.plot(lift, drag)
+# plt.plot(lift, structure.CD0 + structure.K1 * lift + structure.K2 * lift**2, c='r')
+# plt.show()
+
+structure.compute_load_distribution(alpha=10.0, TAS=35.0)
+
+
+# print("Force vectors:", F)
+# print("Vortex coordinates:", coords)
+
+# print("Total normal force:", np.sum(F[:,2]))
+# print("Span:", structure.b)
+
+
+plt.scatter(structure.vortex_coords[:,1], structure.dFx_dy_current)
+plt.show()
+
+plt.scatter(structure.vortex_coords[:,1], structure.dFy_dy_current)
+plt.show()
+
+plt.scatter(structure.vortex_coords[:,1], structure.dFz_dy_current)
+plt.show()

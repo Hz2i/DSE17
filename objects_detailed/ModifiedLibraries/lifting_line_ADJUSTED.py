@@ -631,7 +631,7 @@ class LiftingLine(ExplicitAnalysis):
         self.areas = areas
         self.left_vortex_vertices = left_vortex_vertices
         self.right_vortex_vertices = right_vortex_vertices
-        self.vortex_centers = vortex_centers
+        self.vortex_centers = vortex_centers                            # !!! Attempt to use for distribution !!!
         self.vortex_bound_leg = vortex_bound_leg
         self.chord_vectors = chord_vectors
         self.chords = chords
@@ -835,10 +835,20 @@ class LiftingLine(ExplicitAnalysis):
             * Vi_cross_li
             * tall(self.vortex_strengths)
         )
+
+        #MODIFICATIONS:
+        # print("Panel forces (inviscid):", forces_inviscid_geometry)
+        self.forces_inviscid_geometry = forces_inviscid_geometry
+
+
         moments_inviscid_geometry = np.cross(
             np.add(vortex_centers, -wide(np.array(self.xyz_ref))),
             forces_inviscid_geometry,
         )
+
+        #MODIFICATIONS:
+        # print("Panel moments (inviscid):", moments_inviscid_geometry)
+        self.moments_inviscid_geometry = moments_inviscid_geometry
 
         # Calculate total forces and moments
         force_inviscid_geometry = np.sum(forces_inviscid_geometry, axis=0)
@@ -859,6 +869,15 @@ class LiftingLine(ExplicitAnalysis):
             np.add(vortex_centers, -wide(np.array(self.xyz_ref))),
             forces_profile_geometry,
         )
+
+
+        #MODIFICATIONS:
+        # print("Panel forces (inviscid):", forces_inviscid_geometry)
+        self.forces_profile_geometry = forces_profile_geometry
+        # print("Panel moments (inviscid):", moments_inviscid_geometry)
+        self.moments_profile_geometry = moments_profile_geometry
+
+
         force_profile_geometry = np.sum(forces_profile_geometry, axis=0)
         moment_profile_geometry = np.sum(moments_profile_geometry, axis=0)
 
