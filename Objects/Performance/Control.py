@@ -21,10 +21,10 @@ class Control_Surface_Sizing():
         self.S = self.b * self.c      # Wing area [m^2]
         self.dihedral = np.radians(1.0)
 
-        self.x_cg = 2.275
+        self.x_cg = 2.5
 
-        self.inner_elevon_frac = 0.07
-        self.outer_elevon_frac = 0.25
+        self.inner_elevon_frac = 0.05
+        self.outer_elevon_frac = 0.20
         self.height_winglet = 1.0 # height of winglet above main wing [m]
         self.rudder_frac = 0.8
         self.fraction_outer_engine = None
@@ -681,6 +681,8 @@ class Control_Surface_Sizing():
     def Cm_check(self):
         cg_range = np.linspace(0., 3., 30)
         cm_list = []
+        cma_list =[]
+
         for i in cg_range:
             self.x_cg = i
             cs.Airplane_Geo()
@@ -693,7 +695,17 @@ class Control_Surface_Sizing():
             )
             cm_list.append(cm)
 
+            cma = cs._sweep_single(self.deflection_points,
+            delta_inner_fn=lambda i: 0,
+            delta_outer_fn=lambda i: 0,
+            delta_rudder_fn=lambda i: 0,
+            outer_symmetric=False,
+            coeff_key="Cma"
+            )
+            cma_list.append(cma)
+
         plt.plot(cg_range, cm_list)
+        plt.plot(cg_range, cma_list)
         plt.show()
 
 
@@ -711,7 +723,7 @@ class Control_Surface_Sizing():
 if __name__ == "__main__":
     print("Starting simulation")
     cs = Control_Surface_Sizing()
-    # cs.Airplane_Geo()
+    cs.Airplane_Geo()
     # cs.airplane.draw()
     # cs.Control_Check()
     # cs.Control_Sizing()
