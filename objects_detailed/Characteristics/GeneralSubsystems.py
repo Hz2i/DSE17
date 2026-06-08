@@ -35,9 +35,9 @@ class ComputerSystem:
         #self.comp_volume = self.computing_power_required * self.volume_density
         self.cable_mass = self.cable_mass_density * self.cable_length #* self.connected_subsystems # kg, mass of the cables connecting the computer system to the subsystems     
         self.cable_volume = np.pi * (self.cable_diameter/2)**2 * self.cable_length #* self.connected_subsystems # m^3, volume of the cables connecting the computer system to the subsystems
-        self.comp_total_mass = (self.comp_mass + self.cable_mass)*self.redundancy
-        self.comp_total_volume = (self.comp_volume + self.cable_volume)*self.redundancy
-        self.comp_total_power = self.comp_power
+        self.mass = (self.comp_mass + self.cable_mass)*self.redundancy
+        self.volume = (self.comp_volume + self.cable_volume)*self.redundancy
+        self.power = self.comp_power
         self.comp_x_pos = 0.0  # Needs implementation
         # return self.comp_electrical_power_required, self.comp_mass, self.comp_volume, self.comp_x_pos
 
@@ -97,18 +97,18 @@ class CommunicationSystem:
         """Compute all relevant characteristics of the communication system, 
         by simple summation of the characteristics of the individual components, 
         plus the contribution from the transmit power""" 
-        self.comms_total_mass = (self.adsb_mass + self.elt_mass + self.ssr_mass + self.antenna_mass)*self.redundancy #+ self.comms_mass_density * self.transmit_power)
-        self.comms_total_volume = (self.adsb_volume + self.elt_volume + self.ssr_volume +self.antenna_volume)*self.redundancy#+ self.comms_volume_density * self.transmit_power
+        self.mass = (self.adsb_mass + self.elt_mass + self.ssr_mass + self.antenna_mass)*self.redundancy #+ self.comms_mass_density * self.transmit_power)
+        self.volume = (self.adsb_volume + self.elt_volume + self.ssr_volume +self.antenna_volume)*self.redundancy#+ self.comms_volume_density * self.transmit_power
         self.comms_x_pos = 0.0  # Needs implementation
-        self.comms_total_power= self.adsb_power + self.elt_power + self.ssr_power + self.antenna_power#
+        self.power= self.adsb_power + self.elt_power + self.ssr_power + self.antenna_power#
         #self.transmit_power * self.transmit_efficiency
         # return self.comms_mass
 
 class FlightConditionsSystem:
     def __init__(self):          
         self.redundancy = 2.0 # factor everything is multiplied by if redundancy is added                           # Initialise with proper values
-        self.mass = 0.0                                     # Currently initialised with 0; Class 2 estimation methods required!
-        self.volume = 0.0
+        #self.mass = 0.0                                     # Currently initialised with 0; Class 2 estimation methods required!
+        #self.volume = 0.0
         self.x_pos = 0.0
         self.power_required = 0.0
         self.IMU_mass = 0.006 #kg, pixhawk, includes imu, magnetometer, barometer
@@ -125,9 +125,9 @@ class FlightConditionsSystem:
         self.compute_flight_conditions_system()
 
     def compute_flight_conditions_system(self):
-        self.FCS_total_mass = (self.mass + self.IMU_mass + self.GNSS_mass + self.pitot_mass)*self.redundancy
-        self.FCS_total_volume = (self.volume + self.IMU_volume + self.GNSS_volume + self.pitot_volume)*self.redundancy
-        self.FCS_total_power = self.power_required + self.IMU_power_required + self.GNSS_power_required + self.pitot_power_required # dont multiply power with redundancy, as you only send power to one
+        self.mass = (self.IMU_mass + self.GNSS_mass + self.pitot_mass)*self.redundancy
+        self.volume = (self.IMU_volume + self.GNSS_volume + self.pitot_volume)*self.redundancy
+        self.power = self.power_required + self.IMU_power_required + self.GNSS_power_required + self.pitot_power_required # dont multiply power with redundancy, as you only send power to one
         # return self.FCS_mass, self.FCS_volume, self.FCS_power_required
 
 class PayloadSystem: # finish cables here
@@ -153,9 +153,9 @@ class PayloadSystem: # finish cables here
         self.compute_payload_system()
 
     def compute_payload_system(self):     
-        self.PS_total_mass = self.mass_payload+self.mass_mounting#self.mass_connector + self.mass_cables + 
-        self.PS_total_volume = self.volume
-        self.PS_total_power = self.power_required
+        self.mass = self.mass_payload+self.mass_mounting#self.mass_connector + self.mass_cables + 
+        self.volume = self.volume
+        self.power = self.power_required
         # return self.PS_mass, self.PS_volume, self.PS_power
 
 class ControlSystem:
@@ -181,7 +181,7 @@ class ControlSystem:
 
 
     def compute_control_system(self): #Assumed a total of 4 actuators (ailerons, elevator, rudder), so all characteristics are multiplied by 4
-        self.CS_total_mass = (self.actuator_mass + self.mass_cables + self.mass_pushrod + self.joints_mass_ratio * self.mass_pushrod) * 4
-        self.CS_total_volume = (self.actuator_volume + self.volume_pushrod + self.volume_cable) * 4
-        self.CS_total_power = (self.actuator_power + self.power_loss_cable) * 4
+        self.mass = (self.actuator_mass + self.mass_cables + self.mass_pushrod + self.joints_mass_ratio * self.mass_pushrod) * 4
+        self.volume = (self.actuator_volume + self.volume_pushrod + self.volume_cable) * 4
+        self.power = (self.actuator_power + self.power_loss_cable) * 4
         # return self.CS_mass, self.CS_volume, self.CS_power_required
