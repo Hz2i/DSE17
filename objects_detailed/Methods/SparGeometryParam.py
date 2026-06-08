@@ -3,9 +3,12 @@ import aerosandbox as asb
 import matplotlib.patches as pth
 import matplotlib.pyplot as plt
 import scipy.interpolate as interpolate
-import objects_detailed.Characteristics.Airframe as Airframe
-from objects_detailed.Characteristics.Components_Materials import CFRP, GLARE, Aluminum7075, Mylar, Silicone_Rubber
-
+import sys
+import os
+# Add the folder containing characteristics_airframe.py to the Python path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../Characteristics')))
+from Airframe import airframe as Airframe
+from Components_Materials import CFRP, GLARE, Aluminum7075, Mylar, Silicone_Rubber
 
 optimize_variables = {
         "t_spar": 0.005,  #m
@@ -24,7 +27,7 @@ determined_geometry = {
 }
 
 class AirfoilGeometry:
-    def __init__(self, Airframe = Airframe.airframe(), Available_width = 0.3, t_skin_airfoil = 0.0002, plot=False):
+    def __init__(self, Airframe = Airframe(), Available_width = 0.3, t_skin_airfoil = 0.0002, plot=False):
         self.Airfoil = Airframe.foil
         self.chord_length = Airframe.c_r
         self.Available_width = Available_width
@@ -175,7 +178,7 @@ class AirfoilGeometry:
         plt.show()
 
 class SparGeometryOptimization:
-    def __init__(self, I_xx_spar_req, I_yy_spar_req, I_xx_sleeve_req, I_yy_sleeve_req, n_sections, airframe = Airframe.airframe(), airfoil_geometry = AirfoilGeometry(), min_eccentricity_factor=2, optimize_variables = optimize_variables, determined_geometry = determined_geometry):
+    def __init__(self, I_xx_spar_req, I_yy_spar_req, I_xx_sleeve_req, I_yy_sleeve_req, n_sections, airframe = Airframe(), airfoil_geometry = AirfoilGeometry(), min_eccentricity_factor=1.1, optimize_variables = optimize_variables, determined_geometry = determined_geometry, Plot=False):
         self.I_xx_spar_req = I_xx_spar_req
         self.I_yy_spar_req = I_yy_spar_req
         self.I_xx_sleeve_req = I_xx_sleeve_req
@@ -210,14 +213,33 @@ class SparGeometryOptimization:
         self.sweep = airframe.qc_sweep
         self.slanted_span = self.span / np.cos(np.radians(self.sweep))
 
-        #Min Limits of Thicknesses based on manufacturability and material limits
-        self.CFRP_LIMIT_t = CFRP.min_thickness
-        self.GLARE_LIMIT_t = GLARE.min_thickness
-        self.GLARE_rho = GLARE.rho
-        self.CFRP_rho = CFRP.rho
-        self.Alu_rho = Aluminum7075.rho
-        self.Rubber_rho = Silicone_Rubber.rho
-        self.Mylar_rho = Mylar.rho
+        #Min Limits of Thicknesses based on manufacturability and material limitsc
+        #Material instances
+        cfrp = CFRP()
+        glare = GLARE()
+        alu = Aluminum7075()
+        rubber = Silicone_Rubber()
+        mylar = Mylar()
+
+        # Min Limits of Thicknesses based on manufacturability and material limits
+        self.CFRP_LIMIT_t = cfrp.min_thickness
+        self.GLARE_LIMIT_t = glare.min_thickness
+
+        # Densities
+        self.GLARE_rho = glare.rho
+        self.CFRP_rho = cfrp.rho
+        self.Alu_rho = alu.rho
+        self.Rubber_rho = rubber.rho
+        self.Mylar_rho = mylar.rho
+
+        #Optimized Geometry
+        self.optimized_geometry = self.optimize_geometry_H_clamp_with_asb()
+        print(f"Optimized Geometry: {self.optimized_geometry}")
+        self.total_mass_spar, self.total_length_inc_clamp, self.total_span_exc_sleeve_clamp = self.calc_Mass_structure_span(self.optimized_geometry)
+        self.Weight_skin = self.calculate_airfoil_skin_weight(self.optimized_geometry, self.total_length_inc_clamp, self.total_span_exc_sleeve_clamp)
+        self.total_structure_weight = self.total_mass_spar + self.Weight_skin
+        if Plot:
+            self.Plot_optimized_geometry(self.optimized_geometry["r_top"], self.optimized_geometry["t_spar"], self.optimized_geometry["t_sleeve"], self.optimized_geometry["Clamp_width"], self.optimized_geometry["eccentricity_factor"])
 
     def calc_I_square(self, b, h):
         return (b * h**3) / 12
@@ -436,6 +458,7 @@ class SparGeometryOptimization:
         plt.legend()
         plt.axis('equal')
         plt.grid()
+        plt.show()
 
     def calc_Mass_structure_span(self, optimized_geometry):
         total_length_inc_clamp = self.n_sections*(self.l_clamp*3)
@@ -531,3 +554,18 @@ class SparGeometryOptimization:
         return weight_airfoil_skin
 
 
+if __name__ == "__main__":
+    airframe = Airframe()
+    airfoil_geometry = AirfoilGeometry(Airframe(),t_skin_airfoil=0.001, plot=True)
+    #Components
+    spar_optimizer = SparGeometryOptimization(
+        I_xx_spar_req=1e-7,  # Placeholder values for required inertia, these should be calculated based on load cases
+        I_yy_spar_req=5e-8,
+        I_xx_sleeve_req=1e-7,
+        I_yy_sleeve_req=5e-8,
+        n_sections=6,
+        min_eccentricity_factor=1.5,
+        airframe=airframe,
+        airfoil_geometry=airfoil_geometry,
+        Plot=True
+    )
