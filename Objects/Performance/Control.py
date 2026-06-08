@@ -12,7 +12,7 @@ class Control_Surface_Sizing():
     def __init__(self):
         self.coeff = None
         self.airplane = None
-        self.wing_airfoil = asb.Airfoil("mh60")
+        self.wing_airfoil = asb.Airfoil("mh91")
         self.tail_airfoil = asb.Airfoil("naca0012")
 
         self.wing_sweep = 0.2618      # radians
@@ -21,11 +21,11 @@ class Control_Surface_Sizing():
         self.S = self.b * self.c      # Wing area [m^2]
         self.dihedral = np.radians(1.0)
 
-        self.x_cg = 2.5
+        self.x_cg = 2.18
 
-        self.inner_elevon_frac = 0.05
+        self.inner_elevon_frac = 0.10
         self.outer_elevon_frac = 0.20
-        self.height_winglet = 1.0 # height of winglet above main wing [m]
+        self.height_winglet = 1.5 # height of winglet above main wing [m]
         self.rudder_frac = 0.8
         self.fraction_outer_engine = None
 
@@ -507,7 +507,7 @@ class Control_Surface_Sizing():
         Cn_OEI_counter = k*M_engine/(0.5*rho_cruise*self.op_point.velocity**2*self.S*self.b) # Required Cn to counteract OEI yawing moment
         deflection_OEI = -Cn_OEI_counter/Cndr
         print("OEI Deflection", np.degrees(deflection_OEI), "deg/s")
-        deflection_max = np.radians(30)
+        deflection_max = np.radians(self.deflection_points[np.size(self.deflection_points) - 1])
 
         r = Cndr / Cnr * (deflection_max-deflection_OEI) * 2 * self.op_point.velocity / self.b
         # r = Cndr / Cnr * (np.radians(self.deflection_points[np.size(self.deflection_points) - 1])) * 2 * self.op_point.velocity / self.b
@@ -726,7 +726,7 @@ if __name__ == "__main__":
     cs.Airplane_Geo()
     # cs.airplane.draw()
     # cs.Control_Check()
-    # cs.Control_Sizing()
+    cs.Control_Sizing()
     # cs.Pitching_Coefficients(print_plots=True)
     # cs.Spiral_Check()
-    cs.Cm_check()
+    # cs.Cm_check()
