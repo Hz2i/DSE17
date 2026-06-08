@@ -18,8 +18,19 @@ class power_storage:
         self.bat = battery_input
         self.f_c = fuel_cell_input
         self.f_c_efficiency = f_c_efficiency
+        self.redundancy = 2.0
+        self.cable_mass = 2.848664
+        self.cable_volume = 0.000374554
+        self.pdu_mass = 1.195
+        self.pdu_volume = 0.0004
+        self.converter_mass = 0.110983357
+        self.converter_volume = 4.11e-05
+        self.esc_mass = 0.52
+        self.esc_volume = 0.00024
 
     def compute_weight_volume(self):        # Compute weight and volume of power storage components
+        rest_system_mass = (self.cable_mass + self.pdu_mass + self.converter_mass + self.esc_mass) * self.redundancy
+        rest_system_volume = (self.cable_volume + self.pdu_volume + self.converter_volume + self.esc_volume) * self.redundancy
         if self.batteries_used:
             energy_req = self.power_req*(86400-self.daylight_time) * (1.0+28.0*self.energy_delta) /self.DOD
             self.mass = energy_req/self.bat.massEnergy                  # Mass of Energy Storage System
@@ -28,7 +39,8 @@ class power_storage:
             energy_req = self.power_req*(86400-self.daylight_time) * (1.0+28.0*self.energy_delta )/self.f_c_efficiency
             self.mass = energy_req/self.f_c.massEnergy                  # Mass of Energy Storage System
             self.volume = energy_req/self.f_c.volumeEnergy              # Volume of Energy Storage System
-
+        self.mass+= rest_system_mass
+        self.volume+= rest_system_volume
 class power_generation:
     def __init__(self, power_req, latitude, days_from_solstice, solar_panel_input=solar_panel(), energy_delta=0.0):                     # Initialise known/computed values and constants
         daylight_analysis = solar_incidence(latitude,days_from_solstice)
