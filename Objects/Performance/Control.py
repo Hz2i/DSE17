@@ -12,7 +12,7 @@ class Control_Surface_Sizing():
     def __init__(self):
         self.coeff = None
         self.airplane = None
-        self.wing_airfoil = asb.Airfoil("mh60")
+        self.wing_airfoil = asb.Airfoil("e344")
         self.tail_airfoil = asb.Airfoil("naca0012")
 
         self.wing_sweep = 0.2618      # radians
@@ -20,8 +20,9 @@ class Control_Surface_Sizing():
         self.c = 1.44                 # chord [m]
         self.S = self.b * self.c      # Wing area [m^2]
         self.dihedral = np.radians(1.0)
+        self.twist = 2.0
 
-        self.x_cg = 2.5
+        self.x_cg = 2.25
 
         self.inner_elevon_frac = 0.05
         self.outer_elevon_frac = 0.20
@@ -81,7 +82,7 @@ class Control_Surface_Sizing():
                         asb.WingXSec(
                             xyz_le=[0, 0, 0],
                             chord=self.c,
-                            twist=0,
+                            twist=self.twist,
                             airfoil=self.wing_airfoil,
                         ),
 
@@ -93,7 +94,7 @@ class Control_Surface_Sizing():
                                 np.tan(self.dihedral)*self.start_inner_elevon,
                             ],
                             chord=self.c,
-                            twist=0,
+                            twist=(1-self.start_inner_elevon/self.half_span) * self.twist,
                             airfoil=self.wing_airfoil,
                             control_surfaces=[
                                 asb.ControlSurface(
@@ -114,7 +115,7 @@ class Control_Surface_Sizing():
                                 np.tan(self.dihedral)*self.elevon_connection,
                             ],
                             chord=self.c,
-                            twist=0,
+                            twist=(1-self.elevon_connection/self.half_span) * self.twist,
                             airfoil=self.wing_airfoil,
                             control_surfaces=[
                                 asb.ControlSurface(
@@ -135,7 +136,7 @@ class Control_Surface_Sizing():
                                 np.tan(self.dihedral)*self.end_outer_elevon,
                             ],
                             chord=self.c,
-                            twist=0,
+                            twist=(1-self.end_outer_elevon/self.half_span) * self.twist,
                             airfoil=self.wing_airfoil,
                         ),
 
@@ -724,9 +725,9 @@ if __name__ == "__main__":
     print("Starting simulation")
     cs = Control_Surface_Sizing()
     cs.Airplane_Geo()
-    # cs.airplane.draw()
+    cs.airplane.draw()
     # cs.Control_Check()
     # cs.Control_Sizing()
     # cs.Pitching_Coefficients(print_plots=True)
     # cs.Spiral_Check()
-    cs.Cm_check()
+    # cs.Cm_check()
