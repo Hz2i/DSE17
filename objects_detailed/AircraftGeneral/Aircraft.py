@@ -111,19 +111,20 @@ class Aircraft:
             # OEM_temp = self.internal_struct.total_structure_weight + self.compute_subsys_mass()
             # MTOW_temp = OEM_temp/self.OEM_frac
 
-            self.T_req = (self.MTOW*self.const.g/self.CL_CD + self.MTOW*self.const.g * np.sin(np.radians(self.gamma)))/self.airframe.nacelles.nr_of_engines
+            self.T_req = self.MTOW*self.const.g/self.CL_CD + self.MTOW*self.const.g * np.sin(np.radians(self.gamma))
+            self.prop = PropulsionSystem(required_thrust_cruise=self.T_req, v_inf_cruise=self.TAS_cruise, m_TO=self.MTOW, S=self.airframe.S,CL_max=self.airframe.CL_max)
 
-            # self.T_req = (MTOW_temp*self.const.g/self.CL_CD + MTOW_temp*self.const.g * np.sin(np.radians(self.gamma)))/self.airframe.nacelles.nr_of_engines
-
-            self.prop = PropulsionSystem(T=self.T_req, velocity=self.TAS_cruise, alt=self.h, rpm=1000.0, torque=4.0, motor_temp=-40.0,propeller_diameter=1.5)
-
-            self.Pow_motor = self.prop.power_required * self.airframe.nacelles.nr_of_engines
+            self.Pow_motor, self.Prop_mass = self.prop.run_full_analysis()
             self.Pow_req = self.compute_subsys_pow() + self.Pow_motor
+
+            print(f"motor power: {self.Pow_motor} W, total motor mass: {self.Prop_mass} kg, power required: {self.Pow_req} W")
 
             self.pow_store = power_storage(self.Pow_req, latitude=self.lat, days_from_solstice=self.day_margin, DOD=self.DoD, batteries_used=self.use_batt, energy_delta=self.energy_delta)
             self.pow_store.compute_weight_volume()
             self.solar = power_generation(self.Pow_req, latitude=self.lat, days_from_solstice=self.day_margin, energy_delta=self.energy_delta)
             self.solar.compute_weight_surface()
+
+            print(f"power storage weight: {self.pow_store.mass} kg")
 
             if self.solar.area < self.airframe.S/1.025:
                 surface_check = False
@@ -166,11 +167,11 @@ class Aircraft:
             I_yy_spar_req=I_drag_spar,
             I_xx_sleeve_req=I_lift_connection,
             I_yy_sleeve_req=I_drag_connection,
-            n_sections=6,
+            n_sections=8,
             min_eccentricity_factor=1.1,
             airframe=self.airframe,
             airfoil_geometry=airfoil_geometry,
-            Plot=False
+            Plot=True
         )
 
 

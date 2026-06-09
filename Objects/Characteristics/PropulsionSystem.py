@@ -174,27 +174,27 @@ class PropulsionSystem:
         # =========================================================
         # Take-Off Analysis
         # =========================================================
-        s_TOG = 20
-        C_L_TO = 0.8 * self.CL_max
-        f_LW = 1.2
+        # s_TOG = 100
+        # C_L_TO = 0.8 * self.CL_max
+        # f_LW = 1.2
         
-        v_TO = f_LW * np.sqrt(2 * 9.81 * self.m_TO / (C_L_TO * self.rho_to * self.S))
-        P_TO_Total_Watts = ((self.m_TO * 9.81)**2) / (s_TOG * self.rho_to * self.S * C_L_TO)
+        # v_TO = f_LW * np.sqrt(2 * 9.81 * self.m_TO / (C_L_TO * self.rho_to * self.S))
+        # P_TO_Total_Watts = ((self.m_TO * 9.81)**2) / (s_TOG * self.rho_to * self.S * C_L_TO)
         
-        res_power_per_motor = P_TO_Total_Watts / self.num_engines
+        # res_power_per_motor = P_TO_Total_Watts / self.num_engines
         
-        alphas_to = np.linspace(-30, 85, 300)
-        aero_to = asb.Airfoil(self.airfoil_name).get_aero_from_neuralfoil(alpha=alphas_to, Re=1_000_000, mach=0.05)
-        # Linear interp safeguards against runaway values in deep stall
-        cl_interp_to = interp1d(alphas_to, aero_to['CL'], kind='linear', fill_value="extrapolate")
-        cd_interp_to = interp1d(alphas_to, aero_to['CD'], kind='linear', fill_value="extrapolate")
+        # alphas_to = np.linspace(-30, 85, 300)
+        # aero_to = asb.Airfoil(self.airfoil_name).get_aero_from_neuralfoil(alpha=alphas_to, Re=1_000_000, mach=0.05)
+        # # Linear interp safeguards against runaway values in deep stall
+        # cl_interp_to = interp1d(alphas_to, aero_to['CL'], kind='linear', fill_value="extrapolate")
+        # cd_interp_to = interp1d(alphas_to, aero_to['CD'], kind='linear', fill_value="extrapolate")
         
-        # Optimizer to find the precise RPM that absorbs the available Roskam Take-Off Power
-        def power_residual(rpm_guess):
-            _, _, P_mech_guess, eta_guess = self._evaluate_bemt(v_TO, rpm_guess, self.D, self.rho_to, cl_interp_to, cd_interp_to)
-            return P_mech_guess - res_power_per_motor*eta_guess
+        # # Optimizer to find the precise RPM that absorbs the available Roskam Take-Off Power
+        # def power_residual(rpm_guess):
+        #     _, _, P_mech_guess, eta_guess = self._evaluate_bemt(v_TO, rpm_guess, self.D, self.rho_to, cl_interp_to, cd_interp_to)
+        #     return P_mech_guess - res_power_per_motor*eta_guess
             
-        takeoff_rpm = brentq(power_residual, 100, 3000)
+        # takeoff_rpm = brentq(power_residual, 100, 3000)
         
         # Final evaluation at the exact Take-Off RPM
         T_to, M_to, P_mech_to, eta_to = self._evaluate_bemt(v_TO, takeoff_rpm, self.D, self.rho_to, cl_interp_to, cd_interp_to)
@@ -219,6 +219,7 @@ class PropulsionSystem:
         m_blades = 2.89*0.7 * (self.D)/(2.1357)# 70 percent of kg from CAD
         m_total_per_engine = m_esc + m_motor + m_add + m_rod +  m_hub + m_blades
         m_total_all_engines = m_total_per_engine * self.num_engines
+
 
         # =========================================================
         # REPORT
@@ -262,12 +263,13 @@ class PropulsionSystem:
         print(f"  Total Electrical Power : {(P_elec_to * self.num_engines) / 1000.0:.3f} kW")
         print("=======================================================\n")
 
-        print("\n=======================================================")
-        print(f"                    MASS ESTIMATE")
-        print("=======================================================")
-        print(f"""Estimated Mass per Engine: {m_total_per_engine:.2f} kg""")
-        print(f"Total Mass for All Engines: {m_total_all_engines:.2f} kg")
-        print("=======================================================\n")
+        # print("\n=======================================================")
+        # print(f"                    MASS ESTIMATE")
+        # print("=======================================================")
+        # print(f"""Estimated Mass per Engine: {m_total_per_engine:.2f} kg""")
+        # print(f"Total Mass for All Engines: {m_total_all_engines:.2f} kg")
+        # print("=======================================================\n")
+        return P_elec_cr * self.num_engines, m_total_all_engines
         
 if __name__ == "__main__":
     ahaps = PropulsionSystem(

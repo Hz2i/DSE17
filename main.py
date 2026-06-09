@@ -38,6 +38,7 @@ S = 36.0
 fus_geo = fuselage(D=0.5, L1=0.2, L2=0.6, L3=0.2)
 nac_geo = nacelles(nr_of_engines=4)
 planform = airframe(S=S, A=20.0, qc_sweep=15.0*np.pi/180, taper=1.0, dihedral=0.0*np.pi/180.0,fus=fus_geo, nac=nac_geo, display=False, init_polar=True)
+planform = airframe(S=S, A=20.0, qc_sweep=15.0*np.pi/180, taper=1.0, dihedral=0.0*np.pi/180.0,fus=fus_geo, nac=nac_geo, display=False, init_polar=True)
 
 
 MTOW = MTOW_initial
@@ -66,8 +67,14 @@ iterations = 0
 while monitoring_var > 5e-3 or iterations < 5:
     AHAPS = Aircraft(MTOW_guess=MTOW, OEM_frac=OEM_frac, TAS=TAS_initial, gamma=gamma, lat=lat, day_margin=day_margin, DoD=DoD, airframe=planform, use_batt=use_batt, energy_delta=energy_delta)
 
-    MTOW_current = AHAPS.pow_store.mass + AHAPS.solar.mass + AHAPS.payload.mass + AHAPS.internal_struct.total_structure_weight + AHAPS.compute_subsys_mass()
+    MTOW_current = AHAPS.pow_store.mass + AHAPS.solar.mass + AHAPS.payload.mass + AHAPS.internal_struct.total_structure_weight + AHAPS.Prop_mass + AHAPS.compute_subsys_mass()
 
+    # print(f'subsystem masses: {AHAPS.compute_subsys_mass()} kg')
+    # print(f'internal structure mass: {AHAPS.internal_struct.total_structure_weight} kg')
+    # print(f'total mass spar {AHAPS.internal_struct.total_mass_spar} kg')
+    # print(f'weight skin {AHAPS.internal_struct.Weight_skin} kg')
+    # print(f'power storage mass: {AHAPS.pow_store.mass} kg')
+    # print(f'solar mass: {AHAPS.solar.mass} kg')
     pow_frac = (AHAPS.pow_store.mass + AHAPS.solar.mass)/MTOW_current
     payload_frac = AHAPS.payload.mass / MTOW_current
     struct_frac = AHAPS.internal_struct.total_structure_weight / MTOW_current
@@ -93,7 +100,8 @@ while monitoring_var > 5e-3 or iterations < 5:
     print("Iteration:", iterations)
     print("Monitoring variable:", monitoring_var)
     print("Current error:", error)
-    print("Current MTOW estimate:", MTOW)
+    print('MTOW current:', MTOW_current)
+    print("New MTOW estimate:", MTOW)
     print("Current power system mass fraction estimate:", pow_frac)
     print("Current structural mass fraction estimate:", struct_frac)
     print("Current payload mass fraction estimate:", payload_frac)
