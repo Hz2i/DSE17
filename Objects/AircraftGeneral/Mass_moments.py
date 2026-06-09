@@ -59,11 +59,16 @@ class Mass_moments:
         self.spar_major_axis = 0.5
         self.spar_minor_axis = 0.4
 
+        self.cg = (-2.19, 0.0, 0.0)
+        self.root = (0.0, 0.0, 0.0) # body axis central point
+
         self.b        = 28.80
+        self.half_b = self.b / 2
         self.c        = 1.44
         self.sweep    = np.radians(-15)
         self.dihedral = np.radians(-2)
         self.twist    = np.radians(4.675)
+        self.twist_rate = np.radians(self.twist/self.half_b)
 
         # MH91 leading-20% battery box geometry
         self.battery_chord_fraction     = 0.20
@@ -74,10 +79,10 @@ class Mass_moments:
     #  internal helpers
     # ------------------------------------------------------------------ #
 
-    def _spar_direction(self, sweep_deg, dihedral_deg):
+    def _spar_direction(self):
         """Unit vector along the spar in FD body axes (x fwd, y right, z down)."""
-        Λ = np.radians(sweep_deg)
-        Γ = np.radians(dihedral_deg)
+        Λ = self.sweep
+        Γ = self.dihedral
         return np.array([
             np.cos(Γ) * np.sin(Λ),
             np.cos(Γ) * np.cos(Λ),
@@ -93,19 +98,19 @@ class Mass_moments:
             [-dx*dz,        -dy*dz,          dx**2 + dy**2],
         ])
 
-    def _mh91_perimeter(self, chord):
+    def _mh91_perimeter(self):
         """Arc length of full MH91 airfoil perimeter [m]."""
-        xy = MH91_COORDS * chord
+        xy = MH91_COORDS * self.c
         diffs = np.diff(xy, axis=0)
         return np.hypot(diffs[:, 0], diffs[:, 1]).sum()
 
-    def _mh91_skin_centroid(self, chord):
+    def _mh91_skin_centroid(self):
         """
         Arc-length-weighted centroid of the MH91 skin in body axes.
         Returns (x_offset, z_offset) relative to the leading edge.
         x: chordwise (positive aft), z: positive down (negated from airfoil y).
         """
-        xy  = MH91_COORDS * chord
+        xy  = MH91_COORDS * self.chord
         dls = np.hypot(*np.diff(xy, axis=0).T)
         mids = 0.5 * (xy[:-1] + xy[1:])
         x_c =  (mids[:, 0] * dls).sum() / dls.sum()
@@ -120,11 +125,6 @@ class Mass_moments:
             self,
             mass,
             length,
-            sweep_deg,
-            dihedral_deg,
-            twist_deg=4.675,
-            cg=(  -2.19, 0.0, 0.0),
-            root=(  0.0, 0.0, 0.0),
     ):
         """
         Inertia tensor of a swept/dihedral spar (slender rod) about the CG.
@@ -139,9 +139,9 @@ class Mass_moments:
         cg         : tuple   aircraft CG in body axes
         root       : tuple   spar root in body axes
         """
-        u  = self._spar_direction(sweep_deg, dihedral_deg)
-        rc = np.array(root) + 0.5 * length * u
-        d  = rc - np.array(cg)
+        u  = self._spar_direction()
+        rc = np.array(self.root) + 0.5 * length * u
+        d  = rc - np.array(self.cg)
 
         Ic  = (mass * length**2 / 12.0) * (np.eye(3) - np.outer(u, u))
         return Ic + self._parallel_axis(mass, d)
@@ -154,11 +154,6 @@ class Mass_moments:
             self,
             total_mass,
             span_sections,
-            sweep_deg,
-            dihedral_deg,
-            chord=None,
-            cg=(  -2.19, 0.0, 0.0),
-            root=(  0.0, 0.0, 0.0),
     ):
         """
         Inertia tensor of batteries in the leading 20% of the MH91 airfoil.
@@ -182,13 +177,11 @@ class Mass_moments:
         I_total      : np.ndarray (3×3)  [kg·m²]
         section_info : list of dict
         """
-        if chord is None:
-            chord = self.c
 
-        u = self._spar_direction(sweep_deg, dihedral_deg)
+        u = self._spar_direction()
 
-        batt_width  = self.battery_chord_fraction     * chord
-        batt_height = self.battery_thickness_fraction * chord
+        batt_width  = self.battery_chord_fraction     * self.c
+        batt_height = self.battery_thickness_fraction * self.c
         A_cross     = batt_width * batt_height
 
         total_volume = total_mass / self.battery_density
@@ -212,9 +205,9 @@ class Mass_moments:
 
         for (y_inner, _), fill_length in zip(span_sections, fill_lengths):
             mass    = self.battery_density * A_cross * fill_length
-            p_inner = np.array(root) + y_inner * u
+            p_inner = np.array(self.root) + y_inner * u
             rc      = p_inner + 0.5 * fill_length * u
-            d       = rc - np.array(cg)
+            d       = rc - np.array(self.cg)
 
             L2  = fill_length**2
             wh2 = batt_width**2 + batt_height**2
@@ -239,11 +232,6 @@ class Mass_moments:
             skin_density,
             skin_thickness,
             span_sections,
-            sweep_deg,
-            dihedral_deg,
-            chord=None,
-            cg=(  -2.19, 0.0, 0.0),
-            root=(  0.0, 0.0, 0.0),
     ):
         """
         Inertia tensor of a constant-thickness shell skin following the MH91
@@ -265,12 +253,10 @@ class Mass_moments:
         I_total      : np.ndarray (3×3)  [kg·m²]
         section_info : list of dict
         """
-        if chord is None:
-            chord = self.c
 
-        u         = self._spar_direction(sweep_deg, dihedral_deg)
-        perimeter = self._mh91_perimeter(chord)
-        x_skin, z_skin = self._mh91_skin_centroid(chord)
+        u         = self._spar_direction()
+        perimeter = self._mh91_perimeter()
+        x_skin, z_skin = self._mh91_skin_centroid()
 
         # Gyration radius of the skin cross-section about the spar axis
         # (thin-ring equivalent: r² = P² / 4π²)
@@ -289,10 +275,10 @@ class Mass_moments:
             mass = skin_density * skin_thickness * perimeter * seg_len
 
             # Centroid: spar midpoint + cross-section offset
-            p_inner = np.array(root) + y_inner * u
+            p_inner = np.array(self.root) + y_inner * u
             rc_spar = p_inner + 0.5 * seg_len * u
             rc      = rc_spar + np.array([x_skin, 0.0, z_skin])
-            d       = rc - np.array(cg)
+            d       = rc - np.array(self.cg)
 
             L2 = seg_len**2
             Ic = mass * (
@@ -310,6 +296,77 @@ class Mass_moments:
 
         return I_total, section_info
 
+    def rib_point_mass_inertia_full(
+            self,
+            mass,
+            y_span,
+    ):
+        """
+        Rib point-mass inertia about aircraft CG
+        with sweep, dihedral, and twist included.
+
+        Flight dynamics axes:
+            x forward
+            y right wing
+            z down
+        """
+
+        Λ = self.sweep
+        Γ = self.dihedral
+
+        θ0 = self.twist
+        θt = self.twist_rate
+
+        x0, y0, z0 = self.root
+        xcg, ycg, zcg = self.cg
+
+        # spanwise twist (for completeness only)
+        twist = θ0 + θt * y_span
+
+        # position in aircraft body axes (root frame)
+        x_rib = x0 + y_span * np.tan(Λ)
+        y_rib = y0 + y_span
+        z_rib = z0 - y_span * np.tan(Γ)
+
+        # shift to CG frame
+        x = x_rib - xcg
+        y = y_rib - ycg
+        z = z_rib - zcg
+
+        # point-mass inertia about CG
+        I = mass * np.array([
+            [y ** 2 + z ** 2, -x * y, -x * z],
+            [-x * y, x ** 2 + z ** 2, -y * z],
+            [-x * z, -y * z, x ** 2 + y ** 2]
+        ])
+
+        return I, twist
+
+    def wing_rib_inertia_full(
+            self,
+            ribs,
+            root=(0, 0, 0),
+            cg=(0, 0, 0),
+            sweep_deg=0.0,
+            dihedral_deg=0.0,
+            twist_deg=0.0,
+            twist_rate_deg_per_m=0.0
+    ):
+
+        I_total = np.zeros((3, 3))
+        M_total = 0.0
+
+        for mass, y in ribs:
+            I, _ = self.rib_point_mass_inertia_full(
+                mass=mass,
+                y_span=y,
+            )
+
+            I_total += I
+            M_total += mass
+
+        return M_total, I_total
+
 
 # ======================================================================== #
 #  Example
@@ -322,8 +379,6 @@ half_span = cs.b / 2   # 14.4 m
 I_spar = cs.spar_inertia_fd(
     mass=20,
     length=half_span,
-    sweep_deg=15,
-    dihedral_deg=2,
 )
 print("Spar inertia tensor [kg·m²]:")
 print(np.round(I_spar, 4))
@@ -337,8 +392,6 @@ battery_sections = [
 I_batt, batt_info = cs.batteries_inertia_fd(
     total_mass=45.0,
     span_sections=battery_sections,
-    sweep_deg=15,
-    dihedral_deg=2,
 )
 print("\nBattery sections:")
 for s in batt_info:
@@ -352,8 +405,6 @@ I_skin, skin_info = cs.skin_inertia_fd(
     skin_density=1390.0,
     skin_thickness=0.002,
     span_sections=[(0.0, half_span)],
-    sweep_deg=15,
-    dihedral_deg=2,
 )
 print("\nSkin sections:")
 for s in skin_info:
