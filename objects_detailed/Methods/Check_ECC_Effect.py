@@ -576,7 +576,7 @@ if __name__ == "__main__":
         "I_yy_sleeve": 0.5e-7, #m^4
     }
     airfoil_geometry = {
-        "airfoil": asb.Airfoil("e344"),  # Use NACA 2412 as an example
+        "airfoil": asb.Airfoil("mh91"),  # Use NACA 2412 as an example
         "chord_length": 1.2,  #m
         "Available width": 0.2,  #Fraction of chord length
         "t_skin_airfoil": 0.0002,  #m
