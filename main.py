@@ -9,6 +9,7 @@ from objects_detailed.Characteristics.GeneralSubsystems import ComputerSystem, C
 from Objects.Characteristics.PropulsionSystem import PropulsionSystem
 from objects_detailed.Characteristics.ReferenceGeometries import *
 from objects_detailed.Constants import Constants
+from objects_detailed.Methods.LandingSkids import m_skid
 
 # from objects_detailed.AircraftGeneral.Aircraft import Aircraft
 
@@ -35,9 +36,9 @@ S = 36.0
 
 
 # Flying wing planform:
-fus_geo = fuselage(D=0.5, L1=0.2, L2=0.6, L3=0.2)
+fus_geo = fuselage(D=0.0, L1=0.0, L2=0.0, L3=0.0)
 nac_geo = nacelles(nr_of_engines=0, pos=[])
-planform = airframe(S=S, A=25.0, qc_sweep=15.0*np.pi/180, taper=1.0, dihedral=0.0*np.pi/180.0,fus=fus_geo, nac=nac_geo, display=False, init_polar=True)
+planform = airframe(S=S, A=20.0, qc_sweep=15.0*np.pi/180, taper=1.0, dihedral=0.0*np.pi/180.0,fus=fus_geo, nac=nac_geo, display=False, init_polar=True)
 
 
 MTOW = MTOW_initial
@@ -46,7 +47,7 @@ MTOW = MTOW_initial
 AHAPS = Aircraft(MTOW_guess=MTOW, OEM_frac=OEM_frac, TAS=TAS_initial, gamma=gamma, lat=lat, day_margin=day_margin, DoD=DoD, airframe=planform, use_batt=use_batt, energy_delta=energy_delta)
 
 planform.S = AHAPS.airframe.S
-MTOW_current = AHAPS.pow_store.mass + AHAPS.solar.mass + AHAPS.payload.mass + AHAPS.internal_struct.total_structure_weight + AHAPS.Prop_mass + AHAPS.compute_subsys_mass()
+MTOW_current = AHAPS.pow_store.mass + AHAPS.solar.mass + AHAPS.payload.mass + AHAPS.internal_struct.total_structure_weight + AHAPS.Prop_mass + AHAPS.compute_subsys_mass() + m_skid()
 
 pow_frac = (AHAPS.pow_store.mass + AHAPS.solar.mass)/MTOW
 payload_frac = AHAPS.payload.mass_payload / MTOW
