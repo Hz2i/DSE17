@@ -8,6 +8,12 @@ from Objects.Performance.Control import Mass_moments
 class Coeff_Values(Mass_moments):
 
     def __init__(self):
+        self.m = 170 #MTOM
+        self.V0 = 27.94 # [m/s]
+        self.b = 28.8
+        self.c = 1.44
+        self.S = self.b * self.c
+
         # Constant values concerning atmosphere and gravity
         self.rho0 = 1.2250  # air density at sea level [kg/m^3]
         self.lmda = -0.0065  # temperature gradient in ISA [K/m]
@@ -16,16 +22,16 @@ class Coeff_Values(Mass_moments):
         self.g = 9.81  # gravity constant [m/sec^2]
 
         # Air density [kg/m^3]
-        self.rho = ---
+        self.rho = 0.115318 # 60k ft no ISA dev
         self.W = self.m * self.g  # aircraft weight [N]
 
         # Constant values concerning aircraft inertia
         self.muc = self.m / (self.rho * self.S * self.c)
         self.mub = self.m / (self.rho * self.S * self.b)
-        self.KX2 = 0.019
-        self.KZ2 = 0.042
-        self.KXZ = 0.002
-        self.KY2 = 1.25 * 1.114
+        self.KX2 = Mass_moments.k_x_nd ** 2
+        self.KZ2 = Mass_moments.k_z_nd ** 2
+        self.KXZ = Mass_moments.k_xz_nd
+        self.KY2 = Mass_moments.k_y ** 2
 
         # Aerodynamic constants
         # self.Cmac = 0
@@ -70,15 +76,15 @@ class Coeff_Values(Mass_moments):
         self.Clb = -0.0845726
         self.Clp = -0.7594234
         self.Clr = +0.0204966
-        self.Clda = -0.23088 # next todo
-        self.Cldr = +0.03440
+        self.Clda = -0.0
+        self.Cldr = +0.0
 
-        self.Cnb = +0.1348
-        self.Cnbdot = 0
-        self.Cnp = -0.0602
-        self.Cnr = -0.2061
-        self.Cnda = -0.0120
-        self.Cndr = -0.0939
+        self.Cnb = -0.0027290 # sign not looking correct
+        self.Cnbdot = 0.
+        self.Cnp = -0.1287038
+        self.Cnr = -0.0081057
+        self.Cnda = ---
+        self.Cndr = ---
 
 class Dynamic_Analysis(param = Coeff_Values):
 
