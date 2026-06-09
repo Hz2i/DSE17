@@ -415,7 +415,7 @@ class Mass_moments:
         x_start_frac, x_end_frac = chord_limits
 
         # Unit vector along the spar (spanwise direction)
-        u_spar = self._spar_direction(sweep_deg, dihedral_deg)
+        u_spar = self._spar_direction()
 
         # Chordwise limits in meters
         x_start = x_start_frac * chord
@@ -557,8 +557,9 @@ print("\nSolar panel info:")
 print(f"Mass: {solar_info['mass']:.3f} kg")
 print(f"Area: {solar_info['area']:.3f} m²")
 print(f"Centroid (global): {solar_info['centroid_global']}")
+
 # --- combined ---
-I_total = I_spar + I_batt + I_skin +I_solar
-I_total = I_spar + I_batt + I_skin + I_ribs
+
+I_total = I_spar + I_batt + I_skin +I_solar + I_ribs
 print("\nCombined inertia tensor [kg·m²]:")
 print(np.round(I_total, 4))
