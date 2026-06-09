@@ -134,7 +134,7 @@ class CG_comp:
         self.l_sleeve = 1
         self.x_cg_spar_structure_wrt_LE = self.AirGEO.x_max_thickness
         #CrossSectionWeight
-        self.cs_w_clamp = 13.5
+        self.cs_w_clamp = 13.5/2 #Hollow Clamp Assumption
         self.cs_w_rubber = 0.285
         self.cs_w_sleeve = 0.56
         self.cs_w_spar = 0.384
@@ -145,7 +145,7 @@ class CG_comp:
         self.x_cg_skin()
         self.x_cg_wingtips()
         self.x_cg_solar_panel()
-        self.x_cg_spar_structure()
+        self.x_clamp, self.y_clamp = self.x_cg_spar_structure()
         '''Changable Positions'''
         #Masses All below 1kg is omitted
         self.mass_payload = Payload.mass_payload + Payload.mass_mounting
@@ -274,9 +274,11 @@ class CG_comp:
     
     def x_cg_wingtips(self):
         #Assume Point For on Centroid of Edge Airfoil
-        self.x_wingtips = ((self.airframe.b/2)*np.tan(self.airframe.le_sweep))+self.x_centroid
+        self.half_span_wing_tips = 1.5
+        self.sweep_wing_tips = self.airframe.le_sweep  #Assuming more sweep for wingtips
+        self.x_wingtips = ((self.airframe.b/2)*np.tan(self.airframe.le_sweep))+self.x_centroid + 0.5*self.half_span_wing_tips*np.tan(self.sweep_wing_tips)  # Shift x-centroid by half the span times tan(sweep) to account for sweep, plus additional shift for wingtip geometry
         self.y_wingtips = self.airframe.b/2  
-        self.mass_wingtips = 2*15.0 #[kg] ()
+        self.mass_wingtips = 2*6.0 #[kg] (Assumptions)
 
     def x_cg_solar_panel(self):
         self.solar_panel_area = 36
@@ -307,6 +309,7 @@ class CG_comp:
         self.x_spar = np.sum(x_spar_list * mass_spar_structure_list) / np.sum(mass_spar_structure_list)
         self.y_spar = np.sum(y_spar_list * mass_spar_structure_list) / np.sum(mass_spar_structure_list)
         self.mass_spar = np.sum(mass_spar_structure_list)
+        return x_datum_clamps_and_rubber, y_datum_clamps_and_rubber
     
     def gen_mass_list(self):
         mass_list = [
@@ -496,7 +499,7 @@ class CG_comp:
     
     def BendingRelief(self, mass_list=None, y_list=None):
         #Mass * Y * g= Bending Moment
-        bending_moment_list = (mass_list/2.0) * y_list * 9.81
+        bending_moment_list = (mass_list) * y_list * 9.81 * 0.5
         #Calculate Bending Relief as the sum of bending moments divided by the total mass
         bending_relief = sum(bending_moment_list)
         return bending_relief
@@ -685,7 +688,7 @@ class CG_comp:
         fig.add_trace(self.plot_wing_contour(left_half=True))
 
         fig.update_layout(
-            title=f"Center of Gravity Distribution - Bending Relief: {self.BendingRelief():.2f} N*m",
+            title=f"Center of Gravity Distribution - Bending Relief: {bending_relief:.2f} N*m",
             xaxis_title="X Coordinate",
             yaxis_title="Y Coordinate",
             showlegend=True
@@ -713,7 +716,28 @@ class CG_comp:
             name_sec = section_names[section_positions.index(sec)]
             fig.add_hline(y=y_span, line=dict(color="gray", width=1, dash="dash"), annotation_text=f"{name_sec}", annotation_position="top left")
             fig.add_hline(y=-y_span, line=dict(color="gray", width=1, dash="dash"), annotation_text=f"{name_sec}", annotation_position="bottom left")
-            
+        
+        #Plot Clamp Positions
+        self.x_clamp, self.y_clamp = self.x_cg_spar_structure()
+        for i in range(len(self.x_clamp)):
+            fig.add_trace(
+                go.Scatter(
+                    x=[self.x_clamp[i]],
+                    y=[self.y_clamp[i]],
+                    mode="markers",
+                    name=f"Clamp {i+1}",
+                    marker=dict(symbol="diamond", size=10, color="purple")
+                )
+            )
+            fig.add_trace(
+                go.Scatter(
+                    x=[self.x_clamp[i]],
+                    y=[-self.y_clamp[i]],
+                    mode="markers",
+                    name=f"Clamp {i+1} (Mirrored)",
+                    marker=dict(symbol="diamond", size=10, color="purple")
+                )
+            )
         #Layout
         fig.update_layout(
             xaxis=dict(range=[-1, 6]),
@@ -730,7 +754,7 @@ class CG_comp:
 
 
 if __name__ == "__main__":
-    airframe = Airframe.airframe(qc_sweep=np.radians(15), init_polar=False)
+    airframe = Airframe.airframe(qc_sweep=np.radians(15), S=57.2, A=20, init_polar=False)
     airfoil_geometry = SparGeometryParam.AirfoilGeometry(Airframe = airframe)
-    battery_cross_section = Available_BatteryCrossSection(AirGEO=airfoil_geometry, width_clamp=0.05)
-    cg_calculator = CG_comp(x_cg_goal=2.55, batt_section=5, airframe=airframe, Batt=battery_cross_section, Wing_sections=Sections.Sections(airframe=airframe, Plot=False), t_skin_airfoil=0.0002)
+    battery_cross_section = Available_BatteryCrossSection(AirGEO=airfoil_geometry, width_clamp=0.125)
+    cg_calculator = CG_comp(x_cg_goal=2.18, batt_section=3, airframe=airframe, Batt=battery_cross_section, Wing_sections=Sections.Sections(airframe=airframe, Plot=False), t_skin_airfoil=0.0002)
