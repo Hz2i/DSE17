@@ -8,7 +8,7 @@ import os
 # Add the folder containing characteristics_airframe.py to the Python path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../Characteristics')))
 from Airframe import airframe as Airframe
-from Components_Materials import CFRP, GLARE, Aluminum7075, Mylar, Silicone_Rubber, PA6
+from Components_Materials import CFRP, Titanium, Aluminum7075, Mylar, Silicone_Rubber, PA6
 import objects_detailed.Methods.StructuralAnalysis as sa
 
 optimize_variables = {
@@ -218,7 +218,7 @@ class SparGeometryOptimization:
         #Min Limits of Thicknesses based on manufacturability and material limitsc
         #Material instances
         cfrp = CFRP()
-        glare = GLARE()
+        titanium = Titanium()
         alu = Aluminum7075()
         rubber = Silicone_Rubber()
         mylar = Mylar()
@@ -226,10 +226,10 @@ class SparGeometryOptimization:
 
         # Min Limits of Thicknesses based on manufacturability and material limits
         self.CFRP_LIMIT_t = cfrp.min_thickness
-        self.GLARE_LIMIT_t = glare.min_thickness
+        self.Titanium_LIMIT_t = titanium.min_thickness
 
         # Densities
-        self.GLARE_rho = glare.rho
+        self.Titanium_rho = titanium.rho
         self.CFRP_rho = cfrp.rho
         self.Alu_rho = alu.rho
         self.Rubber_rho = rubber.rho
@@ -306,7 +306,7 @@ class SparGeometryOptimization:
 
         #Cross Sectional Weight
         weight_clamp = A_clamp_2x * self.pa_rho
-        weight_sleeve = A_sleeve * self.GLARE_rho
+        weight_sleeve = A_sleeve * self.Titanium_rho
         weight_spar = A_spar * self.CFRP_rho
         weight_rubber = A_rubber * self.Rubber_rho
         total_sl_and_sp_weight = weight_sleeve + weight_spar + weight_rubber
@@ -360,7 +360,7 @@ class SparGeometryOptimization:
         opti = asb.Opti()
 
         t_spar = opti.variable(init_guess=float(self.t_spar), lower_bound=self.CFRP_LIMIT_t, upper_bound=0.02)
-        t_sleeve = opti.variable(init_guess=float(self.t_sleeve), lower_bound=self.GLARE_LIMIT_t, upper_bound=0.02)
+        t_sleeve = opti.variable(init_guess=float(self.t_sleeve), lower_bound=self.Titanium_LIMIT_t, upper_bound=0.02)
         clamp_width = opti.variable(init_guess=float(self.t_connection), lower_bound=0.02, upper_bound=min(self.Available_width, 0.3))
         eccentricity_factor = opti.variable(init_guess=float(self.eccentricity_factor), lower_bound=self.min_eccentricity_factor, upper_bound=10.0)
 
@@ -371,7 +371,7 @@ class SparGeometryOptimization:
         opti.subject_to(g["Clamp_width"] <= self.Available_width)
         opti.subject_to(g["Clamp_height"]*2 <= self.Available_height)
         opti.subject_to(g["t_spar"] >= self.CFRP_LIMIT_t)
-        opti.subject_to(g["t_sleeve"] >= self.GLARE_LIMIT_t)
+        opti.subject_to(g["t_sleeve"] >= self.Titanium_LIMIT_t)
         
         # Ensure clamp can physically fit the sleeve (loosen this constraint)
         opti.subject_to(g["Clamp_width"] >= (2*self.t_bolts + 2*g["b_sleeve_out"]))  # Clamp width must accommodate the sleeve and bolts
@@ -542,7 +542,7 @@ class SparGeometryOptimization:
         b_sleeve = optimized_geometry["b_sleeve_out"]
         r_sleeve = optimized_geometry["t_sleeve"]
         clamping_factor = 2.046 # fixed free
-        GLARE_mat = GLARE()
+        Titanium_mat = Titanium()
         CFRP_mat = CFRP()
         try:
             I_spar, I_sleeve = sa.bending_stress_lift(airframe, 3) # inertia calculations
@@ -557,7 +557,7 @@ class SparGeometryOptimization:
         max_force_spar = Area_spar * stress # max force from stress formula
         max_force_sleeve = Area_sleeve * stress
         spar_rib_spacing = np.sqrt(clamping_factor*np.pi**2*CFRP_mat.E*I_spar/(max_force_spar)) # SAD buckling formula
-        sleeve_rib_spacing = np.sqrt(clamping_factor*np.pi**2*GLARE_mat.E*I_sleeve/max_force_sleeve)
+        sleeve_rib_spacing = np.sqrt(clamping_factor*np.pi**2*Titanium_mat.E*I_sleeve/max_force_sleeve)
         if np.mean(spar_rib_spacing[:len(spar_rib_spacing)-2]) < np.mean(sleeve_rib_spacing[:len(sleeve_rib_spacing)-2]): # end goes to inf
             limiting_spacing = spar_rib_spacing
         else:
