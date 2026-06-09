@@ -65,8 +65,8 @@ class Mass_moments:
         self.b        = 28.80
         self.half_b = self.b / 2
         self.c        = 1.44
-        self.sweep    = np.radians(-15)
-        self.dihedral = np.radians(-2)
+        self.sweep    = np.radians(15)
+        self.dihedral = np.radians(2)
         self.twist    = np.radians(4.675)
         self.twist_rate = np.radians(self.twist/self.half_b)
 
@@ -86,7 +86,7 @@ class Mass_moments:
         return np.array([
             np.cos(Γ) * np.sin(Λ),
             np.cos(Γ) * np.cos(Λ),
-            -np.sin(Γ),
+            np.sin(Γ),
         ])
 
     def _parallel_axis(self, mass, d):
