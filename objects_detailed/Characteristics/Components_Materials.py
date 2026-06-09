@@ -64,3 +64,9 @@ class Silicone_Rubber:
 class Aluminum7075: #https://www.jeelix.com/7075-t6-aluminum-material-properties/
     def __init__(self):
         self.rho = 2810   # Density [kg/m^3]
+
+class PA6: #https://designerdata.nl/materials/plastics/thermo-plastics/polyamide-6
+    def __init__(self):
+        self.rho = 1150   # Density [kg/m^3]
+        self.E =4.6e9
+        self.sigma = 66.5e6

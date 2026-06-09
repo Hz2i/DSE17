@@ -18,14 +18,16 @@ payload_frac_prev = 0.1
 struct_frac_prev = 0.35
 gen_subsys_frac_prev = 0.05
 
-MTOW_initial = 120.0
+OEM_frac = payload_frac_prev + gen_subsys_frac_prev + struct_frac_prev
+
+MTOW_initial = 100.0
 TAS_initial = 25.0
 gamma = 0.0
 h_cruise = 18500.0
 lat = 30.0
 day_margin = 0
 use_batt = True
-energy_delta = 0.0
+energy_delta = 0.05
 DoD = 0.7
 night_time = 0.0
 
@@ -35,29 +37,34 @@ S = 36.0
 # Flying wing planform:
 fus_geo = fuselage(D=0.5, L1=0.2, L2=0.6, L3=0.2)
 nac_geo = nacelles(nr_of_engines=4)
-planform = airframe(S=S, A=28.0, qc_sweep=15.0*np.pi/180, taper=0.455, dihedral=0.0*np.pi/180.0,fus=fus_geo, nac=nac_geo, display=False, init_polar=True)
+planform = airframe(S=S, A=20.0, qc_sweep=15.0*np.pi/180, taper=1.0, dihedral=0.0*np.pi/180.0,fus=fus_geo, nac=nac_geo, display=False, init_polar=True)
 
 
 MTOW = MTOW_initial
 
 # Compute initial error:
-AHAPS = Aircraft(MTOW_guess=MTOW, TAS=TAS_initial, gamma=gamma, lat=lat, day_margin=day_margin, DoD=DoD, airframe=planform, use_batt=use_batt, energy_delta=energy_delta)
+AHAPS = Aircraft(MTOW_guess=MTOW, OEM_frac=OEM_frac, TAS=TAS_initial, gamma=gamma, lat=lat, day_margin=day_margin, DoD=DoD, airframe=planform, use_batt=use_batt, energy_delta=energy_delta)
 
 planform.S = AHAPS.airframe.S
+MTOW_current = AHAPS.pow_store.mass + AHAPS.solar.mass + AHAPS.payload.mass + AHAPS.internal_struct.total_structure_weight + AHAPS.compute_subsys_mass()
 
 pow_frac = (AHAPS.pow_store.mass + AHAPS.solar.mass)/MTOW
 payload_frac = AHAPS.payload.mass_payload / MTOW
 struct_frac = AHAPS.internal_struct.total_structure_weight / MTOW
 gen_subsys_frac = AHAPS.compute_subsys_mass() / MTOW
 
-error = abs(pow_frac - pow_frac_prev)/pow_frac_prev + abs(payload_frac - payload_frac_prev)/payload_frac_prev + abs(struct_frac - struct_frac_prev)/struct_frac_prev + abs(gen_subsys_frac - gen_subsys_frac_prev)/gen_subsys_frac_prev
+OEM_frac = payload_frac + gen_subsys_frac + struct_frac
+
+error = (abs(pow_frac - pow_frac_prev)/pow_frac_prev + abs(payload_frac - payload_frac_prev)/payload_frac_prev + abs(struct_frac - struct_frac_prev)/struct_frac_prev + abs(gen_subsys_frac - gen_subsys_frac_prev)/gen_subsys_frac_prev + abs(MTOW-MTOW_current)/MTOW)/5.0
+
+# error = abs(MTOW-MTOW_current)/MTOW
 
 error_vec = np.ones(5) * error
-monitoring_var = np.linalg.norm(abs(error_vec - np.mean(error_vec)))
+monitoring_var = np.linalg.norm(error_vec)
 
 iterations = 0
 while monitoring_var > 5e-3 or iterations < 5:
-    AHAPS = Aircraft(MTOW_guess=MTOW, TAS=TAS_initial, gamma=gamma, lat=lat, day_margin=day_margin, DoD=DoD, airframe=planform, use_batt=use_batt, energy_delta=energy_delta)
+    AHAPS = Aircraft(MTOW_guess=MTOW, OEM_frac=OEM_frac, TAS=TAS_initial, gamma=gamma, lat=lat, day_margin=day_margin, DoD=DoD, airframe=planform, use_batt=use_batt, energy_delta=energy_delta)
 
     MTOW_current = AHAPS.pow_store.mass + AHAPS.solar.mass + AHAPS.payload.mass + AHAPS.internal_struct.total_structure_weight + AHAPS.compute_subsys_mass()
 
@@ -66,9 +73,9 @@ while monitoring_var > 5e-3 or iterations < 5:
     struct_frac = AHAPS.internal_struct.total_structure_weight / MTOW_current
     gen_subsys_frac = AHAPS.compute_subsys_mass() / MTOW_current
 
-    error = abs(pow_frac - pow_frac_prev)/pow_frac_prev + abs(payload_frac - payload_frac_prev)/payload_frac_prev + abs(struct_frac - struct_frac_prev)/struct_frac_prev + abs(gen_subsys_frac - gen_subsys_frac_prev)/gen_subsys_frac_prev
+    error = (abs(pow_frac - pow_frac_prev)/pow_frac_prev + abs(payload_frac - payload_frac_prev)/payload_frac_prev + abs(struct_frac - struct_frac_prev)/struct_frac_prev + abs(gen_subsys_frac - gen_subsys_frac_prev)/gen_subsys_frac_prev + abs(MTOW-MTOW_current)/MTOW)/5.0
 
-    MTOW += (MTOW_current-MTOW) * 0.1
+    MTOW += (MTOW_current-MTOW) * 0.05
     planform.S = AHAPS.airframe.S
 
     pow_frac_prev = pow_frac
@@ -76,10 +83,12 @@ while monitoring_var > 5e-3 or iterations < 5:
     struct_frac_prev = struct_frac
     gen_subsys_frac_prev = gen_subsys_frac
 
+    OEM_frac = payload_frac + gen_subsys_frac + struct_frac
+
     iterations += 1
     error_vec = np.roll(error_vec, 1)
     error_vec[0] = error
-    monitoring_var = np.linalg.norm(abs(error_vec - np.mean(error)))
+    monitoring_var = np.linalg.norm(error_vec)
 
     print("Iteration:", iterations)
     print("Monitoring variable:", monitoring_var)

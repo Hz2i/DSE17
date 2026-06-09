@@ -383,7 +383,7 @@ class SparGeometryOptimization:
         opti.minimize(g["total_weight"])
 
         # ===== SOLVE =====
-        sol = opti.solve()  # Add verbose to see solver output
+        sol = opti.solve(verbose=False)  # Add verbose to see solver output
         
         result = {}
         for k, v in g.items():

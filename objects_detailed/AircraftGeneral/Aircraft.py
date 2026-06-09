@@ -19,8 +19,9 @@ from objects_detailed.Methods.SparGeometryParam import SparGeometryOptimization,
 # It can be assumed that the general logic of this class (at least pertaining to airframe sizing) shall not significantly change.
 
 class Aircraft:
-    def __init__(self, MTOW_guess=200.0, TAS=25.0, h=18500.0, gamma=0.0, lat=30.0, day_margin=0, DoD=0.8, airframe=airframe(), comp=ComputerSystem(), comms=CommunicationSystem(), flight_con=FlightConditionsSystem(), payload=PayloadSystem(), ctrls=ControlSystem(), use_batt=True, energy_delta=0.0):
+    def __init__(self, MTOW_guess=200.0, OEM_frac=0.45, TAS=25.0, h=18500.0, gamma=0.0, lat=30.0, day_margin=0, DoD=0.8, airframe=airframe(), comp=ComputerSystem(), comms=CommunicationSystem(), flight_con=FlightConditionsSystem(), payload=PayloadSystem(), ctrls=ControlSystem(), use_batt=True, energy_delta=0.0):
         self.MTOW = MTOW_guess
+        self.OEM_frac = OEM_frac
         self.const = Constants()
 
         self.airframe = airframe
@@ -49,7 +50,7 @@ class Aircraft:
         self.CD0 = None
         self.CL_opt = None
 
-        self.size_wing()
+        self.inner_iter()
         self.size_structure()
 
     def update_flight_conditions(self, TAS_new=20.0, h_new=18000.0, gamma_new=0.0):
@@ -60,14 +61,14 @@ class Aircraft:
         self.prop = PropulsionSystem(T=self.T_req, velocity=self.TAS, alt=self.h)
 
 
-    def size_wing(self):
+    def inner_iter(self):
         err = 1.0e3
         iterations = 0
         damping = 0.25
         surface_check = True
 
         # Ensure the first iteration of area sizing undershoots:
-        self.airframe.S = self.airframe.S / 5.0
+        self.airframe.S = self.airframe.S / 2.0
 
         # Ensure current Cl and CD values are in scope:
         CL_current = None
@@ -106,7 +107,14 @@ class Aircraft:
 
             self.alpha = (CL_current - self.airframe.CL0)/self.airframe.CL_alpha
 
+            # self.size_structure()
+            # OEM_temp = self.internal_struct.total_structure_weight + self.compute_subsys_mass()
+            # MTOW_temp = OEM_temp/self.OEM_frac
+
             self.T_req = (self.MTOW*self.const.g/self.CL_CD + self.MTOW*self.const.g * np.sin(np.radians(self.gamma)))/self.airframe.nacelles.nr_of_engines
+
+            # self.T_req = (MTOW_temp*self.const.g/self.CL_CD + MTOW_temp*self.const.g * np.sin(np.radians(self.gamma)))/self.airframe.nacelles.nr_of_engines
+
             self.prop = PropulsionSystem(T=self.T_req, velocity=self.TAS_cruise, alt=self.h, rpm=1000.0, torque=4.0, motor_temp=-40.0,propeller_diameter=1.5)
 
             self.Pow_motor = self.prop.power_required * self.airframe.nacelles.nr_of_engines
@@ -142,14 +150,14 @@ class Aircraft:
     def size_structure(self):
         self.airframe.compute_load_distribution(alpha=self.alpha, TAS=self.TAS_cruise, alt=self.h, res=20)
 
-        I_lift_spar, I_lift_connection = bending_stress_lift(airframe=self.airframe, ult_safety_factor=1.5)
-        I_drag_spar, I_drag_connection = bending_stress_drag(airframe=self.airframe, ult_safety_factor=1.5)
-        t_skin = torsional_stress(airframe=self.airframe, ult_safety_factor=1.5)
+        I_lift_spar, I_lift_connection = bending_stress_lift(airframe=self.airframe, ult_safety_factor=2.0)
+        I_drag_spar, I_drag_connection = bending_stress_drag(airframe=self.airframe, ult_safety_factor=2.0)
+        t_skin = torsional_stress(airframe=self.airframe, ult_safety_factor=2.0)
 
-        print("I_xx_spar_req:", I_lift_spar)
-        print("I_yy_spar_req:", I_drag_spar)
-        print("I_xx_sleeve_req:", I_lift_connection)
-        print("I_yy_sleeve_req:", I_drag_connection)
+        # print("I_xx_spar_req:", I_lift_spar)
+        # print("I_yy_spar_req:", I_drag_spar)
+        # print("I_xx_sleeve_req:", I_lift_connection)
+        # print("I_yy_sleeve_req:", I_drag_connection)
 
         airfoil_geometry = AirfoilGeometry(self.airframe, t_skin_airfoil=t_skin, Available_width=0.1, plot=False)
 
