@@ -8,7 +8,7 @@ import os
 # Add the folder containing characteristics_airframe.py to the Python path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../Characteristics')))
 from Airframe import airframe as Airframe
-from Components_Materials import CFRP, GLARE, Aluminum7075, Mylar, Silicone_Rubber, PA6
+from Components_Materials import CFRP, Titanium, Aluminum7075, Mylar, Silicone_Rubber, PA6
 import objects_detailed.Methods.StructuralAnalysis as sa
 
 optimize_variables = {
@@ -218,7 +218,7 @@ class SparGeometryOptimization:
         #Min Limits of Thicknesses based on manufacturability and material limitsc
         #Material instances
         cfrp = CFRP()
-        glare = GLARE()
+        titanium = Titanium()
         alu = Aluminum7075()
         rubber = Silicone_Rubber()
         mylar = Mylar()
@@ -226,10 +226,10 @@ class SparGeometryOptimization:
 
         # Min Limits of Thicknesses based on manufacturability and material limits
         self.CFRP_LIMIT_t = cfrp.min_thickness
-        self.GLARE_LIMIT_t = glare.min_thickness
+        self.Titanium_LIMIT_t = titanium.min_thickness
 
         # Densities
-        self.GLARE_rho = glare.rho
+        self.Titanium_rho = titanium.rho
         self.CFRP_rho = cfrp.rho
         self.Alu_rho = alu.rho
         self.Rubber_rho = rubber.rho
@@ -241,6 +241,7 @@ class SparGeometryOptimization:
         #print(f"Optimized Geometry: {self.optimized_geometry}")
         self.total_mass_spar, self.total_length_inc_clamp, self.total_span_exc_sleeve_clamp = self.calc_Mass_structure_span(self.optimized_geometry)
         self.Weight_skin = self.calculate_airfoil_skin_weight(self.optimized_geometry, self.total_length_inc_clamp, self.total_span_exc_sleeve_clamp)
+        self.Weight_ribs = self.calculate_rib_weight(airframe, self.optimized_geometry)
         self.total_structure_weight = self.total_mass_spar + self.Weight_skin
         if Plot:
             self.Plot_optimized_geometry(self.optimized_geometry["r_top"], self.optimized_geometry["t_spar"], self.optimized_geometry["t_sleeve"], self.optimized_geometry["Clamp_width"], self.optimized_geometry["eccentricity_factor"])
@@ -304,8 +305,8 @@ class SparGeometryOptimization:
         I_yy_spar = self.calc_I_yy_ellipse(b_spar_out, a_spar_out) - self.calc_I_yy_ellipse(b_spar_in, a_spar_in)
 
         #Cross Sectional Weight
-        weight_clamp = A_clamp_2x * self.pa_rho
-        weight_sleeve = A_sleeve * self.GLARE_rho
+        weight_clamp = A_clamp_2x * self.pa_rho * 0.5 #Assume Clamp is hollow structure
+        weight_sleeve = A_sleeve * self.Titanium_rho
         weight_spar = A_spar * self.CFRP_rho
         weight_rubber = A_rubber * self.Rubber_rho
         total_sl_and_sp_weight = weight_sleeve + weight_spar + weight_rubber
@@ -317,7 +318,7 @@ class SparGeometryOptimization:
             "t_sleeve": t_sleeve,
             "Clamp_width": Clamp_width,
             "eccentricity_factor": eccentricity_factor,
-            # Dims
+            # Dims 
             "r_top": r_top,
             "Clamp_height": h_clamp,
             "a_sleeve_out": a_sleeve_out,
@@ -359,7 +360,7 @@ class SparGeometryOptimization:
         opti = asb.Opti()
 
         t_spar = opti.variable(init_guess=float(self.t_spar), lower_bound=self.CFRP_LIMIT_t, upper_bound=0.02)
-        t_sleeve = opti.variable(init_guess=float(self.t_sleeve), lower_bound=self.GLARE_LIMIT_t, upper_bound=0.02)
+        t_sleeve = opti.variable(init_guess=float(self.t_sleeve), lower_bound=self.Titanium_LIMIT_t, upper_bound=0.02)
         clamp_width = opti.variable(init_guess=float(self.t_connection), lower_bound=0.02, upper_bound=min(self.Available_width, 0.3))
         eccentricity_factor = opti.variable(init_guess=float(self.eccentricity_factor), lower_bound=self.min_eccentricity_factor, upper_bound=10.0)
 
@@ -370,7 +371,7 @@ class SparGeometryOptimization:
         opti.subject_to(g["Clamp_width"] <= self.Available_width)
         opti.subject_to(g["Clamp_height"]*2 <= self.Available_height)
         opti.subject_to(g["t_spar"] >= self.CFRP_LIMIT_t)
-        opti.subject_to(g["t_sleeve"] >= self.GLARE_LIMIT_t)
+        opti.subject_to(g["t_sleeve"] >= self.Titanium_LIMIT_t)
         
         # Ensure clamp can physically fit the sleeve (loosen this constraint)
         opti.subject_to(g["Clamp_width"] >= (2*self.t_bolts + 2*g["b_sleeve_out"]))  # Clamp width must accommodate the sleeve and bolts
@@ -533,7 +534,52 @@ class SparGeometryOptimization:
         weight_airfoil_skin = volume_airfoil_skin * self.Mylar_rho  # Use Mylar density for skin weight estimation, as it's a common lightweight material for aerodynamic skins
         #print(f"Estimated Airfoil Skin Weight: {weight_airfoil_skin:.4f} kg")
         return weight_airfoil_skin
-
+    def calculate_rib_weight(self, airframe, optimized_geometry, safety_factor=3.0):            # Analyze buckling performance
+        a_spar = optimized_geometry["a_spar_out"]
+        b_spar = optimized_geometry["b_spar_out"]
+        r_spar = optimized_geometry["t_spar"]
+        a_sleeve = optimized_geometry["a_sleeve_out"]
+        b_sleeve = optimized_geometry["b_sleeve_out"]
+        r_sleeve = optimized_geometry["t_sleeve"]
+        clamping_factor = 2.046 # fixed free
+        Titanium_mat = Titanium()
+        CFRP_mat = CFRP()
+        try:
+            I_spar, I_sleeve = sa.bending_stress_lift(airframe, 3) # inertia calculations
+        except:
+            airframe.compute_load_distribution()
+            I_spar, I_sleeve = sa.bending_stress_lift(airframe, 3)
+        loading, spacing = sa.internal_loading_dMx(airframe) # get loading distribution
+        spacing = abs(spacing[::-1])
+        stress = loading*safety_factor*airframe.foil.max_thickness()*airframe.c_r/(2*min(I_spar, I_sleeve)) # calculate stresses at root with 3x safety factor, to find worst case buckling scenario
+        Area_spar = np.pi*(a_spar*b_spar- (a_spar-r_spar)*(b_spar-r_spar)) # simple area calculations
+        Area_sleeve = np.pi*(a_sleeve*b_sleeve- (a_sleeve-r_sleeve)*(b_sleeve-r_sleeve))
+        max_force_spar = Area_spar * stress # max force from stress formula
+        max_force_sleeve = Area_sleeve * stress
+        spar_rib_spacing = np.sqrt(clamping_factor*np.pi**2*CFRP_mat.E*I_spar/(max_force_spar)) # SAD buckling formula
+        sleeve_rib_spacing = np.sqrt(clamping_factor*np.pi**2*Titanium_mat.E*I_sleeve/max_force_sleeve)
+        if np.mean(spar_rib_spacing[:len(spar_rib_spacing)-2]) < np.mean(sleeve_rib_spacing[:len(sleeve_rib_spacing)-2]): # end goes to inf
+            limiting_spacing = spar_rib_spacing
+        else:
+            limiting_spacing = sleeve_rib_spacing # i dont care if they equal, aint no way thats happening    print(spar_rib_spacing)
+        used_spacings = []
+        position = 0.5
+        pos = [0,0.5]
+        while position <= spacing[-1]:
+            idx = np.searchsorted(spacing, position, side='right') - 1
+            used_spacings.append(limiting_spacing[idx])
+            position += limiting_spacing[idx]
+            pos.append(position)
+        used_spacings.pop()
+        pos.pop()
+        A, p = sa.airfoil_properties(airframe.foil, airframe.c_r)
+        self.ribs_positions = pos
+        self.min_no_ribs = 2*len(pos)-1
+        mass_web = 0.2*0.001*A*CFRP_mat.rho # web is 20% of total area, minimum thickness again
+        mass_cap = 0.01*0.001*p*CFRP_mat.rho #1cm cap width, minimum thickness
+        mass_rib = mass_web+mass_cap
+        total_mass = mass_rib*self.min_no_ribs
+        return total_mass
 
 if __name__ == "__main__":
     airframe = Airframe()

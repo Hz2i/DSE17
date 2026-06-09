@@ -20,7 +20,7 @@ class PropulsionSystem:
         # ---------------------------------------------------------
         # Trade-off parameters
         # ---------------------------------------------------------
-        self.airfoil_name = "SD7037"
+        self.airfoil_name = "sd7037"
         self.Nb = 2
         self.num_engines = 4
         
