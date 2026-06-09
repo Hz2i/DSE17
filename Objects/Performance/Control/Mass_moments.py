@@ -564,6 +564,62 @@ class Mass_moments:
 
         return M_total, I_total
 
+    def radius_of_gyration(self, I_total, M_total):
+        """
+        Calculate the dimensional radius of gyration about the x, y, and z axes.
+
+        Parameters
+        ----------
+        I_total : np.ndarray (3x3)
+            Combined inertia tensor of the aircraft [kg·m²].
+        M_total : float
+            Total mass of the aircraft [kg].
+
+        Returns
+        -------
+        k_x, k_y, k_z : float
+            Radius of gyration about the x, y, and z axes [m].
+        """
+        I_xx = I_total[0, 0]
+        I_yy = I_total[1, 1]
+        I_zz = I_total[2, 2]
+
+        k_x = np.sqrt(I_xx / M_total)
+        k_y = np.sqrt(I_yy / M_total)
+        k_z = np.sqrt(I_zz / M_total)
+
+        return k_x, k_y, k_z
+
+    def non_dimensional_radius_of_gyration(self, I_total, M_total, reference_length=None):
+        """
+        Calculate the non-dimensional radius of gyration about the x, y, and z axes.
+        Normalizes by the wingspan (b) by default, but can use any reference length.
+
+        Parameters
+        ----------
+        I_total : np.ndarray (3x3)
+            Combined inertia tensor of the aircraft [kg·m²].
+        M_total : float
+            Total mass of the aircraft [kg].
+        reference_length : float, optional
+            Reference length for normalization (default: wingspan `b`).
+
+        Returns
+        -------
+        k_x_nd, k_y_nd, k_z_nd : float
+            Non-dimensional radius of gyration about the x, y, and z axes.
+        """
+        if reference_length is None:
+            reference_length = self.b  # Default: wingspan
+
+        k_x, k_y, k_z = self.radius_of_gyration(I_total, M_total)
+
+        k_x_nd = k_x / reference_length
+        k_y_nd = k_y / reference_length
+        k_z_nd = k_z / reference_length
+
+        return k_x_nd, k_y_nd, k_z_nd
+
 # ======================================================================== #
 #  Example
 # ======================================================================== #
@@ -667,3 +723,17 @@ print(np.round(I_payload, 4))
 I_total = I_spar + I_batt + I_skin +I_solar + I_ribs + I_motors + I_payload
 print("\nCombined inertia tensor [kg·m²]:")
 print(np.round(I_total, 4))
+
+# --- Calculate dimensional radius of gyration ---
+k_x, k_y, k_z = cs.radius_of_gyration(I_total, M_total=200.0)
+print("\nDimensional Radius of Gyration:")
+print(f"k_x (roll axis): {k_x:.4f} m")
+print(f"k_y (pitch axis): {k_y:.4f} m")
+print(f"k_z (yaw axis): {k_z:.4f} m")
+
+# --- Calculate non-dimensional radius of gyration (normalized by wingspan) ---
+k_x_nd, k_y_nd, k_z_nd = cs.non_dimensional_radius_of_gyration(I_total, M_total=200.0)
+print("\nNon-Dimensional Radius of Gyration (normalized by wingspan):")
+print(f"k_x/b: {k_x_nd:.4f}")
+print(f"k_y/b: {k_y_nd:.4f}")
+print(f"k_z/b: {k_z_nd:.4f}")
