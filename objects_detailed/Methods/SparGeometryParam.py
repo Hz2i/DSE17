@@ -239,6 +239,7 @@ class SparGeometryOptimization:
         #print(f"Optimized Geometry: {self.optimized_geometry}")
         self.total_mass_spar, self.total_length_inc_clamp, self.total_span_exc_sleeve_clamp = self.calc_Mass_structure_span(self.optimized_geometry)
         self.Weight_skin = self.calculate_airfoil_skin_weight(self.optimized_geometry, self.total_length_inc_clamp, self.total_span_exc_sleeve_clamp)
+        self.Weight_ribs = self.calculate_rib_weight(airframe, self.optimized_geometry)
         self.total_structure_weight = self.total_mass_spar + self.Weight_skin
         if Plot:
             self.Plot_optimized_geometry(self.optimized_geometry["r_top"], self.optimized_geometry["t_spar"], self.optimized_geometry["t_sleeve"], self.optimized_geometry["Clamp_width"], self.optimized_geometry["eccentricity_factor"])
@@ -315,7 +316,7 @@ class SparGeometryOptimization:
             "t_sleeve": t_sleeve,
             "Clamp_width": Clamp_width,
             "eccentricity_factor": eccentricity_factor,
-            # Dims
+            # Dims 
             "r_top": r_top,
             "Clamp_height": h_clamp,
             "a_sleeve_out": a_sleeve_out,
@@ -531,7 +532,52 @@ class SparGeometryOptimization:
         weight_airfoil_skin = volume_airfoil_skin * self.Mylar_rho  # Use Mylar density for skin weight estimation, as it's a common lightweight material for aerodynamic skins
         #print(f"Estimated Airfoil Skin Weight: {weight_airfoil_skin:.4f} kg")
         return weight_airfoil_skin
+    def calculate_rib_weight(self, airframe, optimized_geometry, safety_factor=3.0):            # Analyze buckling performance
+        a_spar = optimized_geometry["a_spar_out"]
+        b_spar = optimized_geometry["b_spar_out"]
+        r_spar = optimized_geometry["t_spar"]
+        a_sleeve = optimized_geometry["a_sleeve_out"]
+        b_sleeve = optimized_geometry["b_sleeve_out"]
+        r_sleeve = optimized_geometry["t_sleeve"]
+        clamping_factor = 2.046 # fixed free
+        GLARE_mat = GLARE()
+        CFRP_mat = CFRP()
+        try:
+            I_spar, I_sleeve = sa.bending_stress_lift(airframe, 3) # inertia calculations
+        except:
+            airframe.compute_load_distribution()
+            I_spar, I_sleeve = sa.bending_stress_lift(airframe, 3)
+        loading, spacing = sa.internal_loading_dMx(airframe) # get loading distribution
+        spacing = abs(spacing[::-1])
+        stress = loading*safety_factor*airframe.foil.max_thickness()*airframe.c_r/(2*min(I_spar, I_sleeve)) # calculate stresses at root with 3x safety factor, to find worst case buckling scenario
+        Area_spar = np.pi*(a_spar*b_spar- (a_spar-r_spar)*(b_spar-r_spar)) # simple area calculations
+        Area_sleeve = np.pi*(a_sleeve*b_sleeve- (a_sleeve-r_sleeve)*(b_sleeve-r_sleeve))
+        max_force_spar = Area_spar * stress # max force from stress formula
+        max_force_sleeve = Area_sleeve * stress
+        spar_rib_spacing = np.sqrt(clamping_factor*np.pi**2*CFRP_mat.E*I_spar/(max_force_spar)) # SAD buckling formula
+        sleeve_rib_spacing = np.sqrt(clamping_factor*np.pi**2*GLARE_mat.E*I_sleeve/max_force_sleeve)
+        if np.mean(spar_rib_spacing[:len(spar_rib_spacing)-2]) < np.mean(sleeve_rib_spacing[:len(sleeve_rib_spacing)-2]): # end goes to inf
+            limiting_spacing = spar_rib_spacing
+        else:
+            limiting_spacing = sleeve_rib_spacing # i dont care if they equal, aint no way thats happening    print(spar_rib_spacing)
+        used_spacings = []
+        position = 0.5
+        pos = [0,0.5]
+        while position <= spacing[-1]:
+            idx = np.searchsorted(spacing, position, side='right') - 1
+            used_spacings.append(limiting_spacing[idx])
+            position += limiting_spacing[idx]
+            pos.append(position)
+        used_spacings.pop()
+        pos.pop()
+        A, p = sa.airfoil_properties(airframe.foil, airframe.c_r)
 
+        min_no_ribs = 2*len(pos)-1
+        mass_web = 0.2*0.001*A*CFRP_mat.rho # web is 20% of total area, minimum thickness again
+        mass_cap = 0.01*0.001*p*CFRP_mat.rho #1cm cap width, minimum thickness
+        mass_rib = mass_web+mass_cap
+        total_mass = mass_rib*min_no_ribs
+        return total_mass
 
 if __name__ == "__main__":
     airframe = Airframe()

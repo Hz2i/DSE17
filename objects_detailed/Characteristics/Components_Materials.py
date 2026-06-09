@@ -53,6 +53,8 @@ class GLARE:
         self.sigma=403.66e6#https://www.academia.edu/104528943/ON_FABRICATION_AND_TESTING_OF_GLARE
         self.rho=2400#https://www.researchgate.net/figure/Properties-of-Glare-components_tbl1_343586328
         self.min_thickness=0.0005
+        self.E = 55.5e9
+        self.shear = 181.4e6 # https://scispace.com/pdf/plasticity-correction-factors-for-buckling-of-flat-4y7cnffw7y.pdf
         #mylar + ressst subsystems in code
 
 class Silicone_Rubber:
