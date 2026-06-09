@@ -28,7 +28,7 @@ lat = 30.0
 day_margin = 0
 use_batt = True
 energy_delta = 0.0
-DoD = 0.7
+DoD = 0.8
 night_time = 0.0
 
 S = 36.0
@@ -83,7 +83,7 @@ while monitoring_var > 5e-3 or iterations < 5:
 
     error = (abs(pow_frac - pow_frac_prev)/pow_frac_prev + abs(payload_frac - payload_frac_prev)/payload_frac_prev + abs(struct_frac - struct_frac_prev)/struct_frac_prev + abs(gen_subsys_frac - gen_subsys_frac_prev)/gen_subsys_frac_prev + abs(MTOW-MTOW_current)/MTOW)/5.0
 
-    MTOW += (MTOW_current-MTOW) * 1
+    MTOW += (MTOW_current-MTOW) * 1.0
     planform.S = AHAPS.airframe.S
 
     pow_frac_prev = pow_frac
