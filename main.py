@@ -67,7 +67,7 @@ iterations = 0
 while monitoring_var > 5e-3 or iterations < 5:
     AHAPS = Aircraft(MTOW_guess=MTOW, OEM_frac=OEM_frac, TAS=TAS_initial, gamma=gamma, lat=lat, day_margin=day_margin, DoD=DoD, airframe=planform, use_batt=use_batt, energy_delta=energy_delta)
 
-    MTOW_current = AHAPS.pow_store.mass + AHAPS.solar.mass + AHAPS.payload.mass + AHAPS.internal_struct.total_structure_weight + AHAPS.Prop_mass + AHAPS.compute_subsys_mass()
+    MTOW_current = AHAPS.pow_store.mass + AHAPS.solar.mass + AHAPS.payload.mass + AHAPS.internal_struct.total_structure_weight + AHAPS.Prop_mass + AHAPS.compute_subsys_mass() + m_skid()
 
 
     print(f'Difference between guess and current MTOW: {MTOW_current - MTOW:.2f} kg')

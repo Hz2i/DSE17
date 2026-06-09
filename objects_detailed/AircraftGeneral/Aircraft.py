@@ -81,7 +81,7 @@ class Aircraft:
         while surface_check or final_sim:
             self.airframe.define_geometry()
             if simulation_required or final_sim:
-                self.airframe.compute_polar(alt=self.h, TAS=self.TAS, res=5)
+                self.airframe.compute_polar(alt=self.h, TAS=self.TAS, res=5, plot=False)
                 S_simulated = self.airframe.S
                 simulation_required = False
 
@@ -99,8 +99,10 @@ class Aircraft:
                 self.CL_CD = CL_current/CD_current
                 self.TAS_cruise = self.TAS
 
-            if CL_current > 0.8* self.airframe.CL_max:
-                CL_current = 0.8* self.airframe.CL_max
+            cl_margin = 1.0
+
+            if CL_current > cl_margin * self.airframe.CL_max:
+                CL_current = cl_margin * self.airframe.CL_max
                 CD_current = self.airframe.CD0 + self.airframe.K1 * CL_current + self.airframe.K2 * CL_current**2
                 self.CL_CD = CL_current/CD_current
                 self.TAS_cruise = (self.MTOW*self.const.g / (0.5 * am.Atmosphere(self.h).density[0] * self.airframe.S * CL_current))**0.5
@@ -112,7 +114,7 @@ class Aircraft:
             # MTOW_temp = OEM_temp/self.OEM_frac
 
             # REMOVE LATER!!!
-            self.CL_CD += 10.0
+            # self.CL_CD += 10.0
 
             self.T_req = self.MTOW*self.const.g/self.CL_CD + self.MTOW*self.const.g * np.sin(np.radians(self.gamma))
             self.prop = PropulsionSystem(required_thrust_cruise=self.T_req, v_inf_cruise=self.TAS_cruise, m_TO=self.MTOW, S=self.airframe.S,CL_max=self.airframe.CL_max)
