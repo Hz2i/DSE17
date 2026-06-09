@@ -154,24 +154,7 @@ def assess_packing_feasibility(packets, visualize=False):
 
 
 def main():
-    con_list = [
-        {'name': 'Wing sec 1',     'width': 4.72, 'height': 1.32, 'depth': 0.2},
-        {'name': 'Wing sec 2',     'width': 4.72, 'height': 1.32, 'depth': 0.2},
-        {'name': 'Wing sec 3',     'width': 4.72, 'height': 1.32, 'depth': 0.2},
-        {'name': 'Wing sec 4',     'width': 4.72, 'height': 1.32, 'depth': 0.2},
-        {'name': 'Wing sec 5',     'width': 4.72, 'height': 1.32, 'depth': 0.2},
-        {'name': 'Wing sec 6',     'width': 4.72, 'height': 1.32, 'depth': 0.2},
-        {'name': 'Wing sec 7',     'width': 4.72, 'height': 1.32, 'depth': 0.2},
-        {'name': 'Tail wing',      'width': 5.7,  'height': 1.14, 'depth': 0.14},
-        {'name': 'rudder',         'width': 2.48, 'height': 1.24, 'depth': 0.15},
-        {'name': 'fuselage sec 1', 'width': 5.0,  'height': 0.5,  'depth': 0.5},
-        {'name': 'fuselage sec 2', 'width': 5.0,  'height': 0.5,  'depth': 0.5},
-        {'name': 'proppelor 1',    'width': 0.3,  'height': 0.3,  'depth': 1.5},
-        {'name': 'proppelor 2',    'width': 0.3,  'height': 0.3,  'depth': 1.5},
-        {'name': 'proppelor 3',    'width': 0.3,  'height': 0.3,  'depth': 1.5},
-        {'name': 'proppelor 4',    'width': 0.3,  'height': 0.3,  'depth': 1.5},
-    ]
-
+    
     wing_list = [
         {'name': 'Wing sec 1', 'width': 4.30, 'height': 1.20, 'depth': 0.2},
         {'name': 'Wing sec 2', 'width': 4.30, 'height': 1.20, 'depth': 0.2},
