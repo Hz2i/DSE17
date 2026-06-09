@@ -18,7 +18,7 @@ payload_frac_prev = 0.1
 struct_frac_prev = 0.35
 gen_subsys_frac_prev = 0.05
 
-MTOW_initial = 200.0
+MTOW_initial = 120.0
 TAS_initial = 25.0
 gamma = 0.0
 h_cruise = 18500.0
@@ -35,13 +35,15 @@ S = 36.0
 # Flying wing planform:
 fus_geo = fuselage(D=0.5, L1=0.2, L2=0.6, L3=0.2)
 nac_geo = nacelles(nr_of_engines=4)
-planform = airframe(S=S, A=20.0, qc_sweep=0.0*np.pi/180, taper=1.0, dihedral=0.0*np.pi/180.0,fus=fus_geo, nac=nac_geo, display=False, init_polar=False)
+planform = airframe(S=S, A=28.0, qc_sweep=15.0*np.pi/180, taper=0.455, dihedral=0.0*np.pi/180.0,fus=fus_geo, nac=nac_geo, display=False, init_polar=True)
 
 
 MTOW = MTOW_initial
 
 # Compute initial error:
 AHAPS = Aircraft(MTOW_guess=MTOW, TAS=TAS_initial, gamma=gamma, lat=lat, day_margin=day_margin, DoD=DoD, airframe=planform, use_batt=use_batt, energy_delta=energy_delta)
+
+planform.S = AHAPS.airframe.S
 
 pow_frac = (AHAPS.pow_store.mass + AHAPS.solar.mass)/MTOW
 payload_frac = AHAPS.payload.mass_payload / MTOW
@@ -57,34 +59,45 @@ iterations = 0
 while monitoring_var > 5e-3 or iterations < 5:
     AHAPS = Aircraft(MTOW_guess=MTOW, TAS=TAS_initial, gamma=gamma, lat=lat, day_margin=day_margin, DoD=DoD, airframe=planform, use_batt=use_batt, energy_delta=energy_delta)
 
-    pow_frac = (AHAPS.pow_store.mass + AHAPS.solar.mass)/MTOW
-    payload_frac = AHAPS.payload.mass_payload / MTOW
-    struct_frac = AHAPS.internal_struct.total_structure_weight / MTOW
-    gen_subsys_frac = AHAPS.compute_subsys_mass() / MTOW
+    MTOW_current = AHAPS.pow_store.mass + AHAPS.solar.mass + AHAPS.payload.mass + AHAPS.internal_struct.total_structure_weight + AHAPS.compute_subsys_mass()
 
-    MTOW = AHAPS.pow_store.mass + AHAPS.solar.mass + AHAPS.payload.mass_payload
+    pow_frac = (AHAPS.pow_store.mass + AHAPS.solar.mass)/MTOW_current
+    payload_frac = AHAPS.payload.mass / MTOW_current
+    struct_frac = AHAPS.internal_struct.total_structure_weight / MTOW_current
+    gen_subsys_frac = AHAPS.compute_subsys_mass() / MTOW_current
+
+    error = abs(pow_frac - pow_frac_prev)/pow_frac_prev + abs(payload_frac - payload_frac_prev)/payload_frac_prev + abs(struct_frac - struct_frac_prev)/struct_frac_prev + abs(gen_subsys_frac - gen_subsys_frac_prev)/gen_subsys_frac_prev
+
+    MTOW += (MTOW_current-MTOW) * 0.1
+    planform.S = AHAPS.airframe.S
+
+    pow_frac_prev = pow_frac
+    payload_frac_prev = payload_frac
+    struct_frac_prev = struct_frac
+    gen_subsys_frac_prev = gen_subsys_frac
 
     iterations += 1
     error_vec = np.roll(error_vec, 1)
     error_vec[0] = error
-    monitoring_var = np.linalg.norm(abs(error_vec - np.mean(error_vec)))
+    monitoring_var = np.linalg.norm(abs(error_vec - np.mean(error)))
 
     print("Iteration:", iterations)
     print("Monitoring variable:", monitoring_var)
     print("Current error:", error)
     print("Current MTOW estimate:", MTOW)
-    print("Current power system mass fraction estimate:", powM_frac)
-    print("Current structural mass fraction estimate:", )
+    print("Current power system mass fraction estimate:", pow_frac)
+    print("Current structural mass fraction estimate:", struct_frac)
+    print("Current payload mass fraction estimate:", payload_frac)
+    print("Current general subsystem mass fraction estimate:", gen_subsys_frac)
     print("___________________________________")
 
 
 print("Final MTOW:", AHAPS.MTOW)
 print("Final power consumption:", AHAPS.Pow_req)
-print("Final surface area:", AHAPS.wing.S)
+print("Final surface area:", AHAPS.airframe.S)
 print("Final solar panel area:", AHAPS.solar.area)
 print("Final energy storage system mass:", AHAPS.pow_store.mass)
 print("Final energy storage system volume:", AHAPS.pow_store.volume)
-print("Final remaining mass (MTOW - Power System Mass - Payload Mass):", AHAPS.MTOW * (1 - powM_frac) - AHAPS.payload.mass_payload)
 
 
 # K2 = structure.K2

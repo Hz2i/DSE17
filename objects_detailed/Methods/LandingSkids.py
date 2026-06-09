@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def m_skid(nr_of_skids=6,L1=0.3,L2=0.3,L3=0.3,LH=0.4,F2_frac=0.5,W=300.0,n=2.0,cf=1.0,Ro=0.02,t=0.005,print_results=False):
+def m_skid(nr_of_skids=7,L1=0.3,L2=0.3,L3=0.3,LH=0.6,F2_frac=0.5,W=300.0,n=2.0,cf=1.0,Ro=0.01,t=0.004,print_results=False):
 
     # aluminium 6061-T6
     rho = 2700 # kg/m^3
@@ -61,7 +61,5 @@ def m_skid(nr_of_skids=6,L1=0.3,L2=0.3,L3=0.3,LH=0.4,F2_frac=0.5,W=300.0,n=2.0,c
         print(f"Mass of {nr_of_skids} skids: {m*nr_of_skids:.2f} kg \n")
 
     return m*nr_of_skids
-
-
 
 mass = m_skid(print_results=True)

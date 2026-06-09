@@ -90,10 +90,12 @@ class Aircraft:
             if TAS_opt > self.TAS:
                 CL_current = self.CL_opt
                 CD_current = self.airframe.CD0 + self.airframe.K1 * CL_current + self.airframe.K2 * CL_current**2
+                self.CL_CD = CL_current/CD_current
                 self.TAS_cruise = TAS_opt
             else:
                 CL_current = self.MTOW*self.const.g / (0.5 * am.Atmosphere(self.h).density[0] * self.TAS**2 * self.airframe.S)
                 CD_current = self.airframe.CD0 + self.airframe.K1 * CL_current + self.airframe.K2 * CL_current**2
+                self.CL_CD = CL_current/CD_current
                 self.TAS_cruise = self.TAS
 
             if CL_current > 0.8* self.airframe.CL_max:
@@ -128,24 +130,28 @@ class Aircraft:
 
                 iterations += 1
                 print("Inner iteration:", iterations)
+                print("Wing surface:", self.airframe.S)
                 print("Surface difference:", self.solar.area - self.airframe.S)
-        '''
+
         print("Optimal CL:", self.CL_opt)
         print("CL:", CL_current)
-        print("CD0:", self.CD0)
+        print("CD0:", self.airframe.CD0)
         print("CL/CD:", self.CL_CD)
-        print("Oswald efficiency:", self.e)
-        print("Propulsive efficiency:", self.prop.overall_eff)
-        '''
+
 
     def size_structure(self):
         self.airframe.compute_load_distribution(alpha=self.alpha, TAS=self.TAS_cruise, alt=self.h, res=20)
 
-        I_lift_spar, I_lift_connection = bending_stress_lift(airframe=self.airframe)
-        I_drag_spar, I_drag_connection = bending_stress_drag(airframe=self.airframe)
-        t_skin = torsional_stress(airframe=self.airframe)
+        I_lift_spar, I_lift_connection = bending_stress_lift(airframe=self.airframe, ult_safety_factor=1.5)
+        I_drag_spar, I_drag_connection = bending_stress_drag(airframe=self.airframe, ult_safety_factor=1.5)
+        t_skin = torsional_stress(airframe=self.airframe, ult_safety_factor=1.5)
 
-        airfoil_geometry = AirfoilGeometry(self.airframe, t_skin_airfoil=t_skin, plot=False)
+        print("I_xx_spar_req:", I_lift_spar)
+        print("I_yy_spar_req:", I_drag_spar)
+        print("I_xx_sleeve_req:", I_lift_connection)
+        print("I_yy_sleeve_req:", I_drag_connection)
+
+        airfoil_geometry = AirfoilGeometry(self.airframe, t_skin_airfoil=t_skin, Available_width=0.1, plot=False)
 
         self.internal_struct = SparGeometryOptimization(
             I_xx_spar_req=I_lift_spar,
@@ -161,7 +167,7 @@ class Aircraft:
 
 
     def compute_subsys_pow(self):
-        return self.comp.comp_total_power + self.comms.comms_total_power + self.flight_con.FCS_total_power+ self.payload.PS_total_power + self.ctrls.CS_total_power
+        return self.comp.power + self.comms.power + self.flight_con.power+ self.payload.power + self.ctrls.power
 
     def compute_subsys_mass(self):
-        return self.comp.comp_total_mass + self.comms.comms_total_mass + self.flight_con.FCS_total_mass + self.payload.PS_total_mass + self.ctrls.CS_total_mass
+        return self.comp.mass + self.comms.mass + self.flight_con.mass + self.ctrls.mass
