@@ -125,11 +125,6 @@ class Mass_moments:
             self,
             mass,
             length,
-            sweep_deg,
-            dihedral_deg,
-            twist_deg=4.675,
-            cg=(  -2.19, 0.0, 0.0),
-            root=(  0.0, 0.0, 0.0),
     ):
         """
         Inertia tensor of a swept/dihedral spar (slender rod) about the CG.
@@ -158,12 +153,7 @@ class Mass_moments:
     def batteries_inertia_fd(
             self,
             total_mass,
-            span_sections,
-            sweep_deg,
-            dihedral_deg,
-            chord=None,
-            cg=(  -2.19, 0.0, 0.0),
-            root=(  0.0, 0.0, 0.0),
+            span_sections,,
     ):
         """
         Inertia tensor of batteries in the leading 20% of the MH91 airfoil.
@@ -242,11 +232,6 @@ class Mass_moments:
             skin_density,
             skin_thickness,
             span_sections,
-            sweep_deg,
-            dihedral_deg,
-            chord=None,
-            cg=(  -2.19, 0.0, 0.0),
-            root=(  0.0, 0.0, 0.0),
     ):
         """
         Inertia tensor of a constant-thickness shell skin following the MH91
@@ -268,8 +253,6 @@ class Mass_moments:
         I_total      : np.ndarray (3×3)  [kg·m²]
         section_info : list of dict
         """
-        if chord is None:
-            chord = self.c
 
         u         = self._spar_direction()
         perimeter = self._mh91_perimeter()
@@ -382,12 +365,7 @@ class Mass_moments:
             self,
             surface_density,  # kg/m²
             span_limits,  # (y_start, y_end) in meters
-            chord_limits,  # (x_start_frac, x_end_frac) as fraction of chord
-            sweep_deg,
-            dihedral_deg,
-            cg=(-2.19, 0.0, 0.0),
-            root=(0.0, 0.0, 0.0),
-            chord=None,
+            chord_limits,  # (x_start_frac, x_end_frac) as fraction of chord,
     ):
         """
         Inertia tensor of a solar panel modeled as a thin plate with surface mass density.
@@ -408,8 +386,6 @@ class Mass_moments:
         I_total         : np.ndarray (3×3)  inertia tensor about the aircraft CG [kg·m²]
         section_info    : dict                 details about the solar panel
         """
-        if chord is None:
-            chord = self.c
 
         y_start, y_end = span_limits
         x_start_frac, x_end_frac = chord_limits
@@ -418,8 +394,8 @@ class Mass_moments:
         u_spar = self._spar_direction()
 
         # Chordwise limits in meters
-        x_start = x_start_frac * chord
-        x_end = x_end_frac * chord
+        x_start = x_start_frac * self.c
+        x_end = x_end_frac * self.c
 
         # Area and mass of the solar panel
         area = (y_end - y_start) * (x_end - x_start)
@@ -432,13 +408,13 @@ class Mass_moments:
 
         # Centroid in the global body axes
         centroid_global = (
-                np.array(root) +
+                np.array(self.root) +
                 y_centroid_local * u_spar +
                 np.array([x_centroid_local, 0.0, 0.0])  # Assuming chord is aligned with x-axis
         )
 
         # Offset from the aircraft CG
-        d = centroid_global - np.array(cg)
+        d = centroid_global - np.array(self.cg)
 
         # Inertia tensor of a thin plate about its centroid in the local coordinate system
         L = y_end - y_start  # Spanwise length
@@ -583,12 +559,14 @@ class Mass_moments:
         I_xx = I_total[0, 0]
         I_yy = I_total[1, 1]
         I_zz = I_total[2, 2]
+        I_xz = I_total[0,2]
 
         k_x = np.sqrt(I_xx / M_total)
         k_y = np.sqrt(I_yy / M_total)
         k_z = np.sqrt(I_zz / M_total)
+        k_xz = I_xz / M_total
 
-        return k_x, k_y, k_z
+        return k_x, k_y, k_z, k_xz
 
     def non_dimensional_radius_of_gyration(self, I_total, M_total, reference_length=None):
         """
@@ -612,13 +590,14 @@ class Mass_moments:
         if reference_length is None:
             reference_length = self.b  # Default: wingspan
 
-        k_x, k_y, k_z = self.radius_of_gyration(I_total, M_total)
+        k_x, k_y, k_z, k_xz = self.radius_of_gyration(I_total, M_total)
 
         k_x_nd = k_x / reference_length
         k_y_nd = k_y / reference_length
         k_z_nd = k_z / reference_length
+        k_xz_nd = k_xz / (reference_length ** 2)
 
-        return k_x_nd, k_y_nd, k_z_nd
+        return k_x_nd, k_y_nd, k_z_nd, k_xz_nd
 
 # ======================================================================== #
 #  Example
@@ -630,9 +609,7 @@ half_span = cs.b / 2   # 14.4 m
 # --- spar (one half-wing) ---
 I_spar = cs.spar_inertia_fd(
     mass=20,
-    length=half_span,
-    sweep_deg=15,
-    dihedral_deg=2,
+    length=half_span,,
 )
 print("Spar inertia tensor [kg·m²]:")
 print(np.round(I_spar, 4))
@@ -646,8 +623,6 @@ battery_sections = [
 I_batt, batt_info = cs.batteries_inertia_fd(
     total_mass=40.5,
     span_sections=battery_sections,
-    sweep_deg=15,
-    dihedral_deg=2,
 )
 print("\nBattery sections:")
 for s in batt_info:
@@ -661,8 +636,6 @@ I_skin, skin_info = cs.skin_inertia_fd(
     skin_density=1390.0,
     skin_thickness=0.0002,
     span_sections=[(0.0, half_span)],
-    sweep_deg=15,
-    dihedral_deg=2,
 )
 print("\nSkin sections:")
 for s in skin_info:
@@ -692,8 +665,6 @@ I_solar, solar_info = cs.solar_panel_inertia_fd(
     surface_density=0.665,  # kg/m²
     span_limits=solar_span_limits,
     chord_limits=solar_chord_limits,
-    sweep_deg=15,
-    dihedral_deg=2,
 )
 
 print("\nSolar panel inertia tensor [kg·m²]:")
@@ -725,15 +696,17 @@ print("\nCombined inertia tensor [kg·m²]:")
 print(np.round(I_total, 4))
 
 # --- Calculate dimensional radius of gyration ---
-k_x, k_y, k_z = cs.radius_of_gyration(I_total, M_total=200.0)
+k_x, k_y, k_z, k_xz = cs.radius_of_gyration(I_total, M_total=200.0)
 print("\nDimensional Radius of Gyration:")
 print(f"k_x (roll axis): {k_x:.4f} m")
 print(f"k_y (pitch axis): {k_y:.4f} m")
 print(f"k_z (yaw axis): {k_z:.4f} m")
+print(f"k_xz: {k_xz:.4f} m")
 
 # --- Calculate non-dimensional radius of gyration (normalized by wingspan) ---
-k_x_nd, k_y_nd, k_z_nd = cs.non_dimensional_radius_of_gyration(I_total, M_total=200.0)
+k_x_nd, k_y_nd, k_z_nd, k_xz_nd = cs.non_dimensional_radius_of_gyration(I_total, M_total=200.0)
 print("\nNon-Dimensional Radius of Gyration (normalized by wingspan):")
 print(f"k_x/b: {k_x_nd:.4f}")
 print(f"k_y/b: {k_y_nd:.4f}")
 print(f"k_z/b: {k_z_nd:.4f}")
+print(f"k_xz/b^2: {k_xz_nd:.4f} m")
