@@ -110,7 +110,7 @@ class Mass_moments:
         Returns (x_offset, z_offset) relative to the leading edge.
         x: chordwise (positive aft), z: positive down (negated from airfoil y).
         """
-        xy  = MH91_COORDS * self.chord
+        xy  = MH91_COORDS * self.c
         dls = np.hypot(*np.diff(xy, axis=0).T)
         mids = 0.5 * (xy[:-1] + xy[1:])
         x_c =  (mids[:, 0] * dls).sum() / dls.sum()
@@ -345,12 +345,6 @@ class Mass_moments:
     def wing_rib_inertia_full(
             self,
             ribs,
-            root=(0, 0, 0),
-            cg=(0, 0, 0),
-            sweep_deg=0.0,
-            dihedral_deg=0.0,
-            twist_deg=0.0,
-            twist_rate_deg_per_m=0.0
     ):
 
         I_total = np.zeros((3, 3))
@@ -413,7 +407,14 @@ for s in skin_info:
 print(f"Skin inertia tensor [kg·m²]:")
 print(np.round(I_skin, 4))
 
+# --- ribs: full half span ---
+ribs = np.linspace(0, cs.half_b, 10)
+M_ribs, I_ribs = cs.wing_rib_inertia_full(ribs)
+print(M_ribs)
+print(f"Rib inertia tensor [kg·m²]:")
+print(I_ribs)
+
 # --- combined ---
-I_total = I_spar + I_batt + I_skin
+I_total = I_spar + I_batt + I_skin + I_ribs
 print("\nCombined inertia tensor [kg·m²]:")
 print(np.round(I_total, 4))
