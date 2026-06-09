@@ -161,6 +161,15 @@ class PropulsionSystem:
         # motor + ESC losses
         P_elec_cr = P_mech_cr / self.eta_elec
         P_available_cr = P_mech_cr * eta_cr
+
+        # Tip Mach check for cruise
+        n_rps_cr = cruise_rpm / 60.0
+        omega_cr = 2 * np.pi * n_rps_cr
+        R = self.D / 2.0
+        tip_tangential_cr = omega_cr * R
+        tip_speed_cr = np.sqrt(tip_tangential_cr**2 + self.v_inf_cr**2)
+        a_cr = self.atmo_cr.speed_of_sound()
+        tip_mach_cr = tip_speed_cr / a_cr if a_cr > 0 else 0.0
         
         # =========================================================
         # Take-Off Analysis
@@ -190,6 +199,14 @@ class PropulsionSystem:
         # Final evaluation at the exact Take-Off RPM
         T_to, M_to, P_mech_to, eta_to = self._evaluate_bemt(v_TO, takeoff_rpm, self.D, self.rho_to, cl_interp_to, cd_interp_to)
         P_elec_to = P_mech_to / self.eta_elec
+
+        # Tip Mach check for Take-Off
+        n_rps_to = takeoff_rpm / 60.0
+        omega_to = 2 * np.pi * n_rps_to
+        tip_tangential_to = omega_to * (self.D / 2.0)
+        tip_speed_to = np.sqrt(tip_tangential_to**2 + v_TO**2)
+        a_to = self.atmo_to.speed_of_sound()
+        tip_mach_to = tip_speed_to / a_to if a_to > 0 else 0.0
 
         # ========================================================
         # mass estimate
@@ -221,6 +238,7 @@ class PropulsionSystem:
         print(f"Propeller Aerodynamic Eff: {eta_cr * 100:.2f} %")
         print(f"Total Aircraft Elec Pwr  : {(P_elec_cr * self.num_engines) / 1000.0:.3f} kW")
         print(f"Total Power Available at Propeller: {(P_available_cr * self.num_engines) / 1000.0:.3f} kW")
+        print(f"Tip Mach (cruise)        : {tip_mach_cr:.3f} {'OK' if tip_mach_cr < 0.7 else 'WARNING: >0.7'}")
         
         print("\n=======================================================")
         print(f"                      TAKE-OFF")
@@ -238,6 +256,7 @@ class PropulsionSystem:
         print(f"  Electrical Power Draw  : {P_elec_to:.2f} W")
         print(f"  Propeller Aerodynamic Eff: {eta_to * 100:.2f} %")
         print("-------------------------------------------------------")
+        print(f"  Tip Mach (take-off)     : {tip_mach_to:.3f} {'OK' if tip_mach_to < 0.7 else 'WARNING: >0.7'}")
         print(f"TOTAL AIRCRAFT (4 Engines):")
         print(f"  Total Take-Off Thrust  : {T_to * self.num_engines:.2f} N")
         print(f"  Total Electrical Power : {(P_elec_to * self.num_engines) / 1000.0:.3f} kW")
