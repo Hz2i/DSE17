@@ -310,6 +310,102 @@ class Mass_moments:
 
         return I_total, section_info
 
+    def solar_panel_inertia_fd(
+            self,
+            surface_density,  # kg/m²
+            span_limits,  # (y_start, y_end) in meters
+            chord_limits,  # (x_start_frac, x_end_frac) as fraction of chord
+            sweep_deg,
+            dihedral_deg,
+            cg=(-2.19, 0.0, 0.0),
+            root=(0.0, 0.0, 0.0),
+            chord=None,
+    ):
+        """
+        Inertia tensor of a solar panel modeled as a thin plate with surface mass density.
+
+        Parameters
+        ----------
+        surface_density : float   surface mass density of the solar panel [kg/m²]
+        span_limits     : tuple   (y_start, y_end) spanwise limits of the solar panel [m]
+        chord_limits    : tuple   (x_start_frac, x_end_frac) chordwise limits (fraction of chord)
+        sweep_deg       : float   sweep angle of the wing [deg]
+        dihedral_deg    : float   dihedral angle of the wing [deg]
+        cg              : tuple   aircraft CG in body axes
+        root            : tuple   wing root in body axes
+        chord           : float   chord length of the wing [m] (defaults to self.c)
+
+        Returns
+        -------
+        I_total         : np.ndarray (3×3)  inertia tensor about the aircraft CG [kg·m²]
+        section_info    : dict                 details about the solar panel
+        """
+        if chord is None:
+            chord = self.c
+
+        y_start, y_end = span_limits
+        x_start_frac, x_end_frac = chord_limits
+
+        # Unit vector along the spar (spanwise direction)
+        u_spar = self._spar_direction(sweep_deg, dihedral_deg)
+
+        # Chordwise limits in meters
+        x_start = x_start_frac * chord
+        x_end = x_end_frac * chord
+
+        # Area and mass of the solar panel
+        area = (y_end - y_start) * (x_end - x_start)
+        mass = surface_density * area
+
+        # Centroid of the solar panel in the local wing coordinate system
+        x_centroid_local = 0.5 * (x_start + x_end)
+        y_centroid_local = 0.5 * (y_start + y_end)
+        z_centroid_local = 0.0  # Assuming the solar panel lies on the wing surface
+
+        # Centroid in the global body axes
+        centroid_global = (
+                np.array(root) +
+                y_centroid_local * u_spar +
+                np.array([x_centroid_local, 0.0, 0.0])  # Assuming chord is aligned with x-axis
+        )
+
+        # Offset from the aircraft CG
+        d = centroid_global - np.array(cg)
+
+        # Inertia tensor of a thin plate about its centroid in the local coordinate system
+        L = y_end - y_start  # Spanwise length
+        W = x_end - x_start  # Chordwise length
+        I_local = (mass / 12) * np.array([
+            [W ** 2, 0, 0],
+            [0, L ** 2 + W ** 2, 0],
+            [0, 0, L ** 2]
+        ])
+
+        # Rotation matrix from local to global body axes
+        u_spar_normalized = u_spar / np.linalg.norm(u_spar)
+        local_x_axis = np.array([1.0, 0.0, 0.0])
+        local_z_axis = np.cross(u_spar_normalized, local_x_axis)
+        local_z_axis = local_z_axis / np.linalg.norm(local_z_axis)
+        local_y_axis = u_spar_normalized
+
+        R = np.column_stack([local_x_axis, local_y_axis, local_z_axis])
+
+        # Rotate the local inertia tensor to the global body axes
+        I_rotated = R @ I_local @ R.T
+
+        # Apply the parallel axis theorem
+        I_total = I_rotated + self._parallel_axis(mass, d)
+
+        # Section info
+        section_info = {
+            "mass": mass,
+            "area": area,
+            "centroid_global": centroid_global,
+            "span_limits": span_limits,
+            "chord_limits": chord_limits,
+        }
+
+        return I_total, section_info
 
 # ======================================================================== #
 #  Example
@@ -335,7 +431,7 @@ battery_sections = [
 ]
 
 I_batt, batt_info = cs.batteries_inertia_fd(
-    total_mass=45.0,
+    total_mass=40.5,
     span_sections=battery_sections,
     sweep_deg=15,
     dihedral_deg=2,
@@ -350,7 +446,7 @@ print(np.round(I_batt, 4))
 # --- skin: full half-span ---
 I_skin, skin_info = cs.skin_inertia_fd(
     skin_density=1390.0,
-    skin_thickness=0.002,
+    skin_thickness=0.0002,
     span_sections=[(0.0, half_span)],
     sweep_deg=15,
     dihedral_deg=2,
@@ -362,7 +458,25 @@ for s in skin_info:
 print(f"Skin inertia tensor [kg·m²]:")
 print(np.round(I_skin, 4))
 
+# Example: Solar panel covering the middle 50% of the half-span and 80% of the chord
+solar_span_limits = (half_span * 0.05, half_span*0.95)  # 3.6 m to 10.8 m
+solar_chord_limits = (0.05, 0.95)  # 10% to 90% of the chord
+
+I_solar, solar_info = cs.solar_panel_inertia_fd(
+    surface_density=0.665,  # kg/m²
+    span_limits=solar_span_limits,
+    chord_limits=solar_chord_limits,
+    sweep_deg=15,
+    dihedral_deg=2,
+)
+
+print("\nSolar panel inertia tensor [kg·m²]:")
+print(np.round(I_solar, 4))
+print("\nSolar panel info:")
+print(f"Mass: {solar_info['mass']:.3f} kg")
+print(f"Area: {solar_info['area']:.3f} m²")
+print(f"Centroid (global): {solar_info['centroid_global']}")
 # --- combined ---
-I_total = I_spar + I_batt + I_skin
+I_total = I_spar + I_batt + I_skin +I_solar
 print("\nCombined inertia tensor [kg·m²]:")
 print(np.round(I_total, 4))
