@@ -99,7 +99,7 @@ def bending_stress_lift(airframe, ult_safety_factor=5, drag=False):    # Compute
     if  drag:
         Bending_distribution,_ = internal_loading_dMZ(airframe) # for the drag function, gets that instead
     CFRP = Components_Materials.CFRP() # imports materials
-    GLARE = Components_Materials.GLARE()
+    Titanium = Components_Materials.Titanium()
     yield_stress = CFRP.sigma 
     chord=airframe.c_r
     max_thickness = airframe.foil.max_thickness()
@@ -107,7 +107,7 @@ def bending_stress_lift(airframe, ult_safety_factor=5, drag=False):    # Compute
     # calcaulte min I by using bending stress, with yield stress, safety factor and max y of half airfoil thickness
     # find position where connection first starts taking (all) load
     x_max_connection=pos_first_connection(airframe)
-    yield_stress = GLARE.sigma
+    yield_stress = Titanium.sigma
     I_lift_connection = ult_safety_factor*Bending_distribution[x_max_connection]*chord*max_thickness/2/(yield_stress) # find I for connection
     # find min I from connection using same method, looking at stress
     return I_lift_spar, I_lift_connection
@@ -195,7 +195,7 @@ def shear_force(Lift_distribution, airframe, t_spar, t_sleeve): #returns true if
     sigma_root = safety_factor*Lift_distribution[0]/(2*t_spar) #lift stress at thinnest part of spar, with 5x safety factor
     sigma_sleeve = safety_factor*Lift_distribution[pos_first_connection(airframe)]/(2*t_sleeve) #lift stress at thinnest part of sleeve, with 5x safety factor
     root = Components_Materials.CFRP().sigma > sigma_root
-    sleeve = Components_Materials.GLARE().sigma > sigma_sleeve
+    sleeve = Components_Materials.Titanium().sigma > sigma_sleeve
     return bool(sleeve*root)
 
 def stress_analysis():              # Implement method to compute maximum stresses
