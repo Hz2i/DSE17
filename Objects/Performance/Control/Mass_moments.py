@@ -60,14 +60,17 @@ class Mass_moments:
         # self.spar_minor_axis = 0.4
 
         self.cg = (-2.19, 0.0, 0.0)
-        self.root = (0.0, 0.0, 0.0) # body axis central point
+        self.root = (-0.7, 0.0, 0.0)
+        self.body_centre = (0.0, 0.0, 0.0) # body axis central point
 
         self.b        = 28.80
-        self.half_b = self.b / 2
+        self.half_b   = self.b / 2
         self.c        = 1.44
+        self.S        = self.b * self.c
+        self.AR       = 20
         self.sweep    = np.radians(15)
         self.dihedral = np.radians(2)
-        self.twist    = np.radians(4.675)
+        self.twist    = np.radians(4.675) # twist not used - assumption that effect is minimal
         self.twist_rate = self.twist/self.half_b
 
         # MH91 leading-20% battery box geometry
@@ -117,6 +120,14 @@ class Mass_moments:
         z_c = -(mids[:, 1] * dls).sum() / dls.sum()   # flip sign: airfoil y-up → FD z-down
         return x_c, z_c
 
+    def _include_second_half(self, I_left):
+        T = np.diag([1, -1, 1])
+
+        I_right = T @ I_left @ T.T
+
+        I_total = I_left + I_right
+        return I_total
+
     # ------------------------------------------------------------------ #
     #  spar
     # ------------------------------------------------------------------ #
@@ -147,11 +158,7 @@ class Mass_moments:
 
         I_left = Ic + self._parallel_axis(mass, d)
 
-        T = np.diag([1, -1, 1])
-
-        I_right = T @ I_left @ T.T
-
-        I_total = I_left + I_right
+        I_total = self._include_second_half(I_left)
 
         return I_total
 
@@ -214,7 +221,7 @@ class Mass_moments:
 
         for (y_inner, _), fill_length in zip(span_sections, fill_lengths):
             mass    = self.battery_density * A_cross * fill_length
-            p_inner = np.array(self.root) + y_inner * u
+            p_inner = np.array(self.root) + y_inner * u # todo check if root use is correct and not body centre
             rc      = p_inner + 0.5 * fill_length * u
             d       = rc - np.array(self.cg)
 
@@ -231,11 +238,7 @@ class Mass_moments:
                 "volume":      A_cross * fill_length,
             })
 
-            T = np.diag([1, -1, 1])
-
-            I_right = T @ I_left @ T.T
-
-            I_total = I_left + I_right
+        I_total = self._include_second_half(I_left)
 
         return I_total, section_info # doubled due to wing symmetry
 
@@ -291,7 +294,7 @@ class Mass_moments:
             mass = skin_density * skin_thickness * perimeter * seg_len
 
             # Centroid: spar midpoint + cross-section offset
-            p_inner = np.array(self.root) + y_inner * u
+            p_inner = np.array(self.body_centre) + y_inner * u # todo check if root use is correct and not body centre
             rc_spar = p_inner + 0.5 * seg_len * u
             rc      = rc_spar + np.array([-x_skin, 0.0, z_skin])
             d       = rc - np.array(self.cg)
@@ -339,13 +342,13 @@ class Mass_moments:
         θ0 = self.twist
         θt = self.twist_rate
 
-        x0, y0, z0 = self.root
+        x0, y0, z0 = self.body_centre # todo check if root use is correct and not body centre
         xcg, ycg, zcg = self.cg
 
         # spanwise twist (for completeness only)
         twist = θ0 + θt * y_span
 
-        # position in aircraft body axes (root frame)
+        # position in aircraft body axes (root frame) # todo check if root use is correct and not body centre
         x_rib = x0 - y_span * np.tan(Λ)
         y_rib = y0 + y_span
         z_rib = z0 - y_span * np.tan(Γ)
@@ -436,7 +439,7 @@ class Mass_moments:
 
         # Centroid in the global body axes
         centroid_global = (
-                np.array(self.root) +
+                np.array(self.body_centre) + # todo check if root use is correct and not body centre
                 y_centroid_local * u_spar +
                 np.array([-x_centroid_local, 0.0, 0.0])  # Assuming chord is aligned with x-axis
         )
@@ -534,10 +537,10 @@ class Mass_moments:
         θ0 = self.twist
         θt = self.twist_rate
 
-        x0, y0, z0 = self.root
+        x0, y0, z0 = self.body_centre # todo check if root use is correct and not body centre
         xcg, ycg, zcg = self.cg
 
-        # position in aircraft body axes (root frame)
+        # position in aircraft body axes (root frame) # todo check if root use is correct and not body centre
         x_motor = x0 - y_span * np.tan(Λ) + x_offset
         y_motor = y0 + y_span
         z_motor = z0 - y_span * np.tan(Γ)

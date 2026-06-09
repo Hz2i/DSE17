@@ -31,7 +31,7 @@ class Coeff_Values(Mass_moments):
         self.KX2 = Mass_moments.k_x_nd ** 2
         self.KZ2 = Mass_moments.k_z_nd ** 2
         self.KXZ = Mass_moments.k_xz_nd
-        self.KY2 = Mass_moments.k_y ** 2
+        self.KY2 = Mass_moments.k_y_nd ** 2
 
         # Aerodynamic constants
         # self.Cmac = 0
