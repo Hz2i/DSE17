@@ -114,7 +114,7 @@ class TestOrderOfMagnitude:
 class TestValueLimits:
     """Check physical bounds and sign conventions across the deflection range."""
 
-    def test_inner_elevon_produces_negative_Cm(self): #FAILED
+    def test_inner_elevon_produces_negative_Cm(self):
         """Positive (trailing-edge-down) inner elevon should pitch nose down (Cm < 0)."""
         cs = Control_Surface_Sizing()
         aero = cs.vlm_run(delta_inner=15, delta_outer=0, delta_rudder=0, outer_symmetric=True)
@@ -145,13 +145,13 @@ class TestValueLimits:
         """Clda (roll control derivative) should be non-zero."""
         cs = Control_Surface_Sizing()
         Clda, _ = cs.Rolling_Coefficients()
-        assert abs(Clda) > 0.0
+        assert Clda < 0.0
 
     def test_Cndr_sign(self):
         """Cndr (yaw control derivative) should be non-zero."""
         cs = Control_Surface_Sizing()
         Cndr, _ = cs.Yawing_Coefficients()
-        assert abs(Cndr) > 0.0
+        assert Cndr < 0.0
 
     def test_OEI_deflection_within_limits(self):
         """The deflection required to counteract OEI should not exceed 30 degrees."""
