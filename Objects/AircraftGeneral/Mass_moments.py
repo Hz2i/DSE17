@@ -475,6 +475,95 @@ class Mass_moments:
 
         return I_total, section_info
 
+    def payload_inertia_fd(
+            self,
+            mass,
+            x_pos,
+    ):
+        x0, y0, z0 = self.root
+        xcg, ycg, zcg = self.cg
+
+        x_payload = x0 + x_pos
+        y_payload = y0
+        z_payload = z0
+
+        x = x_payload - xcg
+        y = y_payload - ycg
+        z = z_payload - zcg
+
+        I = mass * np.array([
+            [y ** 2 + z ** 2, -x * y, -x * z],
+            [-x * y, x ** 2 + z ** 2, -y * z],
+            [-x * z, -y * z, x ** 2 + y ** 2]
+        ])
+
+        return I
+
+    def motor_inertia_fd(
+            self,
+            mass,
+            y_span,
+            x_offset=0.0,
+    ):
+
+        """
+        Motor point-mass inertia about aircraft CG
+        with sweep, dihedral, and twist included.
+
+        Flight dynamics axes:
+            x forward
+            y right wing
+            z down
+        """
+
+        Λ = self.sweep
+        Γ = self.dihedral
+
+        θ0 = self.twist
+        θt = self.twist_rate
+
+        x0, y0, z0 = self.root
+        xcg, ycg, zcg = self.cg
+
+        # position in aircraft body axes (root frame)
+        x_motor = x0 + y_span * np.tan(Λ) + x_offset
+        y_motor = y0 + y_span
+        z_motor = z0 - y_span * np.tan(Γ)
+
+        # shift to CG frame
+        x = x_motor - xcg
+        y = y_motor - ycg
+        z = z_motor - zcg
+
+        # point-mass inertia about CG
+        I = mass * np.array([
+            [y ** 2 + z ** 2, -x * y, -x * z],
+            [-x * y, x ** 2 + z ** 2, -y * z],
+            [-x * z, -y * z, x ** 2 + y ** 2]
+        ])
+
+        return I
+
+    def motor_inertia_full(
+            self,
+            motors,
+    ):
+
+        I_total = np.zeros((3, 3))
+        M_total = 0.0
+
+        for mass, y, x_offset in motors:
+            I = self.motor_inertia_fd(
+                mass=mass,
+                y_span=y,
+                x_offset=x_offset,
+            )
+
+            I_total += I
+            M_total += mass
+
+        return M_total, I_total
+
 # ======================================================================== #
 #  Example
 # ======================================================================== #
@@ -558,8 +647,23 @@ print(f"Mass: {solar_info['mass']:.3f} kg")
 print(f"Area: {solar_info['area']:.3f} m²")
 print(f"Centroid (global): {solar_info['centroid_global']}")
 
+motors = [
+    (2.0, 0.25*cs.half_b, 0.5),
+    (2.0, 0.5*cs.half_b, 0.5)
+]
+
+M_motors, I_motors = cs.motor_inertia_full(motors)
+print("\nmotors mass:")
+print(np.round(M_motors, 4))
+print(f"motor inertia tensor [kg·m²]:")
+print(np.round(I_motors, 4))
+
+# Calculate payload inertia tensor
+I_payload = cs.payload_inertia_fd(mass=20.0, x_pos=0.75)
+print("\nPayload inertia tensor [kg·m²]:")
+print(np.round(I_payload, 4))
 # --- combined ---
 
-I_total = I_spar + I_batt + I_skin +I_solar + I_ribs
+I_total = I_spar + I_batt + I_skin +I_solar + I_ribs + I_motors + I_payload
 print("\nCombined inertia tensor [kg·m²]:")
 print(np.round(I_total, 4))
