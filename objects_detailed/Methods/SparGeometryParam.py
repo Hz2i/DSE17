@@ -8,7 +8,7 @@ import os
 # Add the folder containing characteristics_airframe.py to the Python path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../Characteristics')))
 from Airframe import airframe as Airframe
-from Components_Materials import CFRP, GLARE, Aluminum7075, Mylar, Silicone_Rubber
+from Components_Materials import CFRP, GLARE, Aluminum7075, Mylar, Silicone_Rubber, PA6
 import objects_detailed.Methods.StructuralAnalysis as sa
 
 optimize_variables = {
@@ -222,6 +222,7 @@ class SparGeometryOptimization:
         alu = Aluminum7075()
         rubber = Silicone_Rubber()
         mylar = Mylar()
+        pa = PA6()
 
         # Min Limits of Thicknesses based on manufacturability and material limits
         self.CFRP_LIMIT_t = cfrp.min_thickness
@@ -233,6 +234,7 @@ class SparGeometryOptimization:
         self.Alu_rho = alu.rho
         self.Rubber_rho = rubber.rho
         self.Mylar_rho = mylar.rho
+        self.pa_rho = pa.rho
 
         #Optimized Geometry
         self.optimized_geometry = self.optimize_geometry_H_clamp_with_asb()
@@ -303,7 +305,7 @@ class SparGeometryOptimization:
         I_yy_spar = self.calc_I_yy_ellipse(b_spar_out, a_spar_out) - self.calc_I_yy_ellipse(b_spar_in, a_spar_in)
 
         #Cross Sectional Weight
-        weight_clamp = A_clamp_2x * self.Alu_rho
+        weight_clamp = A_clamp_2x * self.pa_rho
         weight_sleeve = A_sleeve * self.GLARE_rho
         weight_spar = A_spar * self.CFRP_rho
         weight_rubber = A_rubber * self.Rubber_rho
@@ -384,7 +386,7 @@ class SparGeometryOptimization:
         opti.minimize(g["total_weight"])
 
         # ===== SOLVE =====
-        sol = opti.solve()  # Add verbose to see solver output
+        sol = opti.solve(verbose=False)  # Add verbose to see solver output
         
         result = {}
         for k, v in g.items():

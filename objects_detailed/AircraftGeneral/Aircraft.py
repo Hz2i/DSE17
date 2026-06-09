@@ -19,8 +19,9 @@ from objects_detailed.Methods.SparGeometryParam import SparGeometryOptimization,
 # It can be assumed that the general logic of this class (at least pertaining to airframe sizing) shall not significantly change.
 
 class Aircraft:
-    def __init__(self, MTOW_guess=200.0, TAS=25.0, h=18500.0, gamma=0.0, lat=30.0, day_margin=0, DoD=0.8, airframe=airframe(), comp=ComputerSystem(), comms=CommunicationSystem(), flight_con=FlightConditionsSystem(), payload=PayloadSystem(), ctrls=ControlSystem(), use_batt=True, energy_delta=0.0):
+    def __init__(self, MTOW_guess=200.0, OEM_frac=0.45, TAS=25.0, h=18500.0, gamma=0.0, lat=30.0, day_margin=0, DoD=0.8, airframe=airframe(), comp=ComputerSystem(), comms=CommunicationSystem(), flight_con=FlightConditionsSystem(), payload=PayloadSystem(), ctrls=ControlSystem(), use_batt=True, energy_delta=0.0):
         self.MTOW = MTOW_guess
+        self.OEM_frac = OEM_frac
         self.const = Constants()
 
         self.airframe = airframe
@@ -49,7 +50,7 @@ class Aircraft:
         self.CD0 = None
         self.CL_opt = None
 
-        self.size_wing()
+        self.inner_iter()
         self.size_structure()
 
     def update_flight_conditions(self, TAS_new=20.0, h_new=18000.0, gamma_new=0.0):
@@ -60,14 +61,14 @@ class Aircraft:
         self.prop = PropulsionSystem(T=self.T_req, velocity=self.TAS, alt=self.h)
 
 
-    def size_wing(self):
+    def inner_iter(self):
         err = 1.0e3
         iterations = 0
         damping = 0.25
         surface_check = True
 
         # Ensure the first iteration of area sizing undershoots:
-        self.airframe.S = self.airframe.S / 5.0
+        self.airframe.S = self.airframe.S / 2.0
 
         # Ensure current Cl and CD values are in scope:
         CL_current = None
@@ -90,10 +91,12 @@ class Aircraft:
             if TAS_opt > self.TAS:
                 CL_current = self.CL_opt
                 CD_current = self.airframe.CD0 + self.airframe.K1 * CL_current + self.airframe.K2 * CL_current**2
+                self.CL_CD = CL_current/CD_current
                 self.TAS_cruise = TAS_opt
             else:
                 CL_current = self.MTOW*self.const.g / (0.5 * am.Atmosphere(self.h).density[0] * self.TAS**2 * self.airframe.S)
                 CD_current = self.airframe.CD0 + self.airframe.K1 * CL_current + self.airframe.K2 * CL_current**2
+                self.CL_CD = CL_current/CD_current
                 self.TAS_cruise = self.TAS
 
             if CL_current > 0.8* self.airframe.CL_max:
@@ -104,16 +107,24 @@ class Aircraft:
 
             self.alpha = (CL_current - self.airframe.CL0)/self.airframe.CL_alpha
 
-            self.T_req = (self.MTOW*self.const.g/self.CL_CD + self.MTOW*self.const.g * np.sin(np.radians(self.gamma)))/self.airframe.nacelles.nr_of_engines
-            self.prop = PropulsionSystem(T=self.T_req, velocity=self.TAS_cruise, alt=self.h, rpm=1000.0, torque=4.0, motor_temp=-40.0,propeller_diameter=1.5)
+            # self.size_structure()
+            # OEM_temp = self.internal_struct.total_structure_weight + self.compute_subsys_mass()
+            # MTOW_temp = OEM_temp/self.OEM_frac
 
-            self.Pow_motor = self.prop.power_required * self.airframe.nacelles.nr_of_engines
+            self.T_req = self.MTOW*self.const.g/self.CL_CD + self.MTOW*self.const.g * np.sin(np.radians(self.gamma))
+            self.prop = PropulsionSystem(required_thrust_cruise=self.T_req, v_inf_cruise=self.TAS_cruise, m_TO=self.MTOW, S=self.airframe.S,CL_max=self.airframe.CL_max)
+
+            self.Pow_motor, self.Prop_mass = self.prop.run_full_analysis()
             self.Pow_req = self.compute_subsys_pow() + self.Pow_motor
+
+            print(f"motor power: {self.Pow_motor} W, total motor mass: {self.Prop_mass} kg, power required: {self.Pow_req} W")
 
             self.pow_store = power_storage(self.Pow_req, latitude=self.lat, days_from_solstice=self.day_margin, DOD=self.DoD, batteries_used=self.use_batt, energy_delta=self.energy_delta)
             self.pow_store.compute_weight_volume()
             self.solar = power_generation(self.Pow_req, latitude=self.lat, days_from_solstice=self.day_margin, energy_delta=self.energy_delta)
             self.solar.compute_weight_surface()
+
+            print(f"power storage weight: {self.pow_store.mass} kg")
 
             if self.solar.area < self.airframe.S/1.025:
                 surface_check = False
@@ -130,26 +141,24 @@ class Aircraft:
                 print("Inner iteration:", iterations)
                 print("Wing surface:", self.airframe.S)
                 print("Surface difference:", self.solar.area - self.airframe.S)
-        '''
+
         print("Optimal CL:", self.CL_opt)
         print("CL:", CL_current)
-        print("CD0:", self.CD0)
+        print("CD0:", self.airframe.CD0)
         print("CL/CD:", self.CL_CD)
-        print("Oswald efficiency:", self.e)
-        print("Propulsive efficiency:", self.prop.overall_eff)
-        '''
+
 
     def size_structure(self):
         self.airframe.compute_load_distribution(alpha=self.alpha, TAS=self.TAS_cruise, alt=self.h, res=20)
 
-        I_lift_spar, I_lift_connection = bending_stress_lift(airframe=self.airframe)
-        I_drag_spar, I_drag_connection = bending_stress_drag(airframe=self.airframe)
-        t_skin = torsional_stress(airframe=self.airframe)
+        I_lift_spar, I_lift_connection = bending_stress_lift(airframe=self.airframe, ult_safety_factor=2.0)
+        I_drag_spar, I_drag_connection = bending_stress_drag(airframe=self.airframe, ult_safety_factor=2.0)
+        t_skin = torsional_stress(airframe=self.airframe, ult_safety_factor=2.0)
 
-        print("I_xx_spar_req:", I_lift_spar)
-        print("I_yy_spar_req:", I_drag_spar)
-        print("I_xx_sleeve_req:", I_lift_connection)
-        print("I_yy_sleeve_req:", I_drag_connection)
+        # print("I_xx_spar_req:", I_lift_spar)
+        # print("I_yy_spar_req:", I_drag_spar)
+        # print("I_xx_sleeve_req:", I_lift_connection)
+        # print("I_yy_sleeve_req:", I_drag_connection)
 
         airfoil_geometry = AirfoilGeometry(self.airframe, t_skin_airfoil=t_skin, Available_width=0.1, plot=False)
 
@@ -158,7 +167,7 @@ class Aircraft:
             I_yy_spar_req=I_drag_spar,
             I_xx_sleeve_req=I_lift_connection,
             I_yy_sleeve_req=I_drag_connection,
-            n_sections=6,
+            n_sections=8,
             min_eccentricity_factor=1.1,
             airframe=self.airframe,
             airfoil_geometry=airfoil_geometry,

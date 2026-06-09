@@ -166,7 +166,7 @@ class airframe:
             return llt_results, llt_an
 
 
-    def compute_polar(self, alpha_range=np.linspace(-10.0, 20.0, 50), alt=18500.0, TAS=25.0, res=5):
+    def compute_polar(self, alpha_range=np.linspace(-10.0, 20.0, 30), alt=18500.0, TAS=25.0, res=5):
         llt_data = self.llt_analysis(series=True, alpha=alpha_range, alt=alt, TAS=TAS, resolution=res)
         CL_data = llt_data["CL"]
         CD_data = llt_data["CD"]
