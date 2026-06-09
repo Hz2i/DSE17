@@ -527,11 +527,17 @@ print(f"Skin inertia tensor [kg·m²]:")
 print(np.round(I_skin, 4))
 
 # --- ribs: full half span ---
-ribs = np.linspace(0, cs.half_b, 10)
+ribs = [
+    (0.6, 0),
+    (0.6, 0.5*cs.half_b),
+    (0.6, cs.half_b)
+]
+
 M_ribs, I_ribs = cs.wing_rib_inertia_full(ribs)
-print(M_ribs)
+print("\nWing ribs mass:")
+print(np.round(M_ribs, 4))
 print(f"Rib inertia tensor [kg·m²]:")
-print(I_ribs)
+print(np.round(I_ribs, 4))
 
 # Example: Solar panel covering the middle 50% of the half-span and 80% of the chord
 solar_span_limits = (half_span * 0.05, half_span*0.95)  # 3.6 m to 10.8 m
