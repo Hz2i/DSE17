@@ -408,11 +408,17 @@ print(f"Skin inertia tensor [kg·m²]:")
 print(np.round(I_skin, 4))
 
 # --- ribs: full half span ---
-ribs = np.linspace(0, cs.half_b, 10)
+ribs = [
+    (0.6, 0),
+    (0.6, 0.5*cs.half_b),
+    (0.6, cs.half_b)
+]
+
 M_ribs, I_ribs = cs.wing_rib_inertia_full(ribs)
-print(M_ribs)
+print("\nWing ribs mass:")
+print(np.round(M_ribs, 4))
 print(f"Rib inertia tensor [kg·m²]:")
-print(I_ribs)
+print(np.round(I_ribs, 4))
 
 # --- combined ---
 I_total = I_spar + I_batt + I_skin + I_ribs
