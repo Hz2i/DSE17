@@ -9,6 +9,7 @@ from objects_detailed.Characteristics.GeneralSubsystems import ComputerSystem, C
 from Objects.Characteristics.PropulsionSystem import PropulsionSystem
 from objects_detailed.Characteristics.ReferenceGeometries import *
 from objects_detailed.Constants import Constants
+from objects_detailed.Methods.LandingSkids import m_skid
 
 # from objects_detailed.AircraftGeneral.Aircraft import Aircraft
 
@@ -28,16 +29,16 @@ lat = 30.0
 day_margin = 0
 use_batt = True
 energy_delta = 0.0
-DoD = 0.7
+DoD = 0.8
 night_time = 0.0
 
 S = 36.0
 
 
 # Flying wing planform:
-fus_geo = fuselage(D=0.5, L1=0.2, L2=0.6, L3=0.2)
+fus_geo = fuselage(D=0.0, L1=0.0, L2=0.0, L3=0.0)
 nac_geo = nacelles(nr_of_engines=0, pos=[])
-planform = airframe(S=S, A=25.0, qc_sweep=15.0*np.pi/180, taper=1.0, dihedral=0.0*np.pi/180.0,fus=fus_geo, nac=nac_geo, display=False, init_polar=True)
+planform = airframe(S=S, A=20.0, qc_sweep=15.0*np.pi/180, taper=1.0, dihedral=0.0*np.pi/180.0,fus=fus_geo, nac=nac_geo, display=False, init_polar=True)
 
 
 MTOW = MTOW_initial
@@ -46,7 +47,7 @@ MTOW = MTOW_initial
 AHAPS = Aircraft(MTOW_guess=MTOW, OEM_frac=OEM_frac, TAS=TAS_initial, gamma=gamma, lat=lat, day_margin=day_margin, DoD=DoD, airframe=planform, use_batt=use_batt, energy_delta=energy_delta)
 
 planform.S = AHAPS.airframe.S
-MTOW_current = AHAPS.pow_store.mass + AHAPS.solar.mass + AHAPS.payload.mass + AHAPS.internal_struct.total_structure_weight + AHAPS.Prop_mass + AHAPS.compute_subsys_mass()
+MTOW_current = AHAPS.pow_store.mass + AHAPS.solar.mass + AHAPS.payload.mass + AHAPS.internal_struct.total_structure_weight + AHAPS.Prop_mass + AHAPS.compute_subsys_mass() + m_skid()
 
 pow_frac = (AHAPS.pow_store.mass + AHAPS.solar.mass)/MTOW
 payload_frac = AHAPS.payload.mass_payload / MTOW
@@ -66,7 +67,7 @@ iterations = 0
 while monitoring_var > 5e-3 or iterations < 5:
     AHAPS = Aircraft(MTOW_guess=MTOW, OEM_frac=OEM_frac, TAS=TAS_initial, gamma=gamma, lat=lat, day_margin=day_margin, DoD=DoD, airframe=planform, use_batt=use_batt, energy_delta=energy_delta)
 
-    MTOW_current = AHAPS.pow_store.mass + AHAPS.solar.mass + AHAPS.payload.mass + AHAPS.internal_struct.total_structure_weight + AHAPS.Prop_mass + AHAPS.compute_subsys_mass()
+    MTOW_current = AHAPS.pow_store.mass + AHAPS.solar.mass + AHAPS.payload.mass + AHAPS.internal_struct.total_structure_weight + AHAPS.Prop_mass + AHAPS.compute_subsys_mass() + m_skid()
 
 
     print(f'Difference between guess and current MTOW: {MTOW_current - MTOW:.2f} kg')
@@ -83,7 +84,7 @@ while monitoring_var > 5e-3 or iterations < 5:
 
     error = (abs(pow_frac - pow_frac_prev)/pow_frac_prev + abs(payload_frac - payload_frac_prev)/payload_frac_prev + abs(struct_frac - struct_frac_prev)/struct_frac_prev + abs(gen_subsys_frac - gen_subsys_frac_prev)/gen_subsys_frac_prev + abs(MTOW-MTOW_current)/MTOW)/5.0
 
-    MTOW += (MTOW_current-MTOW) * 1
+    MTOW += (MTOW_current-MTOW) * 1.0
     planform.S = AHAPS.airframe.S
 
     pow_frac_prev = pow_frac

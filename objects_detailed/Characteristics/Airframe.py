@@ -1,5 +1,6 @@
 import numpy as np
 import aerosandbox as asb
+import matplotlib.pyplot as plt
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
@@ -29,7 +30,7 @@ class nacelles:
         self.m = None
 
 class airframe:
-    def __init__(self, S=36.0, A=25.0, qc_sweep=0.0, taper=1.0, dihedral=0.0 , airfoil=asb.Airfoil("e344"), fus = fuselage(), nac = nacelles(), display=False, init_polar=True):
+    def __init__(self, S=36.0, A=20.0, qc_sweep=15.0/180*np.pi, taper=1.0, dihedral=0.0 , airfoil=asb.Airfoil("mh91"), fus = fuselage(), nac = nacelles(), display=False, init_polar=True):
         self.foil = airfoil
         self.AR = A
         self.taper = taper
@@ -92,23 +93,43 @@ class airframe:
                                     (self.b/2) * np.tan(self.dihedral)],
                             chord=self.c_t,
                             twist=0,
-                            airfoil=self.foil),
-                            ]
-                        )
-                    ],
-            fuselages=[
-                asb.Fuselage(
-                    name="Nacelle_"+str(pos),
-                    xsecs=[
-                        asb.FuselageXSec(
-                            xyz_c=[self.c_t * xi + abs(pos)*self.b/2*np.tan(self.le_sweep), self.b/2*pos, pos*self.b/2*np.tan(self.dihedral)],
-                            radius=self.c_t * asb.Airfoil("dae51").local_thickness(x_over_c=xi)
-                            )
-                        for xi in np.linspace(0.0, self.c_t, 30)
+                            airfoil=self.foil),  
                         ]
-                    )
-                for pos in self.nacelles.positions
-                ]
+                        ),
+                    asb.Wing(
+                    name="Rudder",
+                    symmetric = True,
+                    xsecs=[
+                        asb.WingXSec(
+                            xyz_le=[(self.b/2) * np.tan(self.le_sweep),
+                                    self.b/2,
+                                    (self.b/2) * np.tan(self.dihedral)],
+                            chord=self.c_t,
+                            twist=0,
+                            airfoil=self.foil),
+                        asb.WingXSec(
+                            xyz_le=[(self.b/2) * np.tan(self.le_sweep),
+                                    self.b/2,
+                                    (self.b/2) * np.tan(self.dihedral)+1.5],
+                            chord=self.c_t,
+                            twist=0,
+                            airfoil=self.foil),
+                        ]
+                        ),
+                    ],
+            # fuselages=[
+            #     asb.Fuselage(
+            #         name="Nacelle_"+str(pos),
+            #         xsecs=[
+            #             asb.FuselageXSec(
+            #                 xyz_c=[self.c_t * xi + abs(pos)*self.b/2*np.tan(self.le_sweep), self.b/2*pos, pos*self.b/2*np.tan(self.dihedral)],
+            #                 radius=self.c_t * asb.Airfoil("dae51").local_thickness(x_over_c=xi)
+            #                 )
+            #             for xi in np.linspace(0.0, self.c_t, 30)
+            #             ]
+            #         )
+            #     for pos in self.nacelles.positions
+            #     ]
             )
 
 
@@ -124,7 +145,7 @@ class airframe:
             p.show_plot(dpi=600)
 
 
-    def llt_analysis(self, series=False, alpha=5.0, alt=18500.0, TAS=25.0, resolution=5):
+    def llt_analysis(self, series=False, alpha=5.0, alt=18500.0, TAS=25.0, resolution=20):
         op_point = asb.OperatingPoint(
             atmosphere=asb.Atmosphere(altitude=alt),
             velocity=TAS
@@ -166,7 +187,7 @@ class airframe:
             return llt_results, llt_an
 
 
-    def compute_polar(self, alpha_range=np.linspace(-10.0, 20.0, 30), alt=18500.0, TAS=25.0, res=5):
+    def compute_polar(self, alpha_range=np.linspace(-10.0, 20.0, 30), alt=18500.0, TAS=25.0, res=5, plot=False):
         llt_data = self.llt_analysis(series=True, alpha=alpha_range, alt=alt, TAS=TAS, resolution=res)
         CL_data = llt_data["CL"]
         CD_data = llt_data["CD"]
@@ -188,11 +209,47 @@ class airframe:
         self.CL_alpha = lift_curve_coeff[1]
 
         self.CD0 = drag_polar_coeff[0]
+
+        op_point = asb.OperatingPoint(
+            atmosphere=asb.Atmosphere(altitude=alt),
+            velocity=TAS
+        )
+
+        vlm_op_point = op_point.copy()
+        vlm_op_point.alpha = alpha_range
+
+        vlm_aeros = [
+            asb.VortexLatticeMethod(
+                airplane=self.geometry_asb, op_point=op, xyz_ref=self.geometry_asb.xyz_ref, spanwise_resolution=res
+            ).run()
+            for op in vlm_op_point
+        ]
+
+        vlm_aero = {}
+
+        for k in vlm_aeros[0].keys():
+            vlm_aero[k] = np.array([aero[k] for aero in vlm_aeros])
+        vlm_aero["alpha"] = vlm_op_point.alpha
+
+        vlm_aero["CD"] += self.CD0
+        CL_data_vlm = vlm_aero["CL"]
+        CD_data_vlm = vlm_aero["CD"]
+        drag_polar_coeff = np.polynomial.polynomial.polyfit(CL_data_vlm[i_min:i_max+1], CD_data_vlm[i_min:i_max+1], 2)
+
+
         self.K1 = drag_polar_coeff[1]
         self.K2 = drag_polar_coeff[2]
 
         CL_CD_data = CL_data/CD_data
         self.CL_CD_max = CL_CD_data[np.argmax(CL_CD_data)]
+
+        if plot:
+            plt.scatter(CL_data, CD_data)
+            plt.plot(CL_data, self.CD0 + self.K1*CL_data + self.K2*CL_data**2, c='r')
+            plt.xlabel("Lift Coefficient")
+            plt.ylabel("Drag Coefficient")
+            plt.title("drag Polar")
+            plt.show()
 
 
     def compute_load_distribution(self, alpha=5.0, alt=18500.0, TAS=25.0, res = 20):
