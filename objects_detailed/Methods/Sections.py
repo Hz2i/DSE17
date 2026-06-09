@@ -29,8 +29,8 @@ class Sections:
         n_sections = 4
         main_section_length = (self.max_length/2) * np.cos(self.airframe.qc_sweep)
         main_section_spar = main_section_length - main_section_inside
-        wingtip_section_length = self.slanted_span_b_2 - main_section_length - (n_sections-1)*main_section_spar*2
-        total_length = main_section_inside + main_section_spar + wingtip_section_length + (n_sections-1)*main_section_spar*2
+        wingtip_section_length = self.slanted_span_b_2 - main_section_inside - (n_sections-1)*main_section_spar*2
+        total_length = main_section_inside + wingtip_section_length + (n_sections-1)*main_section_spar*2
         middle_wing_section = main_section_spar*2
         return main_section_length, main_section_spar, wingtip_section_length, total_length, middle_wing_section
     
