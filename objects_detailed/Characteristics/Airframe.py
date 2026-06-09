@@ -29,7 +29,7 @@ class nacelles:
         self.m = None
 
 class airframe:
-    def __init__(self, S=36.0, A=25.0, qc_sweep=0.0, taper=1.0, dihedral=0.0 , airfoil=asb.Airfoil("mh91"), fus = fuselage(), nac = nacelles(), display=False, init_polar=True):
+    def __init__(self, S=36.0, A=20.0, qc_sweep=15.0/180*np.pi, taper=1.0, dihedral=0.0 , airfoil=asb.Airfoil("mh91"), fus = fuselage(), nac = nacelles(), display=False, init_polar=True):
         self.foil = airfoil
         self.AR = A
         self.taper = taper
@@ -92,23 +92,43 @@ class airframe:
                                     (self.b/2) * np.tan(self.dihedral)],
                             chord=self.c_t,
                             twist=0,
-                            airfoil=self.foil),
-                            ]
-                        )
-                    ],
-            fuselages=[
-                asb.Fuselage(
-                    name="Nacelle_"+str(pos),
-                    xsecs=[
-                        asb.FuselageXSec(
-                            xyz_c=[self.c_t * xi + abs(pos)*self.b/2*np.tan(self.le_sweep), self.b/2*pos, pos*self.b/2*np.tan(self.dihedral)],
-                            radius=self.c_t * asb.Airfoil("dae51").local_thickness(x_over_c=xi)
-                            )
-                        for xi in np.linspace(0.0, self.c_t, 30)
+                            airfoil=self.foil),  
                         ]
-                    )
-                for pos in self.nacelles.positions
-                ]
+                        ),
+                    asb.Wing(
+                    name="Rudder",
+                    symmetric = True,
+                    xsecs=[
+                        asb.WingXSec(
+                            xyz_le=[(self.b/2) * np.tan(self.le_sweep),
+                                    self.b/2,
+                                    (self.b/2) * np.tan(self.dihedral)],
+                            chord=self.c_t,
+                            twist=0,
+                            airfoil=self.foil),
+                        asb.WingXSec(
+                            xyz_le=[(self.b/2) * np.tan(self.le_sweep),
+                                    self.b/2,
+                                    (self.b/2) * np.tan(self.dihedral)+1.5],
+                            chord=self.c_t,
+                            twist=0,
+                            airfoil=self.foil),
+                        ]
+                        ),
+                    ],
+            # fuselages=[
+            #     asb.Fuselage(
+            #         name="Nacelle_"+str(pos),
+            #         xsecs=[
+            #             asb.FuselageXSec(
+            #                 xyz_c=[self.c_t * xi + abs(pos)*self.b/2*np.tan(self.le_sweep), self.b/2*pos, pos*self.b/2*np.tan(self.dihedral)],
+            #                 radius=self.c_t * asb.Airfoil("dae51").local_thickness(x_over_c=xi)
+            #                 )
+            #             for xi in np.linspace(0.0, self.c_t, 30)
+            #             ]
+            #         )
+            #     for pos in self.nacelles.positions
+            #     ]
             )
 
 
