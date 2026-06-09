@@ -515,7 +515,7 @@ class Mass_moments:
             self,
             mass,
             y_span,
-            x_offset=0.0,
+            x_offset=0.5,
     ):
 
         """
@@ -544,6 +544,7 @@ class Mass_moments:
 
         # shift to CG frame
         x = x_motor - xcg
+        # print("Motor x", x)
         y = y_motor - ycg
         z = z_motor - zcg
 
@@ -606,7 +607,7 @@ class Mass_moments:
         k_x = np.sqrt(I_xx / M_total)
         k_y = np.sqrt(I_yy / M_total)
         k_z = np.sqrt(I_zz / M_total)
-        k_xz = I_xz / M_total
+        k_xz = -I_xz / M_total
 
         return k_x, k_y, k_z, k_xz
 
@@ -658,7 +659,7 @@ print(np.round(I_spar, 4))
 
 # --- batteries: inner and outer third of half-span ---
 battery_sections = [
-    (0.0,               half_span / 3),   # 0.0 – 4.8 m
+    (0.0, half_span / 3),   # 0.0 – 4.8 m
     (2 * half_span / 3, half_span),        # 9.6 – 14.4 m
 ]
 
