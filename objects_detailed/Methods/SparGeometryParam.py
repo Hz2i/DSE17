@@ -573,12 +573,12 @@ class SparGeometryOptimization:
         used_spacings.pop()
         pos.pop()
         A, p = sa.airfoil_properties(airframe.foil, airframe.c_r)
-
-        min_no_ribs = 2*len(pos)-1
+        self.ribs_positions = pos
+        self.min_no_ribs = 2*len(pos)-1
         mass_web = 0.2*0.001*A*CFRP_mat.rho # web is 20% of total area, minimum thickness again
         mass_cap = 0.01*0.001*p*CFRP_mat.rho #1cm cap width, minimum thickness
         mass_rib = mass_web+mass_cap
-        total_mass = mass_rib*min_no_ribs
+        total_mass = mass_rib*self.min_no_ribs
         return total_mass
 
 if __name__ == "__main__":
