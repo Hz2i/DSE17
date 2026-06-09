@@ -171,7 +171,7 @@ class Aircraft:
             min_eccentricity_factor=1.1,
             airframe=self.airframe,
             airfoil_geometry=airfoil_geometry,
-            Plot=True
+            Plot=False
         )
 
 

@@ -27,7 +27,7 @@ h_cruise = 18500.0
 lat = 30.0
 day_margin = 0
 use_batt = True
-energy_delta = 0.05
+energy_delta = 0.0
 DoD = 0.7
 night_time = 0.0
 
@@ -37,8 +37,7 @@ S = 36.0
 # Flying wing planform:
 fus_geo = fuselage(D=0.5, L1=0.2, L2=0.6, L3=0.2)
 nac_geo = nacelles(nr_of_engines=4)
-planform = airframe(S=S, A=20.0, qc_sweep=15.0*np.pi/180, taper=1.0, dihedral=0.0*np.pi/180.0,fus=fus_geo, nac=nac_geo, display=False, init_polar=True)
-planform = airframe(S=S, A=20.0, qc_sweep=15.0*np.pi/180, taper=1.0, dihedral=0.0*np.pi/180.0,fus=fus_geo, nac=nac_geo, display=False, init_polar=True)
+planform = airframe(S=S, A=25.0, qc_sweep=15.0*np.pi/180, taper=1.0, dihedral=0.0*np.pi/180.0,fus=fus_geo, nac=nac_geo, display=False, init_polar=True)
 
 
 MTOW = MTOW_initial
@@ -47,7 +46,7 @@ MTOW = MTOW_initial
 AHAPS = Aircraft(MTOW_guess=MTOW, OEM_frac=OEM_frac, TAS=TAS_initial, gamma=gamma, lat=lat, day_margin=day_margin, DoD=DoD, airframe=planform, use_batt=use_batt, energy_delta=energy_delta)
 
 planform.S = AHAPS.airframe.S
-MTOW_current = AHAPS.pow_store.mass + AHAPS.solar.mass + AHAPS.payload.mass + AHAPS.internal_struct.total_structure_weight + AHAPS.compute_subsys_mass()
+MTOW_current = AHAPS.pow_store.mass + AHAPS.solar.mass + AHAPS.payload.mass + AHAPS.internal_struct.total_structure_weight + AHAPS.Prop_mass + AHAPS.compute_subsys_mass()
 
 pow_frac = (AHAPS.pow_store.mass + AHAPS.solar.mass)/MTOW
 payload_frac = AHAPS.payload.mass_payload / MTOW
@@ -69,12 +68,14 @@ while monitoring_var > 5e-3 or iterations < 5:
 
     MTOW_current = AHAPS.pow_store.mass + AHAPS.solar.mass + AHAPS.payload.mass + AHAPS.internal_struct.total_structure_weight + AHAPS.Prop_mass + AHAPS.compute_subsys_mass()
 
-    # print(f'subsystem masses: {AHAPS.compute_subsys_mass()} kg')
-    # print(f'internal structure mass: {AHAPS.internal_struct.total_structure_weight} kg')
-    # print(f'total mass spar {AHAPS.internal_struct.total_mass_spar} kg')
-    # print(f'weight skin {AHAPS.internal_struct.Weight_skin} kg')
-    # print(f'power storage mass: {AHAPS.pow_store.mass} kg')
-    # print(f'solar mass: {AHAPS.solar.mass} kg')
+
+    print(f'Difference between guess and current MTOW: {MTOW_current - MTOW:.2f} kg')
+    print(f'subsystem masses: {AHAPS.compute_subsys_mass():.2f} kg')
+    print(f'internal structure mass: {AHAPS.internal_struct.total_structure_weight:.2f} kg')
+    print(f'total mass spar {AHAPS.internal_struct.total_mass_spar:.2f} kg')
+    print(f'weight skin {AHAPS.internal_struct.Weight_skin:.2f} kg')
+    print(f'power storage mass: {AHAPS.pow_store.mass:.2f} kg')
+    print(f'solar mass: {AHAPS.solar.mass:.2f} kg')
     pow_frac = (AHAPS.pow_store.mass + AHAPS.solar.mass)/MTOW_current
     payload_frac = AHAPS.payload.mass / MTOW_current
     struct_frac = AHAPS.internal_struct.total_structure_weight / MTOW_current
@@ -82,7 +83,7 @@ while monitoring_var > 5e-3 or iterations < 5:
 
     error = (abs(pow_frac - pow_frac_prev)/pow_frac_prev + abs(payload_frac - payload_frac_prev)/payload_frac_prev + abs(struct_frac - struct_frac_prev)/struct_frac_prev + abs(gen_subsys_frac - gen_subsys_frac_prev)/gen_subsys_frac_prev + abs(MTOW-MTOW_current)/MTOW)/5.0
 
-    MTOW += (MTOW_current-MTOW) * 0.05
+    MTOW += (MTOW_current-MTOW) * 1
     planform.S = AHAPS.airframe.S
 
     pow_frac_prev = pow_frac
@@ -109,7 +110,7 @@ while monitoring_var > 5e-3 or iterations < 5:
     print("___________________________________")
 
 
-print("Final MTOW:", AHAPS.MTOW)
+print("Final MTOW:", MTOW_current)
 print("Final power consumption:", AHAPS.Pow_req)
 print("Final surface area:", AHAPS.airframe.S)
 print("Final solar panel area:", AHAPS.solar.area)
