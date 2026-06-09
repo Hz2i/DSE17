@@ -39,7 +39,7 @@ from Airframe import airframe as Airframe
 
 def battery_heat_dissipation():
     I = 2.36 # Current in Amperes
-    ACIR = 0.002 # Average Current Internal Resistance in Ohms
+    ACIR = 0.020 # Average Current Internal Resistance in Ohms
     DCIR = ACIR / 0.7 # DC Internal Resistance in Ohms
     P = I**2 * DCIR # Power dissipated as heat in Watts
     return P
@@ -55,9 +55,10 @@ def battery_efficiency():
     Efficiency = (Average_discharge_voltage / Average_charge_voltage) # Efficiency of the battery
     return Efficiency
 
+print("Battery efficiency:", battery_efficiency())
 
 def heat_conduction(airframe=Airframe()):
-    k = 0.019  # Thermal conductivity of used foam in W/(m*K)
+    k = 0.017  # Thermal conductivity of used foam in W/(m*K)
     t = 0.03 # thickness of the material in meters
     delta_T = 70.0  # Difference Temperature in Kelvin
     n_batteries = 450 # Number of batteries
