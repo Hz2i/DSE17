@@ -29,7 +29,7 @@ class nacelles:
         self.m = None
 
 class airframe:
-    def __init__(self, S=36.0, A=25.0, qc_sweep=0.0, taper=1.0, dihedral=0.0 , airfoil=asb.Airfoil("e344"), fus = fuselage(), nac = nacelles(), display=False, init_polar=True):
+    def __init__(self, S=36.0, A=25.0, qc_sweep=0.0, taper=1.0, dihedral=0.0 , airfoil=asb.Airfoil("mh91"), fus = fuselage(), nac = nacelles(), display=False, init_polar=True):
         self.foil = airfoil
         self.AR = A
         self.taper = taper

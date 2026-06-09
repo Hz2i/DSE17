@@ -64,7 +64,7 @@ class Aircraft:
     def inner_iter(self):
         err = 1.0e3
         iterations = 0
-        damping = 0.25
+        damping = 0.5
         surface_check = True
 
         # Ensure the first iteration of area sizing undershoots:
@@ -111,20 +111,23 @@ class Aircraft:
             # OEM_temp = self.internal_struct.total_structure_weight + self.compute_subsys_mass()
             # MTOW_temp = OEM_temp/self.OEM_frac
 
+            # REMOVE LATER!!!
+            self.CL_CD += 10.0
+
             self.T_req = self.MTOW*self.const.g/self.CL_CD + self.MTOW*self.const.g * np.sin(np.radians(self.gamma))
             self.prop = PropulsionSystem(required_thrust_cruise=self.T_req, v_inf_cruise=self.TAS_cruise, m_TO=self.MTOW, S=self.airframe.S,CL_max=self.airframe.CL_max)
 
             self.Pow_motor, self.Prop_mass = self.prop.run_full_analysis()
             self.Pow_req = self.compute_subsys_pow() + self.Pow_motor
 
-            print(f"motor power: {self.Pow_motor} W, total motor mass: {self.Prop_mass} kg, power required: {self.Pow_req} W")
+            # print(f"motor power: {self.Pow_motor} W, total motor mass: {self.Prop_mass} kg, power required: {self.Pow_req} W")
 
             self.pow_store = power_storage(self.Pow_req, latitude=self.lat, days_from_solstice=self.day_margin, DOD=self.DoD, batteries_used=self.use_batt, energy_delta=self.energy_delta)
             self.pow_store.compute_weight_volume()
             self.solar = power_generation(self.Pow_req, latitude=self.lat, days_from_solstice=self.day_margin, energy_delta=self.energy_delta)
             self.solar.compute_weight_surface()
 
-            print(f"power storage weight: {self.pow_store.mass} kg")
+            # print(f"power storage weight: {self.pow_store.mass} kg")
 
             if self.solar.area < self.airframe.S/1.025:
                 surface_check = False
@@ -141,6 +144,7 @@ class Aircraft:
                 print("Inner iteration:", iterations)
                 print("Wing surface:", self.airframe.S)
                 print("Surface difference:", self.solar.area - self.airframe.S)
+                print("_________________________")
 
         print("Optimal CL:", self.CL_opt)
         print("CL:", CL_current)
@@ -151,9 +155,9 @@ class Aircraft:
     def size_structure(self):
         self.airframe.compute_load_distribution(alpha=self.alpha, TAS=self.TAS_cruise, alt=self.h, res=20)
 
-        I_lift_spar, I_lift_connection = bending_stress_lift(airframe=self.airframe, ult_safety_factor=2.0)
-        I_drag_spar, I_drag_connection = bending_stress_drag(airframe=self.airframe, ult_safety_factor=2.0)
-        t_skin = torsional_stress(airframe=self.airframe, ult_safety_factor=2.0)
+        I_lift_spar, I_lift_connection = bending_stress_lift(airframe=self.airframe, ult_safety_factor=1.5)
+        I_drag_spar, I_drag_connection = bending_stress_drag(airframe=self.airframe, ult_safety_factor=1.5)
+        t_skin = torsional_stress(airframe=self.airframe, ult_safety_factor=1.5)
 
         # print("I_xx_spar_req:", I_lift_spar)
         # print("I_yy_spar_req:", I_drag_spar)

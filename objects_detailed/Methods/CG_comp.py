@@ -494,7 +494,13 @@ class CG_comp:
 
         return groups
     
-
+    def BendingRelief(self, mass_list=None, y_list=None):
+        #Mass * Y * g= Bending Moment
+        bending_moment_list = (mass_list/2.0) * y_list * 9.81
+        #Calculate Bending Relief as the sum of bending moments divided by the total mass
+        bending_relief = sum(bending_moment_list)
+        return bending_relief
+    
     def plot_CG(self, l_batt_dist=None):
         import plotly.io as pio
         pio.renderers.default = "browser"
@@ -506,6 +512,9 @@ class CG_comp:
         x_batt = self.Batt_Distribution(l_batt_dist)[0]
         y_batt = self.Batt_Distribution(l_batt_dist)[1]
         mass_list, x_list, y_list, name_list, x_cg, batt_area, l_batt_dist = self.calculate_cg_batt(l_batt_dist)
+        print(f'mass list: {mass_list}')
+        bending_relief = self.BendingRelief(mass_list, y_list)
+        print(f"Bending Relief: {bending_relief:.2f} N*m")
         # Update Name List so same x       
         # CG points
         for i in range(len(mass_list)):
@@ -676,7 +685,7 @@ class CG_comp:
         fig.add_trace(self.plot_wing_contour(left_half=True))
 
         fig.update_layout(
-            title="Center of Gravity Distribution",
+            title=f"Center of Gravity Distribution - Bending Relief: {self.BendingRelief():.2f} N*m",
             xaxis_title="X Coordinate",
             yaxis_title="Y Coordinate",
             showlegend=True
@@ -716,6 +725,9 @@ class CG_comp:
 )
         fig.write_html("cg_plot.html", auto_open=True)
         # fig.show()
+    
+    
+
 
 if __name__ == "__main__":
     airframe = Airframe.airframe(qc_sweep=np.radians(15), init_polar=False)
