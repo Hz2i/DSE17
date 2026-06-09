@@ -144,7 +144,7 @@ class Mass_moments:
         d  = rc - np.array(self.cg)
 
         Ic  = (mass * length**2 / 12.0) * (np.eye(3) - np.outer(u, u))
-        return Ic + self._parallel_axis(mass, d)
+        return (Ic + self._parallel_axis(mass, d)) * 2 # doubled due to wing symmetry
 
     # ------------------------------------------------------------------ #
     #  batteries
@@ -153,7 +153,7 @@ class Mass_moments:
     def batteries_inertia_fd(
             self,
             total_mass,
-            span_sections,,
+            span_sections,
     ):
         """
         Inertia tensor of batteries in the leading 20% of the MH91 airfoil.
@@ -221,7 +221,7 @@ class Mass_moments:
                 "volume":      A_cross * fill_length,
             })
 
-        return I_total, section_info
+        return I_total * 2, section_info # doubled due to wing symmetry
 
     # ------------------------------------------------------------------ #
     #  skin
@@ -294,7 +294,7 @@ class Mass_moments:
                 "mass":      mass,
             })
 
-        return I_total, section_info
+        return I_total * 2, section_info # doubled due to wing symmetry
 
     def rib_point_mass_inertia_full(
             self,
@@ -359,7 +359,7 @@ class Mass_moments:
             I_total += I
             M_total += mass
 
-        return M_total, I_total
+        return M_total, I_total * 2 # doubled due to wing symmetry
 
     def solar_panel_inertia_fd(
             self,
@@ -449,7 +449,7 @@ class Mass_moments:
             "chord_limits": chord_limits,
         }
 
-        return I_total, section_info
+        return I_total * 2, section_info # doubled due to wing symmetry
 
     def payload_inertia_fd(
             self,
@@ -473,7 +473,7 @@ class Mass_moments:
             [-x * z, -y * z, x ** 2 + y ** 2]
         ])
 
-        return I
+        return I # not doubled as at centre
 
     def motor_inertia_fd(
             self,
@@ -538,7 +538,7 @@ class Mass_moments:
             I_total += I
             M_total += mass
 
-        return M_total, I_total
+        return M_total, I_total * 2 # doubled due to wing symmetry
 
     def radius_of_gyration(self, I_total, M_total):
         """
@@ -609,7 +609,7 @@ half_span = cs.b / 2   # 14.4 m
 # --- spar (one half-wing) ---
 I_spar = cs.spar_inertia_fd(
     mass=20,
-    length=half_span,,
+    length=half_span,
 )
 print("Spar inertia tensor [kg·m²]:")
 print(np.round(I_spar, 4))
