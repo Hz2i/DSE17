@@ -56,8 +56,8 @@ MH91_COORDS = np.array([
 class Mass_moments:
 
     def __init__(self):
-        self.spar_major_axis = 0.5
-        self.spar_minor_axis = 0.4
+        # self.spar_major_axis = 0.5
+        # self.spar_minor_axis = 0.4
 
         self.cg = (-2.19, 0.0, 0.0)
         self.root = (0.0, 0.0, 0.0) # body axis central point
@@ -68,7 +68,7 @@ class Mass_moments:
         self.sweep    = np.radians(15)
         self.dihedral = np.radians(2)
         self.twist    = np.radians(4.675)
-        self.twist_rate = np.radians(self.twist/self.half_b)
+        self.twist_rate = self.twist/self.half_b
 
         # MH91 leading-20% battery box geometry
         self.battery_chord_fraction     = 0.20
@@ -84,9 +84,9 @@ class Mass_moments:
         Λ = self.sweep
         Γ = self.dihedral
         return np.array([
-            np.cos(Γ) * np.sin(Λ),
+            -np.cos(Γ) * np.sin(Λ),
             np.cos(Γ) * np.cos(Λ),
-            np.sin(Γ),
+            -np.sin(Γ),
         ])
 
     def _parallel_axis(self, mass, d):
@@ -144,7 +144,16 @@ class Mass_moments:
         d  = rc - np.array(self.cg)
 
         Ic  = (mass * length**2 / 12.0) * (np.eye(3) - np.outer(u, u))
-        return (Ic + self._parallel_axis(mass, d)) * 2 # doubled due to wing symmetry
+
+        I_left = Ic + self._parallel_axis(mass, d)
+
+        T = np.diag([1, -1, 1])
+
+        I_right = T @ I_left @ T.T
+
+        I_total = I_left + I_right
+
+        return I_total
 
     # ------------------------------------------------------------------ #
     #  batteries
@@ -200,7 +209,7 @@ class Mass_moments:
                     f"exceeds available span {sl:.3f} m. Add more sections."
                 )
 
-        I_total      = np.zeros((3, 3))
+        I_left      = np.zeros((3, 3))
         section_info = []
 
         for (y_inner, _), fill_length in zip(span_sections, fill_lengths):
@@ -213,7 +222,8 @@ class Mass_moments:
             wh2 = batt_width**2 + batt_height**2
             Ic  = (mass / 12.0) * (L2 * np.eye(3) + (wh2 - L2) * np.outer(u, u))
 
-            I_total += Ic + self._parallel_axis(mass, d)
+            I_left += Ic + self._parallel_axis(mass, d)
+
             section_info.append({
                 "section":     (y_inner, y_inner + fill_length),
                 "fill_length": fill_length,
@@ -221,7 +231,13 @@ class Mass_moments:
                 "volume":      A_cross * fill_length,
             })
 
-        return I_total * 2, section_info # doubled due to wing symmetry
+            T = np.diag([1, -1, 1])
+
+            I_right = T @ I_left @ T.T
+
+            I_total = I_left + I_right
+
+        return I_total, section_info # doubled due to wing symmetry
 
     # ------------------------------------------------------------------ #
     #  skin
@@ -262,7 +278,7 @@ class Mass_moments:
         # (thin-ring equivalent: r² = P² / 4π²)
         r_gyr2 = perimeter**2 / (4 * np.pi**2)
 
-        I_total      = np.zeros((3, 3))
+        I_left      = np.zeros((3, 3))
         section_info = []
 
         for (y_inner, y_outer) in span_sections:
@@ -277,7 +293,7 @@ class Mass_moments:
             # Centroid: spar midpoint + cross-section offset
             p_inner = np.array(self.root) + y_inner * u
             rc_spar = p_inner + 0.5 * seg_len * u
-            rc      = rc_spar + np.array([x_skin, 0.0, z_skin])
+            rc      = rc_spar + np.array([-x_skin, 0.0, z_skin])
             d       = rc - np.array(self.cg)
 
             L2 = seg_len**2
@@ -286,7 +302,7 @@ class Mass_moments:
                 + r_gyr2    *  np.outer(u, u)
             )
 
-            I_total += Ic + self._parallel_axis(mass, d)
+            I_left += Ic + self._parallel_axis(mass, d)
             section_info.append({
                 "section":   (y_inner, y_outer),
                 "span_len":  seg_len,
@@ -294,7 +310,13 @@ class Mass_moments:
                 "mass":      mass,
             })
 
-        return I_total * 2, section_info # doubled due to wing symmetry
+            T = np.diag([1, -1, 1])
+
+            I_right = T @ I_left @ T.T
+
+            I_total = I_left + I_right
+
+        return I_total, section_info # doubled due to wing symmetry
 
     def rib_point_mass_inertia_full(
             self,
@@ -324,7 +346,7 @@ class Mass_moments:
         twist = θ0 + θt * y_span
 
         # position in aircraft body axes (root frame)
-        x_rib = x0 + y_span * np.tan(Λ)
+        x_rib = x0 - y_span * np.tan(Λ)
         y_rib = y0 + y_span
         z_rib = z0 - y_span * np.tan(Γ)
 
@@ -347,7 +369,7 @@ class Mass_moments:
             ribs,
     ):
 
-        I_total = np.zeros((3, 3))
+        I_left = np.zeros((3, 3))
         M_total = 0.0
 
         for mass, y in ribs:
@@ -356,10 +378,16 @@ class Mass_moments:
                 y_span=y,
             )
 
-            I_total += I
+            I_left += I
             M_total += mass
 
-        return M_total, I_total * 2 # doubled due to wing symmetry
+        T = np.diag([1, -1, 1])
+
+        I_right = T @ I_left @ T.T
+
+        I_total = I_left + I_right
+
+        return M_total, I_total
 
     def solar_panel_inertia_fd(
             self,
@@ -410,7 +438,7 @@ class Mass_moments:
         centroid_global = (
                 np.array(self.root) +
                 y_centroid_local * u_spar +
-                np.array([x_centroid_local, 0.0, 0.0])  # Assuming chord is aligned with x-axis
+                np.array([-x_centroid_local, 0.0, 0.0])  # Assuming chord is aligned with x-axis
         )
 
         # Offset from the aircraft CG
@@ -426,19 +454,27 @@ class Mass_moments:
         ])
 
         # Rotation matrix from local to global body axes
-        u_spar_normalized = u_spar / np.linalg.norm(u_spar)
-        local_x_axis = np.array([1.0, 0.0, 0.0])
-        local_z_axis = np.cross(u_spar_normalized, local_x_axis)
-        local_z_axis = local_z_axis / np.linalg.norm(local_z_axis)
-        local_y_axis = u_spar_normalized
+        e_span = u_spar
 
-        R = np.column_stack([local_x_axis, local_y_axis, local_z_axis])
+        e_chord = np.array([1.0, 0.0, 0.0])
+        e_chord -= np.dot(e_chord, e_span) * e_span
+        e_chord /= np.linalg.norm(e_chord)
+
+        e_normal = np.cross(e_span, e_chord)
+
+        R = np.column_stack((e_chord, e_span, e_normal))
 
         # Rotate the local inertia tensor to the global body axes
         I_rotated = R @ I_local @ R.T
 
         # Apply the parallel axis theorem
-        I_total = I_rotated + self._parallel_axis(mass, d)
+        I_left = I_rotated + self._parallel_axis(mass, d)
+
+        T = np.diag([1, -1, 1])
+
+        I_right = T @ I_left @ T.T
+
+        I_total = I_left + I_right
 
         # Section info
         section_info = {
@@ -449,7 +485,7 @@ class Mass_moments:
             "chord_limits": chord_limits,
         }
 
-        return I_total * 2, section_info # doubled due to wing symmetry
+        return I_total, section_info
 
     def payload_inertia_fd(
             self,
@@ -473,7 +509,7 @@ class Mass_moments:
             [-x * z, -y * z, x ** 2 + y ** 2]
         ])
 
-        return I # not doubled as at centre
+        return I
 
     def motor_inertia_fd(
             self,
@@ -502,7 +538,7 @@ class Mass_moments:
         xcg, ycg, zcg = self.cg
 
         # position in aircraft body axes (root frame)
-        x_motor = x0 + y_span * np.tan(Λ) + x_offset
+        x_motor = x0 - y_span * np.tan(Λ) + x_offset
         y_motor = y0 + y_span
         z_motor = z0 - y_span * np.tan(Γ)
 
@@ -525,7 +561,7 @@ class Mass_moments:
             motors,
     ):
 
-        I_total = np.zeros((3, 3))
+        I_left = np.zeros((3, 3))
         M_total = 0.0
 
         for mass, y, x_offset in motors:
@@ -535,10 +571,16 @@ class Mass_moments:
                 x_offset=x_offset,
             )
 
-            I_total += I
+            I_left += I
             M_total += mass
 
-        return M_total, I_total * 2 # doubled due to wing symmetry
+            T = np.diag([1, -1, 1])
+
+            I_right = T @ I_left @ T.T
+
+            I_total = I_left + I_right
+
+        return M_total, I_total # doubled due to wing symmetry
 
     def radius_of_gyration(self, I_total, M_total):
         """
