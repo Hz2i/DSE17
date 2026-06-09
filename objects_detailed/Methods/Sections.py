@@ -11,13 +11,18 @@ import Airframe
 #Find n sections and slanted span start of first section and section length
 
 class Sections:
-    def __init__(self, airframe=Airframe.airframe(qc_sweep=np.radians(15), A=25, S=36)):
+    def __init__(self, airframe=Airframe.airframe(qc_sweep=np.radians(15)), Plot=False):
         #Initial Guess
         self.main_section_inside = 0.5
         self.airframe = airframe
         self.max_length = 4.72#From Container
         self.slanted_span_b_2 = (self.airframe.b/2) / np.cos(self.airframe.qc_sweep)
-        self.n_sections = self.find_sections(self.main_section_inside)
+        self.n_sections = 4
+        self.optimized_main_section_inside,_ = self.optimize_sections()
+        self.l_main_section, self.l_main_section_spar, self.l_wingtip_section, self.l_total, self.l_middle_wing_section = self.find_sections(self.optimized_main_section_inside)
+        if Plot:
+            self.plot_sections(self.optimized_main_section_inside)
+
         
 
     def find_sections(self, main_section_inside):
@@ -91,8 +96,4 @@ class Sections:
         plt.show()
 
 if __name__ == "__main__":
-    sections = Sections()
-    main_section_inside, section_lengths = sections.optimize_sections()
-    print(f"Optimized main section inside length: {main_section_inside}")
-    print(f"Section lengths (main section length, main section spar, wingtip section length, total length, middle wing section length): {section_lengths}")
-    sections.plot_sections(main_section_inside)
+    sections = Sections(Plot=True)

@@ -12,7 +12,8 @@ import Airframe
 import Components_Materials
 import GeneralSubsystems
 import PowerSystem_sizing
-import SparGeometryParam 
+import SparGeometryParam
+import Sections
 
 class Available_BatteryCrossSection:
     def __init__(self, AirGEO = SparGeometryParam.AirfoilGeometry(), width_clamp=0.125, plot = False):
@@ -84,7 +85,7 @@ class Available_BatteryCrossSection:
         plt.show()
 
 class CG_comp:
-    def __init__(self, x_cg_goal=2.4, airframe=Airframe.airframe(),
+    def __init__(self, x_cg_goal=2.4, batt_section=1, airframe=Airframe.airframe(),
                 #  Sol=PowerSystem_sizing.power_generation(),
                 #  Batt=PowerSystem_sizing.power_storage(),
                  Fcs = GeneralSubsystems.FlightConditionsSystem(),
@@ -92,14 +93,16 @@ class CG_comp:
                  Comms = GeneralSubsystems.CommunicationSystem(), 
                  Payload = GeneralSubsystems.PayloadSystem(),
                  Batt = Available_BatteryCrossSection(AirGEO = SparGeometryParam.AirfoilGeometry(), width_clamp=0.125),
+                 Wing_sections = Sections.Sections(),
                  t_skin_airfoil=0.0002):
         
+        #Selection
+        self.selected_section = batt_section # [0,1,2]
         #section
-        self.l_main_section = 0.5
-        self.l_main_section_spar = 2.28 - self.l_main_section
-        #Guesses
-        self.l_batt_dist_guess = self.l_main_section_spar*2
-        print(f"Initial Battery Distance Guess: {self.l_batt_dist_guess:.3f} m")
+        self.l_main_section = Wing_sections.l_main_section
+        self.l_main_section_spar = Wing_sections.l_main_section_spar
+        self.wing_section_length = Wing_sections.l_middle_wing_section
+        
         self.Batt = Batt
         self.airframe = airframe
         self.airfoil = airframe.foil
@@ -146,13 +149,15 @@ class CG_comp:
         self.x_list = self.gen_x_list()
         self.y_list = self.gen_y_list()
         self.name_list = self.gen_name_list()
-
+        #Guesses
+        self.l_batt_dist_guess = self.wing_section_length
+        
+        print(f"Initial Battery Distance Guess: {self.l_batt_dist_guess:.3f} m")
+        #Optimize Battery Distribution
+        optimized_batt_dist, resulting_cg, batt_area = self.Optimizer_CG()
         #Plot CG
-        print(f"Battery x: {self.Batt_Distribution(self.l_batt_dist_guess)[0]}")
-        print(f"Battery y: {self.Batt_Distribution(self.l_batt_dist_guess)[1]}")
-        print(f"Battery areafilled: {self.Batt_Distribution(self.l_batt_dist_guess)[2]}")
-        print(f"Battery total mass: {self.Batt_Distribution(self.l_batt_dist_guess)[3]}")
-        self.plot_CG()
+        self.plot_CG(optimized_batt_dist)
+        print(f"Optimized Battery Distribution Length: {optimized_batt_dist:.3f} m, Resulting CG: {resulting_cg:.3f} m, Battery Area Used: {batt_area:.6f} m^2")
 
 
     def calc_x_prop_positions(self):
@@ -167,16 +172,18 @@ class CG_comp:
         batt_total_mass = n_batteries * self.mass_battery_1
         batt_total_vol_half= n_batteries * self.volume_battery_1/2
         #Find Datum Point
-        x_datum_bat = (self.l_main_section + 3.56*2)*np.sin(self.airframe.le_sweep)
-        y_datum_bat = (self.l_main_section + 3.56*2)*np.cos(self.airframe.le_sweep) 
-        print(f"Battery Datum Point: ({x_datum_bat:.3f}, {y_datum_bat:.3f}) m")
+        x_datum_bat = (self.l_main_section + self.wing_section_length*self.selected_section)*np.sin(self.airframe.le_sweep)
+        y_datum_bat = (self.l_main_section + self.wing_section_length*self.selected_section)*np.cos(self.airframe.le_sweep)
         half_batt_l = l_batt_dist/2
-        print(f"Battery Distribution: {n_batteries} batteries, total mass {batt_total_mass:.2f} kg, total half volume {batt_total_vol_half:.6f} m^3, distributed over {l_batt_dist:.3f} m")
         batt_centroid_x = x_datum_bat + self.Batt.x_centroid_batt + half_batt_l*np.sin(self.airframe.le_sweep)
         batt_centroid_y = y_datum_bat + half_batt_l*np.cos(self.airframe.le_sweep)
         batt_cross_section_filled = batt_total_vol_half/l_batt_dist
-        returnlist = np.asarray([batt_centroid_x, batt_centroid_y, batt_cross_section_filled, batt_total_mass]).astype(float).tolist()
-        return returnlist
+        return np.array([
+                            batt_centroid_x,
+                            batt_centroid_y,
+                            batt_cross_section_filled,
+                            batt_total_mass,
+                        ], dtype=object)
 
     def Calculate_Airfoil_Centroid(self):
         # Datum: leading edge, x along chord, z upward
@@ -248,8 +255,9 @@ class CG_comp:
             self.prop_eng,
             self.prop_eng,
             self.mass_wingtips,
-            self.mass_skin
-            #self.mass_spar
+            self.mass_skin,
+            #self.mass_spar,
+            0, #mass_total_battery
         ]
         return mass_list
     
@@ -264,8 +272,9 @@ class CG_comp:
             self.x_prop_2_3, #Assuming propellers are distributed around their CGs
             self.x_prop_1_4,
             self.x_wingtips, #Assuming wingtips are distributed around their CG
-            self.x_skin #Assuming skin mass is distributed around its centroid
+            self.x_skin, #Assuming skin mass is distributed around its centroid
             #self.x_cg_spar
+            0, #x_total_battery
         ]
         return x_list
     
@@ -280,8 +289,9 @@ class CG_comp:
             self.y_prop2_3,
             self.y_prop1_4,
             self.y_wingtips,
-            self.y_skin
+            self.y_skin,
             #self.y_cg_spar
+            0, #y_total_battery
         ]
         return y_list
     
@@ -297,55 +307,86 @@ class CG_comp:
             "Propeller 1/4",
             "Wingtips",
             "Skin",
-            # "Spar"
+            # "Spar",
+            "Battery"
         ]
         return name_list
 
     '''Calculate CG'''
-    # def calculate_cg(self):
-    #     mass_list = self.mass_list
-    #     x_list = self.x_list
-    #     y_list = self.y_list
-    #     x_cg = sum(m * x for m, x in zip(mass_list, x_list)) / sum(mass_list)
-    #     y_cg = sum(m * y for m, y in zip(mass_list, y_list)) / sum(mass_list)
-    #     return x_cg, y_cg
+    def calculate_cg(self):
+        mass_list = np.array(self.mass_list)
+        x_list = np.array(self.x_list)
+        y_list = np.array(self.y_list)
+        x_cg = np.sum(mass_list * x_list) / np.sum(mass_list)
+        y_cg = np.sum(mass_list * y_list) / np.sum(mass_list)
+        return x_cg, y_cg
 
-    def calculate_cg_batt(self, l_batt_dist):
-
-        batt_x, batt_y, batt_area, batt_mass = self.Batt_Distribution(l_batt_dist)
-
-        mass_list = np.append(np.asarray(self.gen_mass_list(), dtype=float), batt_mass)
-        x_list = np.append(np.asarray(self.gen_x_list(), dtype=float), batt_x)
-        y_list = np.append(np.asarray(self.gen_y_list(), dtype=float), batt_y)
-
-        name_list = self.gen_name_list() + ["Battery"]
-
+    def calculate_cg_batt(self,l_batt_dist):
+        batt_list = self.Batt_Distribution(l_batt_dist)
+        batt_area = batt_list[2]
+        
+        # Create lists and append battery values at the end
+        mass_list = list(self.mass_list)
+        x_list = list(self.x_list)
+        y_list = list(self.y_list)
+        
+        # Replace the last element (battery)
+        mass_list[-1] = batt_list[3]
+        x_list[-1] = batt_list[0]
+        y_list[-1] = batt_list[1]
+        
+        # Convert to numpy arrays
+        mass_list = np.array(mass_list)
+        x_list = np.array(x_list)
+        y_list = np.array(y_list)
+        
+        name_list = self.gen_name_list()
+        
         # CG calculation (fully vectorized)
         x_cg = np.sum(mass_list * x_list) / np.sum(mass_list)
         y_cg = np.sum(mass_list * y_list) / np.sum(mass_list)
         print(name_list)
 
-        return mass_list, x_list, y_list, name_list, float(x_cg), float(batt_area), float(l_batt_dist) # Return CG and battery parameters for optimization feedback
+        return mass_list, x_list, y_list, name_list, x_cg, batt_area, l_batt_dist
     
+    def optimize_function(self, l_batt_dist):
+        #Skip y_cg as assumption is symmetric
+        x_cg_no_batt = self.calculate_cg()
+        # distance_to_goal = abs(x_cg_no_batt - self.x_cg_goal)
+        # #Define Centers of Sections
+        # x_center_0 = (self.l_main_section + self.wing_section_length*(0.5))*np.sin(self.airframe.le_sweep)
+        # y_center_0 = (self.l_main_section + self.wing_section_length*(0.5))*np.cos(self.airframe.le_sweep)
+        # x_center_1 = (self.l_main_section + self.wing_section_length*(1.5))*np.sin(self.airframe.le_sweep)
+        # y_center_1 = (self.l_main_section + self.wing_section_length*(1.5))*np.cos(self.airframe.le_sweep)
+        # x_center_2 = (self.l_main_section + self.wing_section_length*(2.5))*np.sin(self.airframe.le_sweep)
+        # y_center_2 = (self.l_main_section + self.wing_section_length*(2.5))*np.cos(self.airframe.le_sweep)
+
+        
+        
+        _, _, _, _, x_cg_with_batt, batt_area, _ = self.calculate_cg_batt(l_batt_dist)
+        return l_batt_dist, x_cg_with_batt, batt_area
+
 
     '''Optimizer'''
 
-    # def Optimizer_CG():
-    #     opti = asb.Opti()
+    def Optimizer_CG(self):
+        opti = asb.Opti()
        
-    #     # Define optimization variables
-    #     l_batt_dist = opti.variable(init_guess=(self.main_section_spar*2), lower_bound=0.5, upper_bound=(self.max_length/2-1))
-    #     #Optimize Function
-    #     function = self.find_sections(main_section_inside)
-    #     #Feasibility
-    #     opti.subject_to(function[1] <= (self.max_length/2))
-    #     # opti.subject_to((function[1]) >= (self.max_length/2))
-        
-        
-    #     opti.maximize(function[1])
-    #     # Define the objective function (e.g., minimize the difference between main section length and wingtip section length)
-    #     sol = opti.solve()
-    #     return sol.value(main_section_inside), self.find_sections(sol.value(main_section_inside))
+        # Define optimization variables
+        l_batt_dist = opti.variable(init_guess=self.l_batt_dist_guess, lower_bound=0.5, upper_bound=self.wing_section_length)  # Battery distribution length along the wing
+        #Optimize Function
+        function = self.optimize_function(l_batt_dist)
+        #Feasibility
+        opti.subject_to(function[1] == self.x_cg_goal)  # Enforce CG to be exactly at the target (can be relaxed to a range if needed)
+        # opti.subject_to(function[1] >= self.x_cg_goal - 0.001)  # Allow for a small tolerance around the target CG
+        # opti.subject_to(function[1] <= self.x_cg_goal + 0.001)
+        opti.subject_to(function[2] <= 0.9 * self.Batt.battery_cross_section_area)  #Add Safety Factor to Allow for insulation 
+
+        opti.minimize(function[2])#Allow for most insulation
+        # Define the objective function (e.g., minimize the difference between main section length and wingtip section length)
+        sol = opti.solve()
+        return sol.value(l_batt_dist), sol.value(function[1]), sol.value(function[2]) # Return optimized section, battery distribution length, resulting CG, and battery area for feedback
+    
     def plot_wing_contour(self):
         cr = self.airframe.c_r
         b = self.airframe.b
@@ -379,8 +420,22 @@ class CG_comp:
             name="Wing Contour",
             line=dict(color="black", width=2)
         )
+    
+    def plot_section_lines(self):
+        # Plot vertical lines for sections
+        section_positions = [
+            self.l_main_section,
+            self.l_main_section + self.l_main_section_spar,
+            self.l_main_section + self.l_main_section_spar + self.wing_section_length,
+            self.l_main_section + self.l_main_section_spar + 2*self.wing_section_length,
+            self.l_main_section + self.l_main_section_spar + 3*self.wing_section_length
+        ]
+        for pos in section_positions:
+            x_line = pos * np.sin(self.airframe.le_sweep)
+            y_line = pos * np.cos(self.airframe.le_sweep)
+            plt.plot([x_line, x_line], [0, y_line], color='gray', linestyle='--', linewidth=1)
 
-    def plot_CG(self):
+    def plot_CG(self, l_batt_dist=None):
         import plotly.io as pio
         pio.renderers.default = "browser"
         fig = go.Figure()
@@ -388,7 +443,9 @@ class CG_comp:
             xaxis=dict(range=[-1, 6]),
             yaxis=dict(range=[-1, 20])
         )
-        mass_list, x_list, y_list, name_list, x_cg, batt_area, l_batt_dist = self.calculate_cg_batt(self.l_batt_dist_guess)
+        x_batt = self.Batt_Distribution(l_batt_dist)[0]
+        y_batt = self.Batt_Distribution(l_batt_dist)[1]
+        mass_list, x_list, y_list, name_list, x_cg, batt_area, l_batt_dist = self.calculate_cg_batt(l_batt_dist)
         # CG points
         for i in range(len(mass_list)):
             fig.add_trace(
@@ -414,6 +471,18 @@ class CG_comp:
                 marker=dict(symbol="x", size=12, color="black")
             )
         )
+        # CG NO BATTERY
+        x_cg_no_batt = self.calculate_cg()[0]
+        fig.add_trace(
+            go.Scatter(
+                x=[x_cg_no_batt],
+                y=[0],
+                mode="markers",
+                name="CG without Battery",
+                marker=dict(symbol="x", size=12, color="blue"),
+                opacity=0.5
+            )
+        )
         # Computed CG
         fig.add_trace(
             go.Scatter(
@@ -421,10 +490,36 @@ class CG_comp:
                 y=[0],
                 mode="markers",
                 name="Computed CG",
-                marker=dict(symbol="x", size=24, color="red")
+                marker=dict(symbol="x", size=24, color="red"),
+                opacity=0.5
             )
         )
+        #Battery Distribution Annotation
+        fig.add_annotation(
+            x=x_batt,
+            y=y_batt,
+            text=f"Middle Point of Battery Distribution<br>Length: {l_batt_dist:.2f} m<br>Area Used: {batt_area:.4f} m²",
+            showarrow=True,
+            arrowhead=1,
+            ax=0,
+            ay=-40
+        )
+        sweep = self.airframe.le_sweep
 
+        n_points = 100
+
+        # spanwise distribution (CENTERED at y_batt)
+        y_batt_dist = np.linspace(-l_batt_dist/2, l_batt_dist/2, n_points) + y_batt
+
+        # LE sweep projects x from y
+        x_batt_dist =y_batt_dist * np.tan(sweep) + self.Batt.x_centroid_batt
+        fig.add_scatter(
+            x=x_batt_dist,
+            y=y_batt_dist,
+            mode="lines",
+            name="Battery Distribution",
+            line=dict(color="red", width=2)
+        )
         # Wing contour
         fig.add_trace(self.plot_wing_contour())
 
@@ -435,6 +530,22 @@ class CG_comp:
             showlegend=True
         )
 
+        #Wing Section Lines
+        section_positions = [
+        self.l_main_section,
+        self.l_main_section + self.wing_section_length,
+        self.l_main_section + self.wing_section_length * 2,
+        self.l_main_section + self.wing_section_length * 3
+        ]
+        y_sec_list = []
+        for sec in section_positions:
+            #Generate Horizontal Lines for Sections
+            #Find y coordinate at section
+            y_span = sec * np.cos(self.airframe.le_sweep)
+            y_sec_list.append(y_span)
+            fig.add_hline(y=y_span, line=dict(color="gray", width=1, dash="dash"), annotation_text=f"Section at {sec:.2f} m along LE Swept", annotation_position="top left")
+            
+        #Layout
         fig.update_layout(
             xaxis=dict(range=[-1, 6]),
             yaxis=dict(range=[-1, 20])
@@ -442,165 +553,8 @@ class CG_comp:
         fig.write_html("cg_plot.html", auto_open=True)
         # fig.show()
 
-class Fitting:
-    def __init__(self, x_data, y_data):
-        self.x_data = x_data
-        self.y_data = y_data
-
-    def linear_fit(self):
-        coeffs = np.polyfit(self.x_data, self.y_data, 1)
-        return coeffs
-    
-    '''Check Fitting'''
-    def AC_layout(self):
-        b = self.airframe.b
-        c_r = self.airframe.c_r
-        c_t = self.airframe.c_t
-        sweep = self.airframe.le_sweep
-
-        edge_margin = 0.005
-        span = b / 2
-
-        # -------------------------
-        # Panel grid (centers)
-        # -------------------------
-        y_edges = np.arange(-span + edge_margin,
-                             span - edge_margin + self.panel_size,
-                             self.panel_size)
-
-        x_edges = np.arange(edge_margin,
-                            c_r + edge_margin,
-                            self.panel_size)
-
-        y_centers = (y_edges[:-1] + y_edges[1:]) / 2
-        x_centers = (x_edges[:-1] + x_edges[1:]) / 2
-
-        Xc, Yc = np.meshgrid(x_centers, y_centers)
-        Xc = Xc + np.abs(Yc) * np.tan(sweep)  # Shift x-coordinates based on sweep
-
-        # -------------------------
-        # Wing geometry (FIXED SWEEP)
-        # -------------------------
-        chord = c_r - (np.abs(Yc) / span) * (c_r - c_t)
-        chord = np.maximum(chord, 1e-6)
-
-        x_le = np.abs(Yc) * np.tan(sweep)  
-
-        # -------------------------
-        # Airfoil thickness
-        # -------------------------
-        x_over_c = (Xc - x_le) / chord
-        x_over_c = np.clip(x_over_c, 0.0, 1.0)
-
-        t_over_c = self.airfoil.local_thickness(x_over_c)
-
-        Z = t_over_c * chord  # meters
-
-        print("Xc shape: ", Xc.shape)
-        print("Yc shape: ", Yc.shape)
-        print("Z shape: ", Z.shape)
-        return Xc, Yc, Z
-
-    def plot_mesh_plotly(self):
-
-        X, Y, Z = self.AC_layout()
-
-        b = self.airframe.b
-        c_r = self.airframe.c_r
-        c_t = self.airframe.c_t
-        sweep = self.airframe.le_sweep
-
-        span = b / 2
-
-        # -------------------------
-        # Wing outline (2D reference)
-        # -------------------------
-        y = np.linspace(-b/2, b/2, 300)
-
-        chord = c_r - (np.abs(y) / span) * (c_r - c_t)
-        x_le = np.abs(y) * np.tan(sweep)   # FIXED
-        x_te = x_le + chord
-        print(X)
-        # -------------------------
-        # Create figure
-        # -------------------------
-        fig = go.Figure()
-
-        # -------------------------
-        # 1. Wing surface
-        # -------------------------
-        fig.add_trace(go.Surface(
-            x=X,
-            y=Y,
-            z=Z,
-            colorscale='Viridis',
-            showscale=True,
-            name="Wing surface",
-            opacity=1.0
-        ))
-
-        # -------------------------
-        # 2. Leading edge
-        # -------------------------
-        fig.add_trace(go.Scatter3d(
-            x=x_le,
-            y=y,
-            z=np.zeros_like(y),
-            mode='lines',
-            line=dict(color='black', width=5),
-            name="Leading edge"
-        ))
-
-        # -------------------------
-        # 3. Trailing edge
-        # -------------------------
-        fig.add_trace(go.Scatter3d(
-            x=x_te,
-            y=y,
-            z=np.zeros_like(y),
-            mode='lines',
-            line=dict(color='black', width=5),
-            name="Trailing edge"
-        ))
-
-        # -------------------------
-        # 4. Chordwise guide lines (IMPORTANT FOR SWEEP VISIBILITY)
-        # -------------------------
-        for yi in np.linspace(-b/2, b/2, 10):
-
-            chord_i = c_r - (np.abs(yi) / span) * (c_r - c_t)
-            x_le_i = np.abs(yi) * np.tan(sweep)
-
-            fig.add_trace(go.Scatter3d(
-                x=[x_le_i, x_le_i + chord_i],
-                y=[yi, yi],
-                z=[0, 0],
-                mode='lines',
-                line=dict(color='gray', width=2),
-                showlegend=False
-            ))
-
-        # -------------------------
-        # Layout
-        # -------------------------
-        fig.update_layout(
-            title=f"HAPS Wing Panel Mesh ({self.panel_size} m × {self.panel_size} m) with Sweep + Thickness",
-            scene=dict(
-                xaxis_title="x (m)",
-                yaxis_title="y (m)",
-                zaxis_title="thickness (m)",
-                aspectmode="data"
-            ),
-            margin=dict(l=0, r=0, t=40, b=0)
-        )
-
-        fig.show()
-
 if __name__ == "__main__":
-    airframe = Airframe.airframe(qc_sweep=np.radians(15), init_polar=False, display=False)
+    airframe = Airframe.airframe(qc_sweep=np.radians(15), init_polar=False)
     airfoil_geometry = SparGeometryParam.AirfoilGeometry(Airframe = airframe)
     battery_cross_section = Available_BatteryCrossSection(AirGEO=airfoil_geometry, width_clamp=0.05)
-    print(f"Battery Cross-Section Area: {battery_cross_section.battery_cross_section_area:.6f} m^2")
-    print(f"Battery Centroid (x): {battery_cross_section.x_centroid_batt:.6f} m")
-    print(f"Battery Centroid (z): {battery_cross_section.z_centroid_batt:.6f} m")
-    cg_calculator = CG_comp(x_cg_goal=2.4, airframe=airframe)
+    cg_calculator = CG_comp(x_cg_goal=2.55, batt_section=2, airframe=airframe, Batt=battery_cross_section, Wing_sections=Sections.Sections(airframe=airframe, Plot=False), t_skin_airfoil=0.0002)
