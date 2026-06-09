@@ -47,7 +47,7 @@ def battery_heat_dissipation():
 
 def battery_efficiency():
     I = 2.36 # Current in Amperes
-    V = 3.4 # Average charge voltage in Volts
+    V = 3.45 # Average charge voltage in Volts
     ACIR = 0.020 # Average Current Internal Resistance in Ohms
     DCIR = ACIR / 0.7 # DC Internal Resistance in Ohms
     delta_V = I * DCIR # Power loss due to internal resistance in Watts
@@ -57,16 +57,16 @@ def battery_efficiency():
     return Efficiency
 
 
-
+print("Battery efficiency:", battery_efficiency())
 
 aircraft_instance = Aircraft()
 
 
-print(aircraft_instance.compute_subsys_pow())
+# print(aircraft_instance.compute_subsys_pow())
 
 def number_batteries_required(aircraft_instance = Aircraft()):
     Pow_req = aircraft_instance.compute_subsys_pow()
-    Pow_battery = 2.36 * 3.4 * battery_efficiency() # Power provided by each battery in Watts
+    Pow_battery = 2.36 * 3.45 * battery_efficiency() # Power provided by each battery in Watts
     n_batteries_required = Pow_req / Pow_battery # Number of batteries required to meet the power requirement
     return n_batteries_required
 
@@ -82,3 +82,5 @@ def heat_conduction(airframe=Airframe()):
     Q_required = 2 * ((k * airframe.S * 0.3 * delta_T / 4.5 ) / t - Q_battery) # Required heat transfer rate in Watts
 
     return Q_required, Q_heatengines
+
+print("Required heat transfer rate (Q) in Watts:", heat_conduction()[0])
