@@ -1,0 +1,13 @@
+ - Final wing surface area: 55.79535859750816
+ - Solar panel area: 54.19851390297442
+ - Wing airfoil: Airfoil mh91 (68 points)
+ - Wing aspect ratio: 20.0
+ - Total wing span: 33.405196780593336
+ - Wing root chord: 1.6702598390296668
+ - Wing tip chord: 1.6702598390296668
+ - Wing taper: 1.0
+ - Wing QC sweep: 0.2617993877991494
+ - Wing LE sweep: 0.2617993877991494
+ - Wing dihedral: 0.0
+ - Wing twist: -4.675
+ - Wing internal structure parameters: {'t_spar': 0.0017313900367461794, 't_sleeve': 0.005728992976302554, 'Clamp_width': 0.05693388838726299, 'eccentricity_factor': 10.000000093991648, 'r_top': 0.010466944193631492, 'Clamp_height': 0.12107643709420637, 'a_sleeve_out': 0.10466949290057488, 'a_sleeve_in': 0.09894049992427233, 'a_rubber_out': 0.09894049992427233, 'a_rubber_in': 0.09794049992427233, 'a_spar_out': 0.09794049992427233, 'a_spar_in': 0.09620910988752615, 'b_sleeve_out': 0.010466949191676907, 'b_sleeve_in': 0.009894049899431427, 'b_rubber_out': 0.009894049899431427, 'b_rubber_in': 0.009794049900371343, 'b_spar_out': 0.009794049900371343, 'b_spar_in': 0.009620910898324089, 'A_sleeve': 0.0003664605651491149, 'A_rubber': 6.185198969420325e-05, 'A_spar': 0.00010560422767161423, 'A_clamp_1': 0.004828251391854758, 'A_clamp_2x': 0.009656502783709517, 'I_xx_sleeve': 1.900549259543563e-06, 'I_yy_sleeve': 1.900549259543563e-06, 'I_xx_spar': 4.976212282136484e-07, 'I_yy_spar': 4.976212282136484e-07, 'weight_clamp': 2.776244550316486, 'weight_sleeve': 1.623420303610579, 'weight_spar': 0.18163927159517648, 'weight_rubber': 0.06803718866362357, 'total_sl_and_sp_weight': 1.873096763869379, 'total_weight': 4.649341314185865}
