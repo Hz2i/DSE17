@@ -1,6 +1,0 @@
- - Final MTOW: 362.6163305584961
- - Energy storage system mass: 158.74156054059708
- - Energy generation system mass: 26.914847823690337
- - Total structural mass: 119.03566622546568
- - Propulsion system mass: 19.737770527683345
- - Total general subsystem mass: 17.525929247

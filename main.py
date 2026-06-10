@@ -21,7 +21,7 @@ gen_subsys_frac_prev = 0.05
 
 
 MTOW_initial = 100.0
-TAS_initial = 30.0
+TAS_initial = 25.0
 gamma = 0.0
 h_cruise = 18500.0
 lat = 30.0
@@ -136,6 +136,8 @@ if save_bool == "Y":
     print(" - Energy storage system mass:", AHAPS.pow_store.mass, file=out_file)
     print(" - Energy generation system mass:", AHAPS.solar.mass, file=out_file)
     print(" - Total structural mass:", AHAPS.airframe.m_total, file=out_file)
+    print(" - Total skid mass:", AHAPS.m_skid, file=out_file)
+    print(" - Total winglet mass (both included):", AHAPS.mass_winglet, file=out_file)
     print(" - Propulsion system mass:", AHAPS.Prop_mass, file=out_file)
     print(" - Total general subsystem mass:", AHAPS.compute_subsys_mass(), file=out_file)
 
@@ -169,11 +171,14 @@ if save_bool == "Y":
 
     out_file = open(cruise_file_ID, "w")
 
+    print(" - TAS at cruise:", AHAPS.TAS_cruise, file=out_file)
+    print(" - Thrust at cruise:", AHAPS.T_req, file=out_file)
     print(" - CD0:", AHAPS.airframe.CD0, file=out_file)
     print(" - K1 (drag polar coefficient):", AHAPS.airframe.K1, file=out_file)
     print(" - K2 (drag polar coefficient):", AHAPS.airframe.K2, file=out_file)
     print(" - Cruise CL:", AHAPS.CL_cruise, file=out_file)
     print(" - Cruise CD:", AHAPS.CD_cruise, file=out_file)
+    print(" - Lift over drag at cruise:", AHAPS.CL_CD, file=out_file)
     print(" - Cruise AoA:", AHAPS.alpha, file=out_file)
     print(" - Maximum CL:", AHAPS.airframe.CL_max, file=out_file)
     print(" - Lift gradient:", AHAPS.airframe.CL_alpha, file=out_file)
