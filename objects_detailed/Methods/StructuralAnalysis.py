@@ -10,6 +10,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../Char
 
 # Now you can import the Airframe module
 import Components_Materials
+import Airframe
 
 points_loads = 50
 
@@ -149,7 +150,7 @@ def torsional_stress(airframe, ult_safety_factor = 5): # Compute torsional stres
     t_airfoil_skin = ult_safety_factor*Torsion_distribution[0]/(2*A_skin*(max_shear)) # uses shear stress formula to find min thickness, similarly to I calculations
     # 5x safety factor torque, min skin thickness calculated if skin carries all torque
     # returns min airfoil thickness, unless its smaller than the minimum provided
-    return max(t_airfoil_skin, 0.0002)
+    return max(t_airfoil_skin, 0.00015)
 
 def torsional_deflection(airframe, r_thickness=0.002, a_spar=0.04, b_spar = 0.04): # Compute twist deflection from torsion distribution
     # parameters given from bas' code
@@ -209,3 +210,7 @@ def deflection_analysis():          # Compute all relevant deflections
 
 def dynamic_analysis():             # Check dynamic loads
     pass
+
+if __name__ == "__main__":
+    airframe = Airframe.airframe(S=69.20, A=20, qc_sweep=15.0/180*np.pi, taper=1.0, dihedral=0.0 , airfoil=asb.Airfoil("mh91"), display=False, init_polar=False)
+    print(airfoil_properties(airframe.foil, airframe.c_r))

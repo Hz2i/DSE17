@@ -14,6 +14,7 @@ import GeneralSubsystems
 import PowerSystem_sizing
 import SparGeometryParam
 import Sections
+from StructuralAnalysis import airfoil_properties
 
 class Available_BatteryCrossSection:
     def __init__(self, AirGEO = SparGeometryParam.AirfoilGeometry(), width_clamp=0.125, plot = False):
@@ -913,8 +914,9 @@ class CG_comp:
 
 
 if __name__ == "__main__":
-    airframe = Airframe.airframe(S=43.47, A=21.0, qc_sweep=15.0/180*np.pi, taper=1.0, dihedral=0.0 , airfoil=asb.Airfoil("mh91"), display=False, init_polar=False)
+    airframe = Airframe.airframe(S=69.20, A=20, qc_sweep=15.0/180*np.pi, taper=1.0, dihedral=0.0 , airfoil=asb.Airfoil("mh91"), display=False, init_polar=False)
     airfoil_geometry = SparGeometryParam.AirfoilGeometry(Airframe = airframe)
     '''INPUT SELF'''
-    battery_cross_section = Available_BatteryCrossSection(AirGEO=airfoil_geometry, width_clamp=0.125, plot=False)
-    cg_calculator = CG_comp(x_cg_goal=2.55, batt_section=4, airframe=airframe, Batt=battery_cross_section, Wing_sections=Sections.Sections(airframe=airframe, Plot=False), t_skin_airfoil=0.0002)
+    battery_cross_section = Available_BatteryCrossSection(AirGEO=airfoil_geometry, width_clamp=0.125, plot=True)
+    cg_calculator = CG_comp(x_cg_goal=2.55, batt_section=2, airframe=airframe, Batt=battery_cross_section, Wing_sections=Sections.Sections(airframe=airframe, Plot=False), t_skin_airfoil=0.0002)
+    print(f'Total Airfoil Area: {airfoil_properties(airframe.foil, airframe.c_r):.4f} m^2')
