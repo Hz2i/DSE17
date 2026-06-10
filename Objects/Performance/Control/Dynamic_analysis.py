@@ -15,18 +15,19 @@ from Objects.Performance.Control.Control import Control_Surface_Sizing
 class Coeff_Values(Mass_moments, Control_Surface_Sizing):
 
     def __init__(self):
+        mm = Mass_moments()
         cs = Control_Surface_Sizing()
         CXu, CXa, CXq, CXde, CZu, CZa, CZq, CZde, Cm, Cmu, Cma, Cmq, Cmde, CYb, CYp, CYr, CYda, CYdr, Clb, Clp, Clr, Clda, Cldr, Cnb, Cnp, Cnr, Cnda, Cndr = cs.Coefficients()
 
         super().__init__()
-        self.m = 170
-        self.V0 = 27.94
-        self.b = 28.8
-        self.c = 1.44
-        self.S = self.b * self.c
+        self.m = mm.m_total
+        self.V0 = cs.op_point.velocity
+        self.b = cs.b
+        self.c = cs.c
+        self.S = cs.S
 
         # Atmosphere
-        self.rho0 = 1.2250
+        self.rho0 = cs.op_point.atmosphere.density() # todo change?
         self.lmda = -0.0065
         self.Temp0 = 288.15
         self.R = 287.05
@@ -63,7 +64,7 @@ class Coeff_Values(Mass_moments, Control_Surface_Sizing):
 
         # Stability derivatives
         self.CX0 = self.W * sin(self.th0) / (0.5 * self.rho * self.V0 ** 2 * self.S) # CHECK
-        self.CXu = CXu          # standard approximation: CXu ≈ -2*CD # todo likely causing phugoid error
+        self.CXu = -CXu          # standard approximation: CXu ≈ -2*CD # todo likely causing phugoid error
         self.CXa = CXa
         self.CXadot = +0.0
         self.CXq = CXq

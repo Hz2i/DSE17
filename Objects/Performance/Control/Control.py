@@ -13,9 +13,10 @@ class Control_Surface_Sizing():
         self.wing_airfoil = asb.Airfoil("mh91")
         self.tail_airfoil = asb.Airfoil("naca0012")
 
+        self.AR = 20
         self.wing_sweep = np.radians(15)     # radians
-        self.b = 39.72             # full span [m]
-        self.c = 1.986                 # chord [m]
+        self.b = 39.72 #* 1.3            # full span [m]
+        self.c = self.b / self.AR               # chord [m]
         self.S = self.b * self.c      # Wing area [m^2]
         self.dihedral = np.radians(2.0)
         self.twist = 2.0
@@ -1122,7 +1123,7 @@ if __name__ == "__main__":
     # cs.Airplane_Geo()
     # cs.airplane.draw()
     # cs.Control_Check()
-    # cs.Control_Sizing()
+    cs.Control_Sizing()
     # cs.Coefficients()
     cs.Spiral_Check()
     # cs.Cm_check()

@@ -78,7 +78,7 @@ class Mass_moments:
         self.battery_thickness_fraction = 0.10
         self.battery_density            = 2180.0
 
-        m_total = 170.0  # MTOM [kg]
+        self.m_total = 170.0  # MTOM [kg]
 
         I_spar = self.spar_inertia_fd(mass=20, length=self.half_b)
 
