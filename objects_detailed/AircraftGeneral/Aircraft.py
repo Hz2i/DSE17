@@ -162,10 +162,10 @@ class Aircraft:
         I_drag_spar, I_drag_connection = bending_stress_drag(airframe=self.airframe, ult_safety_factor=1.5)
         t_skin = torsional_stress(airframe=self.airframe, ult_safety_factor=1.5)
 
-        # print("I_xx_spar_req:", I_lift_spar)
-        # print("I_yy_spar_req:", I_drag_spar)
-        # print("I_xx_sleeve_req:", I_lift_connection)
-        # print("I_yy_sleeve_req:", I_drag_connection)
+        self.I_xx_spar_req = I_lift_spar
+        self.I_yy_spar_req = I_drag_spar
+        self.I_xx_sleeve_req = I_lift_connection
+        self.I_yy_sleeve_req = I_drag_connection
 
         airfoil_geometry = AirfoilGeometry(self.airframe, t_skin_airfoil=t_skin, Available_width=0.1, plot=False)
 

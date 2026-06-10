@@ -155,6 +155,10 @@ if save_bool == "Y":
     print(" - Wing LE sweep:", AHAPS.airframe.le_sweep, file=out_file)
     print(" - Wing dihedral:", AHAPS.airframe.dihedral, file=out_file)
     print(" - Wing twist:", AHAPS.airframe.twist, file=out_file)
+    print(" - Required spar Ixx:", AHAPS.I_xx_spar_req, file=out_file)
+    print(" - Required spar Iyy:", AHAPS.I_yy_spar_req, file=out_file)
+    print(" - Required connection Ixx:", AHAPS.I_xx_sleeve_req, file=out_file)
+    print(" - Required connection Iyy:", AHAPS.I_yy_sleeve_req, file=out_file)
     print(" - Wing internal structure parameters:", AHAPS.internal_struct.optimized_geometry, file=out_file)
 
     out_file = open(powers_file_ID, "w")
