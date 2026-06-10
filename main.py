@@ -52,7 +52,7 @@ MTOW_current = AHAPS.pow_store.mass + AHAPS.solar.mass + AHAPS.payload.mass + AH
 
 pow_frac = (AHAPS.pow_store.mass + AHAPS.solar.mass)/MTOW
 payload_frac = AHAPS.payload.mass_payload / MTOW
-struct_frac = (AHAPS.airframe.m_total + m_skid()) / MTOW
+struct_frac = AHAPS.airframe.m_total / MTOW
 gen_subsys_frac = AHAPS.compute_subsys_mass() / MTOW
 
 error = (abs(pow_frac - pow_frac_prev)/pow_frac_prev + abs(payload_frac - payload_frac_prev)/payload_frac_prev + abs(struct_frac - struct_frac_prev)/struct_frac_prev + abs(gen_subsys_frac - gen_subsys_frac_prev)/gen_subsys_frac_prev + abs(MTOW-MTOW_current)/MTOW)/5.0
@@ -78,7 +78,7 @@ while monitoring_var > 5e-3 or iterations < 5:
     # print(f'solar mass: {AHAPS.solar.mass:.2f} kg')
     pow_frac = (AHAPS.pow_store.mass + AHAPS.solar.mass)/MTOW
     payload_frac = AHAPS.payload.mass_payload / MTOW
-    struct_frac = (AHAPS.airframe.m_total + m_skid()) / MTOW
+    struct_frac = (AHAPS.airframe.m_total) / MTOW
     gen_subsys_frac = AHAPS.compute_subsys_mass() / MTOW
 
     error = (abs(pow_frac - pow_frac_prev)/pow_frac_prev + abs(payload_frac - payload_frac_prev)/payload_frac_prev + abs(struct_frac - struct_frac_prev)/struct_frac_prev + abs(gen_subsys_frac - gen_subsys_frac_prev)/gen_subsys_frac_prev + abs(MTOW-MTOW_current)/MTOW)/5.0
