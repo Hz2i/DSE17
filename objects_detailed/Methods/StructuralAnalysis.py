@@ -149,7 +149,7 @@ def torsional_stress(airframe, ult_safety_factor = 5): # Compute torsional stres
     t_airfoil_skin = ult_safety_factor*Torsion_distribution[0]/(2*A_skin*(max_shear)) # uses shear stress formula to find min thickness, similarly to I calculations
     # 5x safety factor torque, min skin thickness calculated if skin carries all torque
     # returns min airfoil thickness, unless its smaller than the minimum provided
-    return max(t_airfoil_skin, 0.0002)
+    return max(t_airfoil_skin, 0.00015)
 
 def torsional_deflection(airframe, r_thickness=0.002, a_spar=0.04, b_spar = 0.04): # Compute twist deflection from torsion distribution
     # parameters given from bas' code
