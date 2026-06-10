@@ -246,6 +246,7 @@ class airframe:
         if plot:
             plt.scatter(CL_data, CD_data)
             plt.plot(CL_data, self.CD0 + self.K1*CL_data + self.K2*CL_data**2, c='r')
+            plt.scatter(CL_data_vlm, CD_data_vlm, c="g")
             plt.xlabel("Lift Coefficient")
             plt.ylabel("Drag Coefficient")
             plt.title("drag Polar")

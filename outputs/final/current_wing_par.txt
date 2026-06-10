@@ -1,12 +1,12 @@
- - Final wing surface area: 62.883851897294576
- - Solar panel area: 61.05847649450829
+ - Final wing surface area: 59.91102457698912
+ - Solar panel area: 58.18670169705685
  - Wing airfoil: Airfoil mh91 (68 points)
  - Wing aspect ratio: 21.0
- - Total wing span: 36.33952242178185
- - Wing root chord: 1.7304534486562788
- - Wing tip chord: 1.7304534486562788
+ - Total wing span: 35.470149648919886
+ - Wing root chord: 1.6890547451866613
+ - Wing tip chord: 1.6890547451866613
  - Wing taper: 1.0
  - Wing QC sweep: 0.2617993877991494
  - Wing LE sweep: 0.2617993877991494
  - Wing dihedral: 0.0
- - Wing internal structure parameters: <objects_detailed.Methods.SparGeometryParam.SparGeometryOptimization object at 0x7ce5cb80afd0>
+ - Wing internal structure parameters: <objects_detailed.Methods.SparGeometryParam.SparGeometryOptimization object at 0x797de8ff7c50>
