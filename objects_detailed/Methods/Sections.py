@@ -15,7 +15,7 @@ class Sections:
         #Initial Guess
         self.main_section_inside = 0.5
         self.airframe = airframe
-        self.max_length = 5.2#From Container
+        self.max_length = 5.2#From Container #5.6
         self.slanted_span_b_2 = (self.airframe.b/2) / np.cos(self.airframe.qc_sweep)
         self.n_sections = 4
         self.optimized_main_section_inside,_ = self.optimize_sections()
@@ -48,7 +48,7 @@ class Sections:
         
         opti.maximize(function[1])
         # Define the objective function (e.g., minimize the difference between main section length and wingtip section length)
-        sol = opti.solve()
+        sol = opti.solve(verbose=False)
         return sol.value(main_section_inside), self.find_sections(sol.value(main_section_inside))
     
     def plot_sections(self, main_section_inside):
@@ -96,4 +96,4 @@ class Sections:
         plt.show()
 
 if __name__ == "__main__":
-    sections = Sections(Plot=True, airframe=Airframe.airframe(qc_sweep=np.radians(15), S=47.8, A=20, init_polar=False))
+    sections = Sections(Plot=True, airframe=Airframe.airframe(qc_sweep=np.radians(15), S=68.31, A=20, init_polar=False))

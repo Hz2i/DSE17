@@ -95,6 +95,7 @@ class CG_comp:
                  Batt = Available_BatteryCrossSection(AirGEO = SparGeometryParam.AirfoilGeometry(), width_clamp=0.125),
                  AirGEO = SparGeometryParam.AirfoilGeometry(),
                  Wing_sections = Sections.Sections(),
+                 battery_char = Components_Materials.battery(),
                  t_skin_airfoil=0.0002):
         
         #Selection
@@ -108,6 +109,7 @@ class CG_comp:
         self.AirGEO = AirGEO
         self.Batt = Batt
         self.airframe = airframe
+        self.battery_char = battery_char
         self.airfoil = airframe.foil
         self.x_cg_goal = x_cg_goal
         self.t_skin_airfoil = t_skin_airfoil
@@ -129,6 +131,7 @@ class CG_comp:
         self.x_center_4 = (self.l_main_section_inside + self.wing_section_length*(3)+self.wing_tip_section_length*(0.5))*np.sin(self.airframe.le_sweep)
         self.y_center_4 = (self.l_main_section_inside + self.wing_section_length*(3)+self.wing_tip_section_length*(0.5))*np.cos(self.airframe.le_sweep)
         #Spar Structure 
+        '''PUT IN BY HAND'''
         #Lengths
         self.l_clamp = 0.09
         self.l_sleeve = 1
@@ -153,11 +156,25 @@ class CG_comp:
         self.mass_computer = 0 #No components above 1kg, so not included
         self.mass_comms_ssr = Comms.ssr_mass*Comms.redundancy
         self.mass_comms_elt = Comms.elt_mass*Comms.redundancy
-        self.mass_battery_1 = 0.104 #[kg]
-        self.volume_battery_tot = 0.0368 #[m^3]
-        self.volume_battery_1 = 0.140*0.054*0.0065
+        '''PUT IN BY HAND'''
+        self.mass_battery_total = 114.67 #[kg]
+        self.volume_battery_tot = self.mass_battery_total / self.battery_char.massRho
+        '''PUT IN BY HAND'''
         self.prop_eng = 10 #[kg] Combining 2!!
         self.prop_sticklength = 0.5 #[m]
+        '''PUT IN BY HAND'''
+        self.total_skid_mass = 9.15 #[kg]
+        self.N_skids = 8
+        self.mass_skid = self.total_skid_mass / self.N_skids
+        self.skid_chord_pos = 0.4*self.airframe.c_r
+        '''PUT IN BY HAND'''
+        self.mass_actuator = 1.95 #[kg]
+        self.actuator_chord_pos = 0.7*self.airframe.c_r
+        self.outer_elevon_offset = 0.9*self.airframe.b/2
+        self.outer_elevon_length = 0.1*self.airframe.b/2
+        self.inner_elevon_length = 0.2*self.airframe.b/2
+        self.elevon_chord = 0.3*self.airframe.c_r
+
         #Positions
         self.x_payload = self.x_centroid
         self.x_fcs_pitot = self.x_centroid
@@ -165,6 +182,12 @@ class CG_comp:
         self.x_comms_ssr = self.x_centroid
         self.x_comms_elt = self.x_centroid
         self.x_prop_2_3, self.x_prop_1_4 = self.calc_x_prop_positions()
+        self.x_skids_1 = self.x_edge_first_wing_section + 0.5*np.sin(self.airframe.le_sweep)+self.skid_chord_pos
+        self.x_skids_2 = self.x_prop_2_3 + self.prop_sticklength + self.skid_chord_pos
+        self.x_skids_3 = self.x_prop_1_4 + self.prop_sticklength + self.skid_chord_pos
+        self.x_skids_4 = self.x_wingtips - 0.5*np.sin(self.airframe.le_sweep)#Offset of 0.5m
+        self.x_outer_elevons = (self.outer_elevon_offset)*np.tan(self.airframe.le_sweep) + self.actuator_chord_pos
+        self.x_inner_elevons = (self.outer_elevon_offset - self.inner_elevon_length)*np.tan(self.airframe.le_sweep) + self.actuator_chord_pos
 
         self.y_payload = 0
         self.y_fcs_pitot = 0
@@ -173,6 +196,12 @@ class CG_comp:
         self.y_comms_elt = 0
         self.y_prop2_3 = self.airframe.b/6
         self.y_prop1_4 = self.airframe.b/6*2
+        self.y_skids_1 = self.y_edge_first_wing_section + 0.5*np.cos(self.airframe.le_sweep)
+        self.y_skids_2 = self.airframe.b/6
+        self.y_skids_3 = self.airframe.b/6*2
+        self.y_skids_4 = self.y_wingtips - 0.5*np.cos(self.airframe.le_sweep)#Offset of 0.5m
+        self.y_outer_elevons = self.outer_elevon_offset
+        self.y_inner_elevons = self.y_outer_elevons - self.inner_elevon_length
         #Make CGlists
         self.mass_list = self.gen_mass_list()
         self.x_list = self.gen_x_list()
@@ -186,13 +215,17 @@ class CG_comp:
         self.distance_to_goal = abs(self.x_cg_no_batt - self.x_cg_goal)
         print(f'Goal CG: {self.x_cg_goal:.3f} m')
         print(f"Initial CG without battery: {self.x_cg_no_batt:.3f} m, Distance to Goal: {self.distance_to_goal:.3f} m")
+        #Print all starting points of the batteries
+        print(f'Point 0: {self.x_edge_first_wing_section}')
+        print(f'Point 1/2: {self.x_edge_second_wing_section}')
+        print(f'Point 3/4: {self.x_edge_third_wing_section}')
+        print(f'Point 5/6: {self.x_edge_wing_tip_section}')
         
         #Optimize Battery Distribution
         optimized_batt_dist, resulting_cg, batt_area = self.Optimizer_CG()
         #Plot CG
         self.plot_CG(optimized_batt_dist)
         print(f"Optimized Battery Distribution Length: {optimized_batt_dist:.3f} m, Resulting CG: {resulting_cg:.3f} m, Battery Area Used: {batt_area:.6f} m^2")
-
 
     def calc_x_prop_positions(self):
         #Equally spaced along span.
@@ -202,9 +235,8 @@ class CG_comp:
         return x_eng_2_3, x_eng_1_4
 
     def Batt_Distribution(self, l_batt_dist):
-        n_batteries = 10*int(np.ceil((self.volume_battery_tot / self.volume_battery_1)/10))
-        batt_total_mass = n_batteries * self.mass_battery_1
-        batt_total_vol_half= n_batteries * self.volume_battery_1/2
+        batt_total_vol_half= self.volume_battery_tot/2
+        batt_total_mass = self.mass_battery_total
         #Start Either at Beginning of Main Section or at End of Main Section, depending on selected section
         if self.selected_section % 2 == 0:
             #Find Datum Point
@@ -322,6 +354,12 @@ class CG_comp:
             self.mass_solar_panel,
             self.prop_eng,
             self.prop_eng,
+            self.mass_skid*2,
+            self.mass_skid*2,
+            self.mass_skid*2,
+            self.mass_skid*2,
+            self.mass_actuator*2, #Outer
+            self.mass_actuator*2, #Inner
             self.mass_wingtips,
             self.mass_skin,
             0, #mass_total_battery
@@ -339,6 +377,12 @@ class CG_comp:
             self.x_solar_panel,
             self.x_prop_2_3, #Assuming propellers are distributed around their CGs
             self.x_prop_1_4,
+            self.x_skids_1, #Assuming skids are distributed around their CGs
+            self.x_skids_2,
+            self.x_skids_3,
+            self.x_skids_4,
+            self.x_outer_elevons, #Assuming elevons are distributed around their CGs
+            self.x_inner_elevons,
             self.x_wingtips, #Assuming wingtips are distributed around their CG
             self.x_skin, #Assuming skin mass is distributed around its centroid
             0, #x_total_battery
@@ -356,6 +400,12 @@ class CG_comp:
             self.y_solar_panel,
             self.y_prop2_3,
             self.y_prop1_4,
+            self.y_skids_1,
+            self.y_skids_2,
+            self.y_skids_3,
+            self.y_skids_4,
+            self.y_outer_elevons,
+            self.y_inner_elevons,
             self.y_wingtips,
             self.y_skin,
             0, #y_total_battery
@@ -373,6 +423,12 @@ class CG_comp:
             "Solar Panel",
             "Propeller 2/3",
             "Propeller 1/4",
+            "Skids 1",
+            "Skids 2",
+            "Skids 3",
+            "Skids 4",
+            "Outer Elevon Actuators",
+            "Inner Elevon Actuators",
             "Wingtips",
             "Skin",
             "Battery"
@@ -438,7 +494,7 @@ class CG_comp:
 
         opti.minimize(function[2])#Allow for most insulation
         # Define the objective function (e.g., minimize the difference between main section length and wingtip section length)
-        sol = opti.solve()
+        sol = opti.solve(verbose=False)
         return sol.value(l_batt_dist), sol.value(function[1]), sol.value(function[2]) # Return optimized section, battery distribution length, resulting CG, and battery area for feedback
     
     def plot_wing_contour(self, left_half=False):
@@ -476,10 +532,103 @@ class CG_comp:
             name="Wing Contour",
             line=dict(color="black", width=2)
         )
- 
+    
+    def plot_outer_elevon_contour(self, left_half=False):
+        sweep = self.airframe.le_sweep
 
     
 
+        # Outer elevon span stations
+        y_outer_end = self.outer_elevon_offset
+        y_outer_start = y_outer_end - self.outer_elevon_length
+
+        # Leading edge of elevon
+        x_le = np.array([
+            y_outer_start * np.tan(sweep) + self.actuator_chord_pos,
+            y_outer_end   * np.tan(sweep) + self.actuator_chord_pos
+        ])
+
+        # Trailing edge
+        x_te = x_le + self.elevon_chord
+
+        # Polygon
+        x_elevon = np.array([
+            x_le[0],
+            x_le[1],
+            x_te[1],
+            x_te[0],
+            x_le[0]
+        ])
+
+        y_elevon = np.array([
+            y_outer_start,
+            y_outer_end,
+            y_outer_end,
+            y_outer_start,
+            y_outer_start
+        ])
+
+        if left_half:
+            y_elevon = -y_elevon
+
+        return go.Scatter(
+            x=x_elevon,
+            y=y_elevon,
+            mode="lines",
+            name="Outer Elevon",
+            line=dict(color="red", width=2)
+        )
+
+
+    def plot_inner_elevon_contour(self, left_half=False):
+        sweep = self.airframe.le_sweep
+
+        
+
+        # Outer elevon
+        y_outer_end = self.outer_elevon_offset
+        y_outer_start = y_outer_end - self.outer_elevon_length
+
+        # Inner elevon starts where outer elevon ends
+        y_inner_end = y_outer_start
+        y_inner_start = y_inner_end - self.inner_elevon_length
+
+        # Leading edge
+        x_le = np.array([
+            y_inner_start * np.tan(sweep) + self.actuator_chord_pos,
+            y_inner_end   * np.tan(sweep) + self.actuator_chord_pos
+        ])
+
+        # Trailing edge
+        x_te = x_le + self.elevon_chord
+
+        # Polygon
+        x_elevon = np.array([
+            x_le[0],
+            x_le[1],
+            x_te[1],
+            x_te[0],
+            x_le[0]
+        ])
+
+        y_elevon = np.array([
+            y_inner_start,
+            y_inner_end,
+            y_inner_end,
+            y_inner_start,
+            y_inner_start
+        ])
+
+        if left_half:
+            y_elevon = -y_elevon
+
+        return go.Scatter(
+            x=x_elevon,
+            y=y_elevon,
+            mode="lines",
+            name="Inner Elevon",
+            line=dict(color="blue", width=2)
+        )
 
     def group_by_position(self, x_list, y_list, name_list, mass_list, ndigits=6):
         from collections import defaultdict
@@ -544,33 +693,10 @@ class CG_comp:
                     )
                 )
             )
-            # scale_arrow = (mass_list[i])**2/10
-            # fig.add_annotation(
-            #     x=x_list[i],
-            #     y=y_list[i],
-            #     text=f"{name_list[i]}<br>Mass: {mass_list[i]/2:.2f} kg<br>Position: ({x_list[i]:.2f}, {y_list[i]:.2f}) m",
-            #     showarrow=True,
-            #     arrowhead=1,
-            #     textangle=0,
-            #     # font=dict(size=size),
-            #     ax=1*scale_arrow,
-            #     ay=0
-            # )
-            # if y_list[i] != 0:  # Only add annotation for the mirrored point if it's not on the centerline
-            #     fig.add_annotation(
-            #         x=x_list[i],
-            #         y=-y_list[i],
-            #         text=f"{name_list[i]}<br>Mass: {mass_list[i]/2:.2f} kg<br>Position: ({x_list[i]:.2f}, {-y_list[i]:.2f}) m",
-            #         showarrow=True,
-            #         arrowhead=1,
-            #         textangle=0,
-            #         # font=dict(size=size),
-            #         ax=1*scale_arrow,
-            #         ay=0
-            #     )
+           
         #Annotations
         groups = self.group_by_position(x_list, y_list, name_list, mass_list)
-
+        print(f"Groups for annotation: {groups}")
         for i, ((x, y), items) in enumerate(groups.items()):
 
             # merged label
@@ -582,23 +708,38 @@ class CG_comp:
 
             # flip direction every other element
             direction = 1 if i % 2 == 0 else -1
-
-            fig.add_annotation(
-                x=x,
-                y=y,
-                text=label,
-                showarrow=True,
-                arrowhead=1,
-                font=dict(size=14, family="Arial Black"),
-                ax=direction * scale_arrow,
-                ay=0
-            )
-
-            # mirrored annotation only if not on centerline
-            if y != 0:
+            #Adjust Arrows of Actuators
+            if "Outer Elevon Actuators" in label or "Inner Elevon Actuators" in label:
+                print(f"scale_arrow before: {scale_arrow}")
+                print('TEST')
+                print(f'direction: {direction}')
                 fig.add_annotation(
                     x=x,
-                    y=-y,
+                    y=y,
+                    text=label,
+                    showarrow=True,
+                    arrowhead=1,
+                    font=dict(size=14, family="Arial Black"),
+                    ax=direction * 300,
+                    ay=0
+                )
+
+                # mirrored annotation only if not on centerline
+                if y != 0:
+                    fig.add_annotation(
+                        x=x,
+                        y=-y,
+                        text=label,
+                        showarrow=True,
+                        arrowhead=1,
+                        font=dict(size=14, family="Arial Black"),
+                        ax=direction * 300,
+                        ay=0
+                    )
+            else:
+                fig.add_annotation(
+                    x=x,
+                    y=y,
                     text=label,
                     showarrow=True,
                     arrowhead=1,
@@ -606,6 +747,19 @@ class CG_comp:
                     ax=direction * scale_arrow,
                     ay=0
                 )
+
+                # mirrored annotation only if not on centerline
+                if y != 0:
+                    fig.add_annotation(
+                        x=x,
+                        y=-y,
+                        text=label,
+                        showarrow=True,
+                        arrowhead=1,
+                        font=dict(size=14, family="Arial Black"),
+                        ax=direction * scale_arrow,
+                        ay=0
+                    )
         # Target CG
         fig.add_trace(
             go.Scatter(
@@ -648,7 +802,7 @@ class CG_comp:
             arrowhead=1,
             font=dict(size=15, family="Arial Black"),
             ax=0,
-            ay=-250
+            ay=-300
         )
         #Battery Distribution Annotation
         fig.add_annotation(
@@ -658,7 +812,7 @@ class CG_comp:
             showarrow=True,
             arrowhead=1,
             ax=0,
-            ay=250
+            ay=300
         )
         sweep = self.airframe.le_sweep
 
@@ -686,9 +840,14 @@ class CG_comp:
         # Wing contour
         fig.add_trace(self.plot_wing_contour())
         fig.add_trace(self.plot_wing_contour(left_half=True))
-
+        # Elevon Contours
+        fig.add_trace(self.plot_outer_elevon_contour())
+        fig.add_trace(self.plot_outer_elevon_contour(left_half=True))
+        fig.add_trace(self.plot_inner_elevon_contour())
+        fig.add_trace(self.plot_inner_elevon_contour(left_half=True))
+        #
         fig.update_layout(
-            title=f"Center of Gravity Distribution - Bending Relief: {bending_relief:.2f} N*m",
+            title=f"Center of Gravity Distribution - Bending Relief: {bending_relief:.2f} N*m - Available Battery Area: {self.Batt.battery_cross_section_area:.4f} m²",
             xaxis_title="X Coordinate",
             yaxis_title="Y Coordinate",
             showlegend=True
@@ -754,7 +913,8 @@ class CG_comp:
 
 
 if __name__ == "__main__":
-    airframe = Airframe.airframe(qc_sweep=np.radians(15), S=57.2, A=20, init_polar=False)
+    airframe = Airframe.airframe(S=43.47, A=21.0, qc_sweep=15.0/180*np.pi, taper=1.0, dihedral=0.0 , airfoil=asb.Airfoil("mh91"), display=False, init_polar=False)
     airfoil_geometry = SparGeometryParam.AirfoilGeometry(Airframe = airframe)
-    battery_cross_section = Available_BatteryCrossSection(AirGEO=airfoil_geometry, width_clamp=0.125)
-    cg_calculator = CG_comp(x_cg_goal=2.18, batt_section=3, airframe=airframe, Batt=battery_cross_section, Wing_sections=Sections.Sections(airframe=airframe, Plot=False), t_skin_airfoil=0.0002)
+    '''INPUT SELF'''
+    battery_cross_section = Available_BatteryCrossSection(AirGEO=airfoil_geometry, width_clamp=0.125, plot=False)
+    cg_calculator = CG_comp(x_cg_goal=2.55, batt_section=4, airframe=airframe, Batt=battery_cross_section, Wing_sections=Sections.Sections(airframe=airframe, Plot=False), t_skin_airfoil=0.0002)
