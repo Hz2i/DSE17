@@ -21,7 +21,7 @@ gen_subsys_frac_prev = 0.05
 
 
 MTOW_initial = 100.0
-TAS_initial = 32.0
+TAS_initial = 28.0
 gamma = 0.0
 h_cruise = 18500.0
 lat = 30.0
@@ -33,18 +33,16 @@ night_time = 0.0
 
 S = 36.0
 
-Sr_Sw = 0.0755
-
 
 # Flying wing planform:
 fus_geo = fuselage(D=0.0, L1=0.0, L2=0.0, L3=0.0)
 nac_geo = nacelles(nr_of_engines=0, pos=[])
-planform = airframe(S=S, A=20.0, qc_sweep=15.0*np.pi/180, taper=1.0, dihedral=0.0*np.pi/180.0,fus=fus_geo, nac=nac_geo, display=False, init_polar=True)
+planform = airframe(S=S, A=20.0, qc_sweep=15.0*np.pi/180, taper=1.0, dihedral=0.0*np.pi/180.0, fus=fus_geo, nac=nac_geo, display=False, init_polar=True)
 
 MTOW = MTOW_initial
 
 # Compute initial error:
-AHAPS = Aircraft(MTOW_guess=MTOW, m_skid=m_skid(), Srudder_Sw=Sr_Sw, TAS=TAS_initial, gamma=gamma, lat=lat, day_margin=day_margin, DoD=DoD, airframe=planform, use_batt=use_batt, energy_delta=energy_delta)
+AHAPS = Aircraft(MTOW_guess=MTOW, m_skid=m_skid(), TAS=TAS_initial, gamma=gamma, lat=lat, day_margin=day_margin, DoD=DoD, airframe=planform, use_batt=use_batt, energy_delta=energy_delta)
 
 planform.S = AHAPS.airframe.S
 MTOW_current = AHAPS.pow_store.mass + AHAPS.solar.mass + AHAPS.payload.mass + AHAPS.airframe.m_total + AHAPS.Prop_mass + AHAPS.compute_subsys_mass()
@@ -63,7 +61,7 @@ monitoring_var = np.linalg.norm(error_vec)
 
 iterations = 0
 while monitoring_var > 5e-3 or iterations < 5:
-    AHAPS = Aircraft(MTOW_guess=MTOW, m_skid=m_skid(), Srudder_Sw=Sr_Sw, TAS=TAS_initial, gamma=gamma, lat=lat, day_margin=day_margin, DoD=DoD, airframe=planform, use_batt=use_batt, energy_delta=energy_delta)
+    AHAPS = Aircraft(MTOW_guess=MTOW, m_skid=m_skid(), TAS=TAS_initial, gamma=gamma, lat=lat, day_margin=day_margin, DoD=DoD, airframe=planform, use_batt=use_batt, energy_delta=energy_delta)
 
     MTOW_current = AHAPS.pow_store.mass + AHAPS.solar.mass + AHAPS.payload.mass + AHAPS.airframe.m_total + AHAPS.Prop_mass + AHAPS.compute_subsys_mass()
 
@@ -154,6 +152,7 @@ if save_bool == "Y":
     print(" - Wing QC sweep:", AHAPS.airframe.qc_sweep, file=out_file)
     print(" - Wing LE sweep:", AHAPS.airframe.le_sweep, file=out_file)
     print(" - Wing dihedral:", AHAPS.airframe.dihedral, file=out_file)
+    print(" - Wing twist:", AHAPS.airframe.twist, file=out_file)
     print(" - Wing internal structure parameters:", AHAPS.internal_struct.optimized_geometry, file=out_file)
 
     out_file = open(powers_file_ID, "w")

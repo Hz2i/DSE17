@@ -30,14 +30,16 @@ class nacelles:
         self.m = None
 
 class airframe:
-    def __init__(self, S=36.0, A=20.0, qc_sweep=15.0/180*np.pi, taper=1.0, dihedral=0.0 , airfoil=asb.Airfoil("mh91"), fus = fuselage(), nac = nacelles(), display=False, init_polar=True):
+    def __init__(self, S=36.0, A=20.0, qc_sweep=15.0/180*np.pi, taper=1.0, dihedral=0.0, twist=-4.675, winglet_h=1.5, airfoil=asb.Airfoil("mh91"), fus = fuselage(), nac = nacelles(), display=False, init_polar=True):
         self.foil = airfoil
         self.AR = A
         self.taper = taper
         self.qc_sweep = qc_sweep        # RADIANS!!!
         self.le_sweep = np.arctan(np.tan(self.qc_sweep) + (1 - self.taper)/((1+self.taper)*self.AR))
         self.dihedral = dihedral        # RADIANS!!!
-        self.S = S                
+        self.twist = twist
+        self.S = S
+        self.winglet_h = winglet_h
         self.CL_grad = None          # Currently initialised with None; Add method to compute
         self.CL_max = None           # Currently initialised with None; Add method to compute
         self.e = None
@@ -76,7 +78,7 @@ class airframe:
                                     -self.b/2,
                                     (self.b/2) * np.tan(self.dihedral)],
                             chord=self.c_t,
-                            twist=0,
+                            twist=self.twist,
                             airfoil=self.foil),
                         # Root Section::
                         asb.WingXSec(
@@ -92,7 +94,7 @@ class airframe:
                                     self.b/2,
                                     (self.b/2) * np.tan(self.dihedral)],
                             chord=self.c_t,
-                            twist=0,
+                            twist=self.twist,
                             airfoil=self.foil),  
                         ]
                         ),
@@ -110,7 +112,7 @@ class airframe:
                         asb.WingXSec(
                             xyz_le=[(self.b/2) * np.tan(self.le_sweep),
                                     self.b/2,
-                                    (self.b/2) * np.tan(self.dihedral)+1.5],
+                                    (self.b/2) * np.tan(self.dihedral)+self.winglet_h],
                             chord=self.c_t,
                             twist=0,
                             airfoil=asb.Airfoil("naca0012")),
