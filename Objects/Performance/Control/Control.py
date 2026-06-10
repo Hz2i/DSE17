@@ -1,6 +1,7 @@
 import aerosandbox as asb
 import aerosandbox.numpy as np
 import matplotlib
+from aerosandbox import Atmosphere
 
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
@@ -15,17 +16,17 @@ class Control_Surface_Sizing():
 
         self.AR = 20
         self.wing_sweep = np.radians(15)     # radians
-        self.b = 39.72 #* 1.3            # full span [m]
+        self.b = 37.2            # full span [m]
         self.c = self.b / self.AR               # chord [m]
         self.S = self.b * self.c      # Wing area [m^2]
-        self.dihedral = np.radians(2.0)
-        self.twist = 2.0
+        self.dihedral = np.radians(9.0)
+        self.twist = -4.675
 
-        self.x_cg = 2.19
+        self.x_cg = 1.7
 
         self.inner_elevon_frac = 0.1217
         self.outer_elevon_frac = 0.2883
-        self.height_winglet = 1.5 # height of winglet above main wing [m]
+        self.height_winglet = 1.9 # height of winglet above main wing [m]
         self.rudder_frac = 0.4130
         self.fraction_outer_engine = None
 
@@ -38,7 +39,7 @@ class Control_Surface_Sizing():
         self.end_outer_elevon    = None
 
         # Operating point (can be overridden before calling vlm_run)
-        self.op_point = asb.OperatingPoint(atmosphere=asb.Atmosphere(0), velocity=27.94, alpha=7)
+        self.op_point = asb.OperatingPoint(atmosphere=Atmosphere(altitude=60000) ,velocity=27.94, alpha=8.35)
 
         self.q_check = True
         self.p_check = True
@@ -894,9 +895,12 @@ class Control_Surface_Sizing():
         #OEI
         y_eng=fraction_outer_engine*self.half_span
         M_engine = T_eng*y_eng
-        rho_cruise = 0.116
+        rho_cruise = 1.225 #self.op_point.atmosphere.density()
         k = 2
-        Cn_OEI_counter = k*M_engine/(0.5*rho_cruise*self.op_point.velocity**2*self.S*self.b) # Required Cn to counteract OEI yawing moment
+        print(self.op_point.velocity)
+        print(self.op_point.atmosphere.density())
+        Cn_OEI_counter = k*M_engine/(0.5*rho_cruise*(self.op_point.velocity ** 2)*self.S*self.b) # Required Cn to counteract OEI yawing moment
+        print(Cn_OEI_counter)
         deflection_OEI = -Cn_OEI_counter/Cndr
         print("OEI Deflection", np.degrees(deflection_OEI), "deg/s")
         deflection_max = np.radians(self.rudder_deflection_points[np.size(self.rudder_deflection_points) - 1])
@@ -1125,5 +1129,5 @@ if __name__ == "__main__":
     # cs.Control_Check()
     cs.Control_Sizing()
     # cs.Coefficients()
-    cs.Spiral_Check()
+    # cs.Spiral_Check()
     # cs.Cm_check()

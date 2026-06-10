@@ -59,8 +59,8 @@ class Coeff_Values(Mass_moments, Control_Surface_Sizing):
         # self.depsda = 4 / (self.A + 2)
 
         # Lift and drag coefficient
-        self.CL = 2 * self.W / (self.rho * self.V0 ** 2 * self.S)
-        self.CD = self.CD0 + (self.CLa * self.alpha0) ** 2 / (pi * self.A * self.e)
+        # self.CL = 2 * self.W / (self.rho * self.V0 ** 2 * self.S)
+        # self.CD = self.CD0 + (self.CLa * self.alpha0) ** 2 / (pi * self.A * self.e)
 
         # Stability derivatives
         self.CX0 = self.W * sin(self.th0) / (0.5 * self.rho * self.V0 ** 2 * self.S) # CHECK

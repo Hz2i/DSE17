@@ -65,11 +65,11 @@ class Mass_moments:
 
         self.b        = 28.80
         self.half_b   = self.b / 2
-        self.c        = 1.44
+        self.c        = self.b / self.AR
         self.S        = self.b * self.c
         self.AR       = 20
         self.sweep    = np.radians(15)
-        self.dihedral = np.radians(2)
+        self.dihedral = np.radians(9)
         self.twist    = np.radians(4.675) # twist not used - assumption that effect is minimal
         self.twist_rate = self.twist/self.half_b
 
@@ -83,7 +83,7 @@ class Mass_moments:
         I_spar = self.spar_inertia_fd(mass=20, length=self.half_b)
 
         I_batt, _ = self.batteries_inertia_fd(
-            total_mass=40.5,
+            total_mass=156.0,
             span_sections=[(0.0, self.half_b / 3), (2 * self.half_b / 3, self.half_b)],
         )
         I_skin, _ = self.skin_inertia_fd(
@@ -110,7 +110,7 @@ class Mass_moments:
         (self.k_x_nd,
          self.k_y_nd,
          self.k_z_nd,
-         self.k_xz_nd) = self.non_dimensional_radius_of_gyration(I_combined, m_total, self.b)
+         self.k_xz_nd) = self.non_dimensional_radius_of_gyration(I_combined, self.m_total, self.b)
 
 
     # ------------------------------------------------------------------ #
