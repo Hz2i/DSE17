@@ -50,7 +50,7 @@ class Coeff_Values(Mass_moments):
         self.CXadot = +0.0
         self.CXq = 1.1470932
         self.CXde = ---
-        self.CXdt = ---
+        self.CXdt = 0.0
 
         self.CZ0 = -self.W * cos(self.th0) / (0.5 * self.rho * self.V0 ** 2 * self.S) # CHECK
         self.CZu = -0.0
@@ -58,7 +58,7 @@ class Coeff_Values(Mass_moments):
         self.CZadot = -0.0
         self.CZq = -5.1677895
         self.CZde = ---
-        self.CZdt = ---
+        self.CZdt = 0.0
 
         self.Cm0 = ---
         self.Cmu = +0.0

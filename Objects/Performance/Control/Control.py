@@ -1,8 +1,6 @@
 import aerosandbox as asb
 import aerosandbox.numpy as np
 import matplotlib
-from fontTools.feaLib import error
-from scipy.sparse.linalg import eigen
 
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
@@ -24,10 +22,10 @@ class Control_Surface_Sizing():
 
         self.x_cg = 2.19
 
-        self.inner_elevon_frac = 0.06
-        self.outer_elevon_frac = 0.193
+        self.inner_elevon_frac = 0.1217
+        self.outer_elevon_frac = 0.2883
         self.height_winglet = 1.5 # height of winglet above main wing [m]
-        self.rudder_frac = 0.67
+        self.rudder_frac = 0.4130
         self.fraction_outer_engine = None
 
         self.half_span = self.b / 2
@@ -36,7 +34,7 @@ class Control_Surface_Sizing():
         self.end_outer_elevon    = None
 
         # Operating point (can be overridden before calling vlm_run)
-        self.op_point = asb.OperatingPoint(velocity=27.94, alpha=7)
+        self.op_point = asb.OperatingPoint(atmosphere=asb.Atmosphere(0), velocity=27.94, alpha=7)
 
         self.q_check = True
         self.p_check = True
@@ -45,6 +43,8 @@ class Control_Surface_Sizing():
         self.d_deflect = 5
         self.deflection_points = np.arange(-20, 20 + self.d_deflect, self.d_deflect) # don't use floats with arange
         self.rudder_deflection_points = np.arange(-30, 30 + self.d_deflect, self.d_deflect) # don't use floats with arange
+        self.coeff_delta = [0., 0.1]
+
         self.print_plots = False
 
         self.T_eng = None
@@ -255,6 +255,32 @@ class Control_Surface_Sizing():
             results.append(val)
         return results
 
+    def _sweep_not_flat(self, deflection_points, delta_inner_fn, delta_outer_fn, delta_rudder_fn,
+               outer_symmetric, coeff_key):
+        """
+        Generic deflection sweep.  Returns a list of scalar coefficient values.
+        """
+        results = []
+        for i in deflection_points:
+            aero = self.vlm_run(
+                delta_inner=delta_inner_fn(i),
+                delta_outer=delta_outer_fn(i),
+                delta_rudder=delta_rudder_fn(i),
+                outer_symmetric=outer_symmetric,
+            )
+            val = aero.get(coeff_key, None) if aero is not None else None
+            # Flatten to scalar
+            if val is not None:
+                try:
+                    val = np.array([
+                        [x.item() for x in tup]
+                        for tup in val
+                    ])
+                except Exception:
+                    val = None
+            results.append(val)
+        return results
+
     # ------------------------------------------------------------------
     # Sweep helper (single run) | Only for damping coefficients!!! |
     # ------------------------------------------------------------------
@@ -278,10 +304,40 @@ class Control_Surface_Sizing():
                 val = None
         return val
 
+    def _sweep_single_not_flat(self, deflection_points, delta_inner_fn, delta_outer_fn, delta_rudder_fn,
+               outer_symmetric, coeff_key):
+        """
+        Generic deflection sweep.  Returns a list of scalar coefficient values.
+        """
+        aero = self.vlm_run(
+            delta_inner=delta_inner_fn(0),
+            delta_outer=delta_outer_fn(0),
+            delta_rudder=delta_rudder_fn(0),
+            outer_symmetric=outer_symmetric
+        )
+        val = aero.get(coeff_key, None) if aero is not None else None
+        # Flatten to scalar
+        if val is not None:
+            try:
+                val = np.array([
+                    [x.item() for x in tup]
+                    for tup in val
+                ])
+            except Exception:
+                val = None
+        return val
+
+    def bodyforce_to_bodycoeff(self, F):
+        # Converts force to coefficient using current operating conditions
+
+        Cf = F/(0.5 * self.op_point.atmosphere.density() * (self.op_point.velocity ** 2) * self.S)
+
+        return Cf
+
     # ------------------------------------------------------------------
     # Main analysis
     # ------------------------------------------------------------------
-    def Pitching_Coefficients(self, print_plots=False):
+    def Pitching_Coefficients(self, other_coeffs=False):
         """
         Three sweeps:
           1. Inner elevon (symmetric) → Cm — pitch authority
@@ -307,7 +363,7 @@ class Control_Surface_Sizing():
             coeff_key="x_np",
         )
 
-        if print_plots:
+        if self.print_plots:
             # ── Plot ──────────────────────────────────────────────────────
             fig, axes = plt.subplots(1, 2, figsize=(12, 5))
             fig.suptitle("Elevon Control Effectiveness  (V=" + str(self.op_point.velocity) + "m/s, α=" + str(
@@ -348,9 +404,200 @@ class Control_Surface_Sizing():
         print("Cmq:", Cmq, "/rad")
         print("Cmde:", Cmde, "/rad")
 
-        return Cmde, Cmq
+        if other_coeffs:
+            print("Running CXu sweep …")
+            CXu_list = []
+            for i in self.coeff_delta:
+                self.op_point.velocity = self.op_point.velocity + i
+                F= (self._sweep_single_not_flat(
+                    self.deflection_points,
+                    delta_inner_fn=lambda i: 0,
+                    delta_outer_fn=lambda i: 0,
+                    delta_rudder_fn=lambda i: 0,
+                    outer_symmetric=False,
+                    coeff_key="F_b",
+                ))
+                print(F)
+                CXu_list.append(self.bodyforce_to_bodycoeff(F[0,0]))
+                self.op_point.velocity = self.op_point.velocity - i
+            print(CXu_list)
+            CXu = (CXu_list[len(self.coeff_delta) - 1] - CXu_list[0]) / (self.coeff_delta[np.size(self.coeff_delta) - 1] - self.coeff_delta[0])
+            print("CXu:", CXu, "/ms-1")
 
-    def Rolling_Coefficients(self):
+            print("Running CXa and CZa sweep …")
+            CL = self._sweep_single(
+                self.deflection_points,
+                delta_inner_fn=lambda i: 0,
+                delta_outer_fn=lambda i: 0,
+                delta_rudder_fn=lambda i: 0,
+                outer_symmetric=False,
+                coeff_key="CL",
+            )
+            # print("CL:", CL)
+            CLa = self._sweep_single(
+                self.deflection_points,
+                delta_inner_fn=lambda i: 0,
+                delta_outer_fn=lambda i: 0,
+                delta_rudder_fn=lambda i: 0,
+                outer_symmetric=False,
+                coeff_key="CLa",
+            )
+            # print("CLa:", CLa, "/rad")
+            CD = self._sweep_single(
+                self.deflection_points,
+                delta_inner_fn=lambda i: 0,
+                delta_outer_fn=lambda i: 0,
+                delta_rudder_fn=lambda i: 0,
+                outer_symmetric=False,
+                coeff_key="CD",
+            )
+            # print("CD:", CD)
+            CDa = self._sweep_single(
+                self.deflection_points,
+                delta_inner_fn=lambda i: 0,
+                delta_outer_fn=lambda i: 0,
+                delta_rudder_fn=lambda i: 0,
+                outer_symmetric=False,
+                coeff_key="CDa",
+            )
+            # print("CDa:", CDa, "/rad")
+            print(self.op_point.alpha)
+            CXa = (
+                    -CDa * np.cos(np.radians(self.op_point.alpha))
+                    + CD * np.sin(np.radians(self.op_point.alpha))
+                    + CLa * np.sin(np.radians(self.op_point.alpha))
+                    + CL * np.cos(np.radians(self.op_point.alpha))
+            )
+            CZa = (
+                    -CDa * np.sin(np.radians(self.op_point.alpha))
+                    - CD * np.cos(np.radians(self.op_point.alpha))
+                    - CLa * np.cos(np.radians(self.op_point.alpha))
+                    + CL * np.sin(np.radians(self.op_point.alpha))
+            )
+            print("CXa:", CXa, "/rad")
+            print("CZa:", CZa, "/rad")
+
+            print("Running CXq sweep …")
+            CLq = self._sweep_single(
+                self.deflection_points,
+                delta_inner_fn=lambda i: 0,
+                delta_outer_fn=lambda i: 0,
+                delta_rudder_fn=lambda i: 0,
+                outer_symmetric=False,
+                coeff_key="CLq",
+            )
+            # print("CLq:", CLq, "/rad")
+            CDq = self._sweep_single(
+                self.deflection_points,
+                delta_inner_fn=lambda i: 0,
+                delta_outer_fn=lambda i: 0,
+                delta_rudder_fn=lambda i: 0,
+                outer_symmetric=False,
+                coeff_key="CDq",
+            )
+            # print("CDq:", CDq, "/rad")
+            CXq = -CDq * np.cos(np.radians(self.op_point.alpha)) + CLq * np.sin(np.radians(self.op_point.alpha))
+            CZq = -CDq * np.sin(np.radians(self.op_point.alpha)) - CLq * np.cos(np.radians(self.op_point.alpha))
+            print("CXq:", CXq, "/rad")
+            print("CZq:", CZq, "/rad")
+
+            print("Running inner elevon CX sweep …")
+            F_inner = self._sweep_not_flat(
+                self.deflection_points,
+                delta_inner_fn=lambda i: i,
+                delta_outer_fn=lambda i: 0,
+                delta_rudder_fn=lambda i: 0,
+                outer_symmetric=True,
+                coeff_key="F_b",
+            )
+            # print(F_inner)
+            CX_inner = [self.bodyforce_to_bodycoeff(arr[0, 0]) for arr in F_inner]
+            # print("CX_inner:", CX_inner)
+            CXde = (CX_inner[np.size(self.deflection_points) - 1] - CX_inner[0]) / np.radians(
+                self.deflection_points[np.size(self.deflection_points) - 1] - self.deflection_points[0])
+            print("CXde:", CXde, "/rad")
+
+            print("Running CZu sweep …")
+            CZu_list = []
+            for i in self.coeff_delta:
+                self.op_point.velocity = self.op_point.velocity + i
+                F = (self._sweep_single_not_flat(
+                    self.deflection_points,
+                    delta_inner_fn=lambda i: 0,
+                    delta_outer_fn=lambda i: 0,
+                    delta_rudder_fn=lambda i: 0,
+                    outer_symmetric=False,
+                    coeff_key="F_b",
+                ))
+                # print(F[2,0])
+                CZu_list.append(self.bodyforce_to_bodycoeff(F[2, 0]))
+                self.op_point.velocity = self.op_point.velocity - i
+            # print(CZu_list)
+            CZu = (CZu_list[len(self.coeff_delta) - 1] - CZu_list[0]) / (
+                        self.coeff_delta[np.size(self.coeff_delta) - 1] - self.coeff_delta[0])
+            print("CZu:", CZu, "/ms-1")
+
+            print("Running inner elevon CZ sweep …")
+            F_inner = self._sweep_not_flat(
+                self.deflection_points,
+                delta_inner_fn=lambda i: i,
+                delta_outer_fn=lambda i: 0,
+                delta_rudder_fn=lambda i: 0,
+                outer_symmetric=True,
+                coeff_key="F_b",
+            )
+            # print(F_inner)
+            CZ_inner = [self.bodyforce_to_bodycoeff(arr[2, 0]) for arr in F_inner]
+            # print("CX_inner:", CX_inner)
+            CZde = (CZ_inner[np.size(self.deflection_points) - 1] - CZ_inner[0]) / np.radians(
+                self.deflection_points[np.size(self.deflection_points) - 1] - self.deflection_points[0])
+            print("CZde:", CZde, "/rad")
+
+            print("Running Cm sweep …")
+            Cm = self._sweep_single(
+                self.deflection_points,
+                delta_inner_fn=lambda i: 0,
+                delta_outer_fn=lambda i: 0,
+                delta_rudder_fn=lambda i: 0,
+                outer_symmetric=False,
+                coeff_key="Cm"
+            )
+            print("Cm:", Cm, "/rad")
+
+            print("Running Cmu sweep …")
+            Cmu_list = []
+            for i in self.coeff_delta:
+                self.op_point.velocity = self.op_point.velocity + i
+                Cmu_list.append(self._sweep_single(
+                    self.deflection_points,
+                    delta_inner_fn=lambda i: 0,
+                    delta_outer_fn=lambda i: 0,
+                    delta_rudder_fn=lambda i: 0,
+                    outer_symmetric=False,
+                    coeff_key="Cm",
+                ))
+                self.op_point.velocity = self.op_point.velocity - i
+            Cmu = (Cmu_list[np.size(self.coeff_delta) - 1] - Cmu_list[0]) / (self.coeff_delta[np.size(self.coeff_delta) - 1] - self.coeff_delta[0])
+            print("Cmu:", Cmu, "/rad")
+
+            print("Running inner elevon Cma sweep …")
+            Cma = self._sweep_single(
+                self.deflection_points,
+                delta_inner_fn=lambda i: 0,
+                delta_outer_fn=lambda i: 0,
+                delta_rudder_fn=lambda i: 0,
+                outer_symmetric=False,
+                coeff_key="Cma"
+            )
+            print("Cma:", Cma, "/rad")
+
+        if not other_coeffs:
+            return Cmde, Cmq
+
+        else:
+            return CXu, CXa, CXq, CXde, CZu, CZa, CZq, CZde, Cm, Cmu, Cma, Cmq, Cmde
+
+    def Rolling_Coefficients(self, other_coeffs=False):
         print("-------------------------------")
         print("Running outer elevon Cl sweep …")
         Cl_outer = self._sweep(
@@ -410,9 +657,107 @@ class Control_Surface_Sizing():
         print("Clp:", Clp, "/rad")
         print("Clda:", Clda, "/rad")
 
-        return Clda, Clp
+        if other_coeffs:
+            print("Running CYb sweep …")
+            CYb = self._sweep_single(
+                self.deflection_points,
+                delta_inner_fn=lambda i: 0,
+                delta_outer_fn=lambda i: 0,
+                delta_rudder_fn=lambda i: 0,
+                outer_symmetric=False,
+                coeff_key="CYb",
+            )
+            print("CYb:", CYb, "/rad")
 
-    def Yawing_Coefficients(self):
+            print("Running CYp sweep …")
+            CYp = self._sweep_single(
+                self.deflection_points,
+                delta_inner_fn=lambda i: 0,
+                delta_outer_fn=lambda i: 0,
+                delta_rudder_fn=lambda i: 0,
+                outer_symmetric=False,
+                coeff_key="CYp",
+            )
+            print("CYp:", CYp, "/rad")
+
+            print("Running CYr sweep …")
+            CYr = self._sweep_single(
+                self.deflection_points,
+                delta_inner_fn=lambda i: 0,
+                delta_outer_fn=lambda i: 0,
+                delta_rudder_fn=lambda i: 0,
+                outer_symmetric=False,
+                coeff_key="CYr",
+            )
+            print("CYr:", CYr, "/rad")
+
+            print("Running outer elevon CY sweep …")
+            CY_outer = self._sweep(
+                self.deflection_points,
+                delta_inner_fn=lambda i: 0,
+                delta_outer_fn=lambda i: i,
+                delta_rudder_fn=lambda i: 0,
+                outer_symmetric=False,
+                coeff_key="CY",
+            )
+            CYda = (CY_outer[np.size(self.deflection_points) - 1] - CY_outer[0]) / np.radians(
+                self.deflection_points[np.size(self.deflection_points) - 1] - self.deflection_points[0])
+            print("CYda:", CYda, "/rad")
+
+            print("Running rudder CY sweep …")
+            CY_rudder = self._sweep(
+                self.deflection_points,
+                delta_inner_fn=lambda i: 0,
+                delta_outer_fn=lambda i: 0,
+                delta_rudder_fn=lambda i: i,
+                outer_symmetric=False,
+                coeff_key="CY",
+            )
+            CYdr = (CY_rudder[np.size(self.deflection_points) - 1] - CY_rudder[0]) / np.radians(
+                self.deflection_points[np.size(self.deflection_points) - 1] - self.deflection_points[0])
+            print("CYdr:", CYdr, "/rad")
+
+            print("Running Clb sweep …")
+            Clb = self._sweep_single(
+                self.deflection_points,
+                delta_inner_fn=lambda i: 0,
+                delta_outer_fn=lambda i: 0,
+                delta_rudder_fn=lambda i: 0,
+                outer_symmetric=False,
+                coeff_key="Clb",
+            )
+            print("Clb:", Clb, "/rad")
+
+            print("Running Clr sweep …")
+            Clr = self._sweep_single(
+                self.deflection_points,
+                delta_inner_fn=lambda i: 0,
+                delta_outer_fn=lambda i: 0,
+                delta_rudder_fn=lambda i: 0,
+                outer_symmetric=False,
+                coeff_key="Clr",
+            )
+            print("Clr:", Clr, "/rad")
+
+            print("Running rudder Cl sweep …")
+            Cl_rudder = self._sweep(
+                self.deflection_points,
+                delta_inner_fn=lambda i: 0,
+                delta_outer_fn=lambda i: 0,
+                delta_rudder_fn=lambda i: i,
+                outer_symmetric=False,
+                coeff_key="Cl",
+            )
+            Cldr = (Cl_rudder[np.size(self.deflection_points) - 1] - Cl_rudder[0]) / np.radians(
+                self.deflection_points[np.size(self.deflection_points) - 1] - self.deflection_points[0])
+
+        if other_coeffs:
+            return CYb, CYp, CYr, CYda, CYdr, Clb, Clp, Clr, Clda, Cldr
+
+        else:
+            return Clda, Clp
+
+    def Yawing_Coefficients(self, other_coeffs=False):
         print("-------------------------------")
         print("Running rudder Cn sweep (antisymmetric / yaw) …")
         Cn_rudder = self._sweep(
@@ -461,7 +806,7 @@ class Control_Surface_Sizing():
         # ── Control Coefficient Linearisation ─────────────────────────
         Cndr = (Cn_rudder[np.size(self.rudder_deflection_points)-1] - Cn_rudder[0])/np.radians(self.rudder_deflection_points[np.size(self.rudder_deflection_points)-1] - self.rudder_deflection_points[0])
 
-        print("Running Cmq sweep …")
+        print("Running Cnr sweep …")
         Cnr = self._sweep_single(
             self.rudder_deflection_points,
             delta_inner_fn=lambda i: 0,
@@ -473,7 +818,48 @@ class Control_Surface_Sizing():
         print("Cnr:", Cnr, "/rad")
         print("Cndr:", Cndr, "/rad")
 
-        return Cndr, Cnr
+        if other_coeffs:
+
+            print("Running Cnb sweep …")
+            Cnb = self._sweep_single(
+                self.rudder_deflection_points,
+                delta_inner_fn=lambda i: 0,
+                delta_outer_fn=lambda i: 0,
+                delta_rudder_fn=lambda i: 0,
+                outer_symmetric=False,
+                coeff_key="Cnb",
+            )
+            print("Cnb:", Cnb, "/rad")
+
+            print("Running Cnp sweep …")
+            Cnp = self._sweep_single(
+                self.rudder_deflection_points,
+                delta_inner_fn=lambda i: 0,
+                delta_outer_fn=lambda i: 0,
+                delta_rudder_fn=lambda i: 0,
+                outer_symmetric=False,
+                coeff_key="Cnp",
+            )
+            print("Cnp:", Cnp, "/rad")
+
+            print("Running outer elevon Cn sweep …")
+            Cn_outer = self._sweep(
+                self.deflection_points,
+                delta_inner_fn=lambda i: 0,
+                delta_outer_fn=lambda i: 0,
+                delta_rudder_fn=lambda i: i,
+                outer_symmetric=False,
+                coeff_key="Cn",
+            )
+            Cnda = (Cn_outer[np.size(self.deflection_points) - 1] - Cn_outer[0]) / np.radians(
+                self.deflection_points[np.size(self.deflection_points) - 1] - self.deflection_points[0])
+            print("Cnda:", Cnda, "/rad")
+
+        if other_coeffs:
+            return Cnb, Cnp, Cnr, Cnda, Cndr
+
+        else:
+            return Cndr, Cnr
 
     # ------------------------------------------------------------------
     # Control requirements check (placeholder)
@@ -725,10 +1111,12 @@ class Control_Surface_Sizing():
 if __name__ == "__main__":
     print("Starting simulation")
     cs = Control_Surface_Sizing()
-    cs.Airplane_Geo()
-    cs.airplane.draw()
+    # cs.Airplane_Geo()
+    # cs.airplane.draw()
     #cs.Control_Check()
     # cs.Control_Sizing()
-    # cs.Pitching_Coefficients(print_plots=True)
+    print(cs.Pitching_Coefficients(other_coeffs=True))
+    print(cs.Rolling_Coefficients(other_coeffs=True))
+    print(cs.Yawing_Coefficients(other_coeffs=True))
     # cs.Spiral_Check()
-    cs.Cm_check()
+    # cs.Cm_check()

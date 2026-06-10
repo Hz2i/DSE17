@@ -94,5 +94,5 @@ class TestSpar:
         assert I3[2,2] < I1[2,2]
         assert I1[0,2] < I3[0,2] < 0
 
-    def test_battery_inertia(self, mm):
-        mass1 =
+    # def test_battery_inertia(self, mm):
+    #     mass1 =
