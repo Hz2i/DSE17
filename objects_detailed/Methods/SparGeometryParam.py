@@ -305,7 +305,7 @@ class SparGeometryOptimization:
         I_yy_spar = self.calc_I_yy_ellipse(b_spar_out, a_spar_out) - self.calc_I_yy_ellipse(b_spar_in, a_spar_in)
 
         #Cross Sectional Weight
-        weight_clamp = A_clamp_2x * self.pa_rho * 0.5 #Assume Clamp is hollow structure
+        weight_clamp = A_clamp_2x * self.pa_rho * 0.25 #Assume Clamp is hollow structure
         weight_sleeve = A_sleeve * self.Titanium_rho
         weight_spar = A_spar * self.CFRP_rho
         weight_rubber = A_rubber * self.Rubber_rho
