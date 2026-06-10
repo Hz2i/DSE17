@@ -28,7 +28,10 @@ class Control_Surface_Sizing():
         self.outer_elevon_frac = 0.193
         self.height_winglet = 1.5 # height of winglet above main wing [m]
         self.rudder_frac = 0.67
+        self.S_winglet = 2 * self.height_winglet * self.c
+        self.winglet_area_fraction = self.S_winglet / self.S
         self.fraction_outer_engine = None
+
 
         self.half_span = self.b / 2
         self.start_inner_elevon = None
@@ -709,11 +712,6 @@ class Control_Surface_Sizing():
         plt.plot(cg_range, cm_list)
         plt.plot(cg_range, cma_list)
         plt.show()
-
-
-
-
-
         # todo OEI
         # todo controllability at forward cg
         # todo dutch roll/spiral stability
@@ -731,4 +729,4 @@ if __name__ == "__main__":
     # cs.Control_Sizing()
     # cs.Pitching_Coefficients(print_plots=True)
     # cs.Spiral_Check()
-    cs.Cm_check()
+    # cs.Cm_check()
