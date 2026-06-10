@@ -170,7 +170,9 @@ def main():
         {'name': 'Battery box 1',      'width': 0.251,  'height': 0.251,  'depth': 0.251},
         {'name': 'Battery box 2',      'width': 0.251,  'height': 0.251,  'depth': 0.251},
         {'name': 'Battery box 3',      'width': 0.251,  'height': 0.251,  'depth': 0.251},
-        {'name': 'Battery box 4',      'width': 0.251,  'height': 0.251,  'depth': 0.251}
+        {'name': 'Battery box 4',      'width': 0.251,  'height': 0.251,  'depth': 0.251},
+        {'name': 'Pitot tube 1',    'width': 0.194, 'height': 0.194, 'depth': 0.194},
+        {'name': 'Pitot tube 2',    'width': 0.194, 'height': 0.194, 'depth': 0.194}
     ]
 
     packets = build_packets_from_list(wing_list)
