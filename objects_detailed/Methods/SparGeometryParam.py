@@ -401,6 +401,7 @@ class SparGeometryOptimization:
         geometry = self.calc_geometry_H_clamp(t_spar, t_sleeve, Clamp_width, eccentricity_factor)
         xcentroid = self.airfoil_geometry.x_centroid
         ycentroid = self.airfoil_geometry.y_centroid
+        print(f"x,y centroid: {xcentroid:.4f}, {ycentroid:.4f}")
         plt.figure(figsize=(10, 5))
         
         # Plot Centroid
@@ -411,6 +412,8 @@ class SparGeometryOptimization:
         y_lower = self.airfoil_geometry.y_lower
         x_min = self.airfoil_geometry.x_min
         x_max = self.airfoil_geometry.x_max
+        print(f"x_min, x_max: {x_min:.4f}, {x_max:.4f}")
+        print(f"y_lower, y_upper: {y_lower:.4f}, {y_upper:.4f}")
         plt.fill_betweenx([y_lower, y_upper], x_min, x_max, color='gray', alpha=0.3, label='Available Region', zorder=0)
         
         # Clamp (centered at centroid)
@@ -583,16 +586,22 @@ class SparGeometryOptimization:
 
 if __name__ == "__main__":
     airframe = Airframe()
-    airfoil_geometry = AirfoilGeometry(Airframe(),t_skin_airfoil=0.0002, plot=True)
+    airfoil_geometry = AirfoilGeometry(Airframe(),t_skin_airfoil=0.00015, plot=True)
     #Components
     spar_optimizer = SparGeometryOptimization(
         I_xx_spar_req=1e-7,  # Placeholder values for required inertia, these should be calculated based on load cases
         I_yy_spar_req=5e-8,
         I_xx_sleeve_req=1e-7,
         I_yy_sleeve_req=5e-8,
-        n_sections=6,
+        n_sections=8,
         min_eccentricity_factor=1.5,
         airframe=airframe,
         airfoil_geometry=airfoil_geometry,
         Plot=True
     )
+    r_top = 0.010466944193631492
+    t_spar = 0.0017313900367461794
+    t_sleeve = 0.005728992976302554
+    Clamp_width = 0.05693388838726299
+    eccentricity_factor = 10.000000093991648
+    spar_optimizer.Plot_optimized_geometry(r_top, t_spar, t_sleeve, Clamp_width, eccentricity_factor)

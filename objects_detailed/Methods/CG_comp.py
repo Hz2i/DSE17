@@ -14,7 +14,7 @@ import GeneralSubsystems
 import PowerSystem_sizing
 import SparGeometryParam
 import Sections
-from StructuralAnalysis import airfoil_properties
+
 
 class Available_BatteryCrossSection:
     def __init__(self, AirGEO = SparGeometryParam.AirfoilGeometry(), width_clamp=0.125, plot = False):
@@ -138,10 +138,10 @@ class CG_comp:
         self.l_sleeve = 1
         self.x_cg_spar_structure_wrt_LE = self.AirGEO.x_max_thickness
         #CrossSectionWeight
-        self.cs_w_clamp = 13.5/2 #Hollow Clamp Assumption
-        self.cs_w_rubber = 0.285
-        self.cs_w_sleeve = 0.56
-        self.cs_w_spar = 0.384
+        self.cs_w_clamp = 2.78 #Hollow Clamp Assumption
+        self.cs_w_rubber = 0.068
+        self.cs_w_sleeve = 1.623
+        self.cs_w_spar = 0.18
         # self.plot_mesh_plotly()
         #Centroid of Airfoil
         self.x_centroid, self.z_centroid = self.Calculate_Airfoil_Centroid()
@@ -158,10 +158,10 @@ class CG_comp:
         self.mass_comms_ssr = Comms.ssr_mass*Comms.redundancy
         self.mass_comms_elt = Comms.elt_mass*Comms.redundancy
         '''PUT IN BY HAND'''
-        self.mass_battery_total = 114.67 #[kg]
+        self.mass_battery_total = 129.679 #[kg]
         self.volume_battery_tot = self.mass_battery_total / self.battery_char.massRho
         '''PUT IN BY HAND'''
-        self.prop_eng = 10 #[kg] Combining 2!!
+        self.prop_eng = 16.129/2 #[kg] Combining 2!!
         self.prop_sticklength = 0.5 #[m]
         '''PUT IN BY HAND'''
         self.total_skid_mass = 9.15 #[kg]
@@ -172,23 +172,12 @@ class CG_comp:
         self.mass_actuator = 1.95 #[kg]
         self.actuator_chord_pos = 0.7*self.airframe.c_r
         self.outer_elevon_offset = 0.9*self.airframe.b/2
-        self.outer_elevon_length = 0.1*self.airframe.b/2
-        self.inner_elevon_length = 0.2*self.airframe.b/2
+        self.outer_elevon_length = 0.185*self.airframe.b/2
+        self.inner_elevon_length = 0.051*self.airframe.b/2
         self.elevon_chord = 0.3*self.airframe.c_r
 
         #Positions
-        self.x_payload = self.x_centroid
-        self.x_fcs_pitot = self.x_centroid
-        self.x_computer = self.x_centroid
-        self.x_comms_ssr = self.x_centroid
-        self.x_comms_elt = self.x_centroid
-        self.x_prop_2_3, self.x_prop_1_4 = self.calc_x_prop_positions()
-        self.x_skids_1 = self.x_edge_first_wing_section + 0.5*np.sin(self.airframe.le_sweep)+self.skid_chord_pos
-        self.x_skids_2 = self.x_prop_2_3 + self.prop_sticklength + self.skid_chord_pos
-        self.x_skids_3 = self.x_prop_1_4 + self.prop_sticklength + self.skid_chord_pos
-        self.x_skids_4 = self.x_wingtips - 0.5*np.sin(self.airframe.le_sweep)#Offset of 0.5m
-        self.x_outer_elevons = (self.outer_elevon_offset)*np.tan(self.airframe.le_sweep) + self.actuator_chord_pos
-        self.x_inner_elevons = (self.outer_elevon_offset - self.inner_elevon_length)*np.tan(self.airframe.le_sweep) + self.actuator_chord_pos
+        
 
         self.y_payload = 0
         self.y_fcs_pitot = 0
@@ -202,7 +191,20 @@ class CG_comp:
         self.y_skids_3 = self.airframe.b/6*2
         self.y_skids_4 = self.y_wingtips - 0.5*np.cos(self.airframe.le_sweep)#Offset of 0.5m
         self.y_outer_elevons = self.outer_elevon_offset
-        self.y_inner_elevons = self.y_outer_elevons - self.inner_elevon_length
+        self.y_inner_elevons = self.y_outer_elevons - self.outer_elevon_length
+
+        self.x_payload = self.x_centroid
+        self.x_fcs_pitot = self.x_centroid
+        self.x_computer = self.x_centroid
+        self.x_comms_ssr = self.x_centroid
+        self.x_comms_elt = self.x_centroid
+        self.x_prop_2_3, self.x_prop_1_4 = self.calc_x_prop_positions()
+        self.x_skids_1 = self.x_edge_first_wing_section + 0.5*np.sin(self.airframe.le_sweep)+self.skid_chord_pos
+        self.x_skids_2 = self.x_prop_2_3 + self.prop_sticklength + self.skid_chord_pos
+        self.x_skids_3 = self.x_prop_1_4 + self.prop_sticklength + self.skid_chord_pos
+        self.x_skids_4 = self.x_wingtips - 0.5*np.sin(self.airframe.le_sweep)#Offset of 0.5m
+        self.x_outer_elevons = (self.outer_elevon_offset)*np.tan(self.airframe.le_sweep) + self.actuator_chord_pos
+        self.x_inner_elevons = (self.y_inner_elevons)*np.tan(self.airframe.le_sweep) + self.actuator_chord_pos
         #Make CGlists
         self.mass_list = self.gen_mass_list()
         self.x_list = self.gen_x_list()
@@ -307,14 +309,14 @@ class CG_comp:
     
     def x_cg_wingtips(self):
         #Assume Point For on Centroid of Edge Airfoil
-        self.half_span_wing_tips = 1.5
+        self.half_span_wing_tips = 1.9
         self.sweep_wing_tips = self.airframe.le_sweep  #Assuming more sweep for wingtips
         self.x_wingtips = ((self.airframe.b/2)*np.tan(self.airframe.le_sweep))+self.x_centroid + 0.5*self.half_span_wing_tips*np.tan(self.sweep_wing_tips)  # Shift x-centroid by half the span times tan(sweep) to account for sweep, plus additional shift for wingtip geometry
         self.y_wingtips = self.airframe.b/2  
-        self.mass_wingtips = 2*6.0 #[kg] (Assumptions)
+        self.mass_wingtips = 3.7 #[kg] (Assumptions)
 
     def x_cg_solar_panel(self):
-        self.solar_panel_area = 36
+        self.solar_panel_area = 54.2
         self.mass_solar_panel = self.solar_panel_area * Components_Materials.solar_panel().surfRho
         self.x_solar_panel = ((self.airframe.b/2)*np.tan(self.airframe.le_sweep))/2 + self.x_centroid
         self.y_solar_panel = ((self.airframe.b/2)/2)
@@ -537,8 +539,6 @@ class CG_comp:
     def plot_outer_elevon_contour(self, left_half=False):
         sweep = self.airframe.le_sweep
 
-    
-
         # Outer elevon span stations
         y_outer_end = self.outer_elevon_offset
         y_outer_start = y_outer_end - self.outer_elevon_length
@@ -705,7 +705,7 @@ class CG_comp:
                 f"{name} ({m/2:.2f} kg)" for name, m in items
             ])
 
-            scale_arrow = ((sum(m for _, m in items))**(0.5)) * 50
+            scale_arrow = ((sum(m for _, m in items))**(0.5)) * 65
 
             # flip direction every other element
             direction = 1 if i % 2 == 0 else -1
@@ -803,7 +803,7 @@ class CG_comp:
             arrowhead=1,
             font=dict(size=15, family="Arial Black"),
             ax=0,
-            ay=-300
+            ay=-500
         )
         #Battery Distribution Annotation
         fig.add_annotation(
@@ -813,7 +813,7 @@ class CG_comp:
             showarrow=True,
             arrowhead=1,
             ax=0,
-            ay=300
+            ay=500
         )
         sweep = self.airframe.le_sweep
 
@@ -914,9 +914,8 @@ class CG_comp:
 
 
 if __name__ == "__main__":
-    airframe = Airframe.airframe(S=69.20, A=20, qc_sweep=15.0/180*np.pi, taper=1.0, dihedral=0.0 , airfoil=asb.Airfoil("mh91"), display=False, init_polar=False)
+    airframe = Airframe.airframe(S=55.8, A=20, qc_sweep=15.0/180*np.pi, taper=1.0, dihedral=0.0 , airfoil=asb.Airfoil("mh91"), display=False, init_polar=False)
     airfoil_geometry = SparGeometryParam.AirfoilGeometry(Airframe = airframe)
     '''INPUT SELF'''
-    battery_cross_section = Available_BatteryCrossSection(AirGEO=airfoil_geometry, width_clamp=0.125, plot=True)
-    cg_calculator = CG_comp(x_cg_goal=2.55, batt_section=2, airframe=airframe, Batt=battery_cross_section, Wing_sections=Sections.Sections(airframe=airframe, Plot=False), t_skin_airfoil=0.0002)
-    print(f'Total Airfoil Area: {airfoil_properties(airframe.foil, airframe.c_r):.4f} m^2')
+    battery_cross_section = Available_BatteryCrossSection(AirGEO=airfoil_geometry, width_clamp=0.0569)
+    cg_calculator = CG_comp(x_cg_goal=2.275, batt_section=2, airframe=airframe, Batt=battery_cross_section, Wing_sections=Sections.Sections(airframe=airframe, Plot=False), t_skin_airfoil=0.0002)
