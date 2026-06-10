@@ -28,6 +28,9 @@ class Control_Surface_Sizing():
         self.rudder_frac = 0.4130
         self.fraction_outer_engine = None
 
+        self.S_winglet = 2 * self.height_winglet * self.c
+        self.winglet_area_fraction = self.S_winglet / self.S
+
         self.half_span = self.b / 2
         self.start_inner_elevon = None
         self.elevon_connection   = None
