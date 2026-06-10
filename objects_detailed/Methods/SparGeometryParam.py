@@ -242,7 +242,7 @@ class SparGeometryOptimization:
         self.total_mass_spar, self.total_length_inc_clamp, self.total_span_exc_sleeve_clamp = self.calc_Mass_structure_span(self.optimized_geometry)
         self.Weight_skin = self.calculate_airfoil_skin_weight(self.optimized_geometry, self.total_length_inc_clamp, self.total_span_exc_sleeve_clamp)
         self.Weight_ribs = self.calculate_rib_weight(airframe, self.optimized_geometry)
-        self.total_structure_weight = self.total_mass_spar + self.Weight_skin
+        self.total_structure_weight = self.total_mass_spar + self.Weight_skin+ self.Weight_ribs
         if Plot:
             self.Plot_optimized_geometry(self.optimized_geometry["r_top"], self.optimized_geometry["t_spar"], self.optimized_geometry["t_sleeve"], self.optimized_geometry["Clamp_width"], self.optimized_geometry["eccentricity_factor"])
 
