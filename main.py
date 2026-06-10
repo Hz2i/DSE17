@@ -37,7 +37,7 @@ S = 36.0
 # Flying wing planform:
 fus_geo = fuselage(D=0.0, L1=0.0, L2=0.0, L3=0.0)
 nac_geo = nacelles(nr_of_engines=0, pos=[])
-planform = airframe(S=S, A=20.0, qc_sweep=15.0*np.pi/180, taper=1.0, dihedral=0.0*np.pi/180.0,fus=fus_geo, nac=nac_geo, display=False, init_polar=True)
+planform = airframe(S=S, A=21.0, qc_sweep=15.0*np.pi/180, taper=1.0, dihedral=0.0*np.pi/180.0,fus=fus_geo, nac=nac_geo, display=False, init_polar=True)
 
 
 MTOW = MTOW_initial
@@ -68,12 +68,12 @@ while monitoring_var > 5e-3 or iterations < 5:
 
 
     print(f'Difference between guess and current MTOW: {MTOW_current - MTOW:.2f} kg')
-    print(f'subsystem masses: {AHAPS.compute_subsys_mass():.2f} kg')
-    print(f'internal structure mass: {AHAPS.internal_struct.total_structure_weight:.2f} kg')
-    print(f'total mass spar {AHAPS.internal_struct.total_mass_spar:.2f} kg')
-    print(f'weight skin {AHAPS.internal_struct.Weight_skin:.2f} kg')
-    print(f'power storage mass: {AHAPS.pow_store.mass:.2f} kg')
-    print(f'solar mass: {AHAPS.solar.mass:.2f} kg')
+    # print(f'subsystem masses: {AHAPS.compute_subsys_mass():.2f} kg')
+    # print(f'internal structure mass: {AHAPS.internal_struct.total_structure_weight:.2f} kg')
+    # print(f'total mass spar {AHAPS.internal_struct.total_mass_spar:.2f} kg')
+    # print(f'weight skin {AHAPS.internal_struct.Weight_skin:.2f} kg')
+    # print(f'power storage mass: {AHAPS.pow_store.mass:.2f} kg')
+    # print(f'solar mass: {AHAPS.solar.mass:.2f} kg')
     pow_frac = (AHAPS.pow_store.mass + AHAPS.solar.mass)/MTOW_current
     payload_frac = AHAPS.payload.mass / MTOW_current
     struct_frac = AHAPS.internal_struct.total_structure_weight / MTOW_current
@@ -114,40 +114,64 @@ print("Final energy storage system mass:", AHAPS.pow_store.mass)
 print("Final energy storage system volume:", AHAPS.pow_store.volume)
 
 
-K2 = structure.K2
-print("Oswald efficiency: ", 1/(K2 * structure.AR * np.pi))
-print("Max CL/CD:", structure.CL_CD_max)
+K2 = AHAPS.airframe.K2
+print("Oswald efficiency: ", 1/(K2 * AHAPS.airframe.AR * np.pi))
+print("Max CL/CD:", AHAPS.airframe.CL_CD_max)
 
 
-# aero = structure.llt_analysis(series=True, alpha=np.linspace(-10.0, 20.0, 30))
+# save_bool = input("Save results? (Y/N)")
 #
-# aero_single, llt_an = structure.llt_analysis(alpha=10.0)
-# print("Panel coords:", llt_an.front_left_vertices)
+# if save_bool == "Y":
+#     AHAPS_ID = input("Please input the ID of the preliminary design:")
+#     FILE_ID = "outputs/final/" + AHAPS_ID + ".txt"
+#     out_file = open(FILE_ID, "w")
 #
-# lift = aero["CL"]
-# drag = aero["CD"]
-#
-# plt.plot(np.linspace(-10.0, 20.0, 30), lift)
-# plt.show()
-# plt.plot(lift, drag)
-# plt.plot(lift, structure.CD0 + structure.K1 * lift + structure.K2 * lift**2, c='r')
-# plt.show()
-
-# structure.compute_load_distribution(alpha=10.0, TAS=35.0)
-
-
-# print("Force vectors:", F)
-# print("Vortex coordinates:", coords)
-
-# print("Total normal force:", np.sum(F[:,2]))
-# print("Span:", structure.b)
-
-
-# plt.scatter(structure.vortex_coords[:,1], structure.dFx_dy_current)
-# plt.show()
-#
-# plt.scatter(structure.vortex_coords[:,1], structure.dFy_dy_current)
-# plt.show()
-#
-# plt.scatter(structure.vortex_coords[:,1], structure.dFz_dy_current)
-# plt.show()
+#     print("GENERAL AIRCRAFT PARAMETERS:", file=out_file)
+#     print(" - Final MTOW:", AHAPS.MTOW, file=out_file)
+#     print(" - CL/CD at cruise:", AHAPS.CL_CD, file=out_file)
+#     print(" - CD0:", AHAPS.CD0, file=out_file)
+#     print(" - Final power consumption:", AHAPS.Pow_req, file=out_file)
+#     print(" - Final surface area:", AHAPS.wing.S, file=out_file)
+#     print(" - Final remaining mass (MTOW - Power System Mass - Payload Mass):", AHAPS.MTOW * (1 - powM_frac) - AHAPS.payload.mass_payload, file=out_file)
+#     print("___________________________________", file=out_file)
+#     print("POWER SYSTEM PARAMETERS:", file=out_file)
+#     print(" - Final solar panel area:", AHAPS.solar.area, file=out_file)
+#     print(" - Final solar panel mass:", AHAPS.solar.mass, file=out_file)
+#     print(" - Final solar panel power generation:", AHAPS.solar.daylight_power_req, file=out_file)
+#     print(" - Final energy storage system mass:", AHAPS.pow_store.mass, file=out_file)
+#     print(" - Final energy storage system volume:", AHAPS.pow_store.volume, file=out_file)
+#     print(" - Final energy storage system capacity:", AHAPS.pow_store.mass*400*3600, file=out_file)
+#     print("___________________________________", file=out_file)
+#     print("PROPULSION SYSTEM PARAMETERS:", file=out_file)
+#     print(" - Thrust required at cruise:", AHAPS.T_req, file=out_file)
+#     print(" - TAS at cruise:", AHAPS.TAS_cruise, file = out_file)
+#     print(" - Lambda Advance Ratio:", AHAPS.prop.lambda_adv, file=out_file)
+#     print("___________________________________", file=out_file)
+#     print("FUSELAGE PARAMETERS:", file=out_file)
+#     print(" - Fuselage diameter:", AHAPS.fus.D, file=out_file)
+#     print(" - Fuselage L1:", AHAPS.fus.L1, file=out_file)
+#     print(" - Fuselage L2 (main body):", AHAPS.fus.L2, file=out_file)
+#     print(" - Fuselage L3:", AHAPS.fus.L3, file=out_file)
+#     print("___________________________________", file=out_file)
+#     print("WING AND EMPENNAGE PARAMETERS:", file=out_file)
+#     print(" - Wing surface area:", AHAPS.wing.S, file=out_file)
+#     print(" - Wing aspect ratio:", AHAPS.wing.AR, file=out_file)
+#     print(" - Wing full span:", AHAPS.wing.b, file=out_file)
+#     print(" - Wing chord:", AHAPS.wing.root_chord, file=out_file)
+#     print(" - Wing sweep:", AHAPS.wing.qc_sweep, file=out_file)
+#     print(" - Wing dihedral:", AHAPS.wing.dihedral, file=out_file)
+#     print(" - Wing taper:", AHAPS.wing.taper, file=out_file)
+#     print(" - Sh/S:", AHAPS.Sh_S, file=out_file)
+#     print(" - Sv/S:", AHAPS.Sv_S, file=out_file)
+#     print(" - Vertical tail aspect ratio:", AHAPS.emp.AR_v, file=out_file)
+#     print(" - Horizontal tail aspect ratio:", AHAPS.emp.AR_h, file=out_file)
+#     print(" - Vertical tail Surface:", AHAPS.emp.Sv, file=out_file)
+#     print(" - Horizontal tail Surface:", AHAPS.emp.Sh, file=out_file)
+#     print(" - Vertical tail span:", AHAPS.emp.Sv/AHAPS.emp.root_chord_v, file=out_file)
+#     print(" - Horizontal tail span:", AHAPS.emp.Sh/AHAPS.emp.root_chord_h, file=out_file)
+#     print(" - Vertical tail qc sweep:", AHAPS.emp.qc_sweep_v, file=out_file)
+#     print(" - Horizontal tail qc sweep:", AHAPS.emp.qc_sweep_h, file=out_file)
+#     print(" - Vertical tail root chord:", AHAPS.emp.root_chord_v, file=out_file)
+#     print(" - Horizontal tail root chord:", AHAPS.emp.root_chord_h, file=out_file)
+#     print(" - Vertical tail taper:", AHAPS.emp.taper_v, file=out_file)
+#     print(" - Horizontal tail taper:", AHAPS.emp.taper_h, file=out_file)

@@ -110,13 +110,15 @@ class Aircraft:
 
             self.alpha = (CL_current - self.airframe.CL0)/self.airframe.CL_alpha
 
-            self.Pow_heat, = heat_conduction(self.airframe)
-
             self.T_req = self.MTOW*self.const.g/self.CL_CD + self.MTOW*self.const.g * np.sin(np.radians(self.gamma))
             self.prop = PropulsionSystem(required_thrust_cruise=self.T_req, v_inf_cruise=self.TAS_cruise, m_TO=self.MTOW, S=self.airframe.S,CL_max=self.airframe.CL_max)
 
             self.Pow_motor, self.Prop_mass = self.prop.run_full_analysis()
-            self.Pow_req = self.compute_subsys_pow() + self.Pow_motor + self.Pow_heat
+            self.Pow_req = self.compute_subsys_pow() + self.Pow_motor
+
+            self.Pow_heat, _ = heat_conduction(Pow_req=self.Pow_req, S=self.airframe.S)
+
+            self.Pow_req += self.Pow_heat
 
             # print(f"motor power: {self.Pow_motor} W, total motor mass: {self.Prop_mass} kg, power required: {self.Pow_req} W")
 
