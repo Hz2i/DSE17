@@ -176,7 +176,7 @@ class PropulsionSystem:
         # =========================================================
         C_L_TO = 0.8 * self.CL_max
         f_LW = 1.2
-        mu_runway = 0.2  # Rolling friction for wheels max max max
+        mu_runway = 0.1  # Rolling friction for wheels max max max
         C_D_TO = 0.024    # Estimated drag coefficient
         
         v_initial = 5.0   # The human push-off speed (m/s)
@@ -396,11 +396,11 @@ class PropulsionSystem:
         
 if __name__ == "__main__":
     ahaps = PropulsionSystem(
-        v_inf_cruise=27.6, 
-        required_thrust_cruise=62.0, 
-        m_TO=210.0, 
-        S=49.5,
-        CL_max= 1/0.8
+        v_inf_cruise=32.45494362484863, 
+        required_thrust_cruise=65.54910335953765, 
+        m_TO=278.1416060277118, 
+        S=55.79535859750816,
+        CL_max= 1.0319550892283087
     )
 
     ahaps.run_full_analysis()
