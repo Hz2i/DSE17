@@ -76,7 +76,7 @@ def assess_packing_feasibility(packets, visualize=False):
         constants.container_mass_capacity
     ))
 
-    FILL_RATIO = 0.7
+    FILL_RATIO = 1
     scale = FILL_RATIO ** (1/3)
     CONTAINER_LENGTH = 5.867 
 
@@ -156,17 +156,19 @@ def assess_packing_feasibility(packets, visualize=False):
 def main():
     
     wing_list = [
-        {'name': 'Wing sec 1', 'width': 4.30, 'height': 1.20, 'depth': 0.2},
-        {'name': 'Wing sec 2', 'width': 4.30, 'height': 1.20, 'depth': 0.2},
-        {'name': 'Wing sec 3', 'width': 4.30, 'height': 1.20, 'depth': 0.2},
-        {'name': 'Wing sec 4', 'width': 4.30, 'height': 1.20, 'depth': 0.2},
-        {'name': 'Wing sec 5', 'width': 4.30, 'height': 1.20, 'depth': 0.2},
-        {'name': 'Wing sec 6', 'width': 4.30, 'height': 1.20, 'depth': 0.2},
-        {'name': 'Wing sec 7', 'width': 4.30, 'height': 1.20, 'depth': 0.2},
-        {'name': 'proppelor 1',    'width': 0.3,  'height': 0.3,  'depth': 1.5},
-        {'name': 'proppelor 2',    'width': 0.3,  'height': 0.3,  'depth': 1.5},
-        {'name': 'proppelor 3',    'width': 0.3,  'height': 0.3,  'depth': 1.5},
-        {'name': 'proppelor 4',    'width': 0.3,  'height': 0.3,  'depth': 1.5},
+        {'name': 'Wing sec 1', 'width': 4.80, 'height': 1.86, 'depth': 0.28},
+        {'name': 'Wing sec 2', 'width': 4.80, 'height': 1.86, 'depth': 0.28},
+        {'name': 'Wing sec 3', 'width': 4.80, 'height': 1.86, 'depth': 0.28},
+        {'name': 'Wing sec 4', 'width': 4.80, 'height': 1.86, 'depth': 0.28},
+        {'name': 'Wing sec 5', 'width': 4.80, 'height': 1.86, 'depth': 0.28},
+        {'name': 'Wing sec 6', 'width': 4.80, 'height': 1.86, 'depth': 0.28},
+        {'name': 'Wing sec 7', 'width': 4.80, 'height': 1.86, 'depth': 0.28},
+        {'name': 'Wing sec 8', 'width': 4.36, 'height': 1.86, 'depth': 0.28},
+        {'name': 'Wing sec 9', 'width': 4.36, 'height': 1.86, 'depth': 0.28},
+        {'name': 'Rudder 1',    'width': 0.60, 'height': 1.86, 'depth': 0.28},
+        {'name': 'Rudder 2',    'width': 0.60, 'height': 1.86, 'depth': 0.28},
+        {'name': 'proppelor 1',    'width': 2.35,  'height': 1,  'depth': 0.28},
+        {'name': 'proppelor 2',    'width': 2.35,  'height': 1,  'depth': 0.28},
         {'name': 'Battery box 1',      'width': 0.251,  'height': 0.251,  'depth': 0.251},
         {'name': 'Battery box 2',      'width': 0.251,  'height': 0.251,  'depth': 0.251},
         {'name': 'Battery box 3',      'width': 0.251,  'height': 0.251,  'depth': 0.251},
@@ -180,3 +182,4 @@ def main():
 
 
 main()
+
