@@ -13,15 +13,16 @@ from objects_detailed.Constants import Constants
 
 from objects_detailed.Methods.StructuralAnalysis import bending_stress_lift, bending_stress_drag, torsional_stress
 from objects_detailed.Methods.SparGeometryParam import SparGeometryOptimization, AirfoilGeometry, optimize_variables, determined_geometry
+from objects_detailed.Methods.Heat_Management import heat_conduction
 
 
 # Note for Stefan: REFACTOR CODE TO FIT NEW FLOW DIAGRAM
 # It can be assumed that the general logic of this class (at least pertaining to airframe sizing) shall not significantly change.
+# Post-implementation note: I was slightly wrong
 
 class Aircraft:
-    def __init__(self, MTOW_guess=200.0, OEM_frac=0.45, TAS=25.0, h=18500.0, gamma=0.0, lat=30.0, day_margin=0, DoD=0.8, airframe=airframe(), comp=ComputerSystem(), comms=CommunicationSystem(), flight_con=FlightConditionsSystem(), payload=PayloadSystem(), ctrls=ControlSystem(), use_batt=True, energy_delta=0.0):
+    def __init__(self, MTOW_guess=200.0, TAS=25.0, h=18500.0, gamma=0.0, lat=30.0, day_margin=0, DoD=0.8, airframe=airframe(), comp=ComputerSystem(), comms=CommunicationSystem(), flight_con=FlightConditionsSystem(), payload=PayloadSystem(), ctrls=ControlSystem(), use_batt=True, energy_delta=0.0):
         self.MTOW = MTOW_guess
-        self.OEM_frac = OEM_frac
         self.const = Constants()
 
         self.airframe = airframe
@@ -109,18 +110,13 @@ class Aircraft:
 
             self.alpha = (CL_current - self.airframe.CL0)/self.airframe.CL_alpha
 
-            # self.size_structure()
-            # OEM_temp = self.internal_struct.total_structure_weight + self.compute_subsys_mass()
-            # MTOW_temp = OEM_temp/self.OEM_frac
-
-            # REMOVE LATER!!!
-            # self.CL_CD += 10.0
+            self.Pow_heat, = heat_conduction(self.airframe)
 
             self.T_req = self.MTOW*self.const.g/self.CL_CD + self.MTOW*self.const.g * np.sin(np.radians(self.gamma))
             self.prop = PropulsionSystem(required_thrust_cruise=self.T_req, v_inf_cruise=self.TAS_cruise, m_TO=self.MTOW, S=self.airframe.S,CL_max=self.airframe.CL_max)
 
             self.Pow_motor, self.Prop_mass = self.prop.run_full_analysis()
-            self.Pow_req = self.compute_subsys_pow() + self.Pow_motor
+            self.Pow_req = self.compute_subsys_pow() + self.Pow_motor + self.Pow_heat
 
             # print(f"motor power: {self.Pow_motor} W, total motor mass: {self.Prop_mass} kg, power required: {self.Pow_req} W")
 

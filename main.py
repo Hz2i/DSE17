@@ -19,7 +19,6 @@ payload_frac_prev = 0.1
 struct_frac_prev = 0.35
 gen_subsys_frac_prev = 0.05
 
-OEM_frac = payload_frac_prev + gen_subsys_frac_prev + struct_frac_prev
 
 MTOW_initial = 100.0
 TAS_initial = 25.0
@@ -44,7 +43,7 @@ planform = airframe(S=S, A=20.0, qc_sweep=15.0*np.pi/180, taper=1.0, dihedral=0.
 MTOW = MTOW_initial
 
 # Compute initial error:
-AHAPS = Aircraft(MTOW_guess=MTOW, OEM_frac=OEM_frac, TAS=TAS_initial, gamma=gamma, lat=lat, day_margin=day_margin, DoD=DoD, airframe=planform, use_batt=use_batt, energy_delta=energy_delta)
+AHAPS = Aircraft(MTOW_guess=MTOW, TAS=TAS_initial, gamma=gamma, lat=lat, day_margin=day_margin, DoD=DoD, airframe=planform, use_batt=use_batt, energy_delta=energy_delta)
 
 planform.S = AHAPS.airframe.S
 MTOW_current = AHAPS.pow_store.mass + AHAPS.solar.mass + AHAPS.payload.mass + AHAPS.internal_struct.total_structure_weight + AHAPS.Prop_mass + AHAPS.compute_subsys_mass() + m_skid()
@@ -53,8 +52,6 @@ pow_frac = (AHAPS.pow_store.mass + AHAPS.solar.mass)/MTOW
 payload_frac = AHAPS.payload.mass_payload / MTOW
 struct_frac = AHAPS.internal_struct.total_structure_weight / MTOW
 gen_subsys_frac = AHAPS.compute_subsys_mass() / MTOW
-
-OEM_frac = payload_frac + gen_subsys_frac + struct_frac
 
 error = (abs(pow_frac - pow_frac_prev)/pow_frac_prev + abs(payload_frac - payload_frac_prev)/payload_frac_prev + abs(struct_frac - struct_frac_prev)/struct_frac_prev + abs(gen_subsys_frac - gen_subsys_frac_prev)/gen_subsys_frac_prev + abs(MTOW-MTOW_current)/MTOW)/5.0
 
@@ -65,7 +62,7 @@ monitoring_var = np.linalg.norm(error_vec)
 
 iterations = 0
 while monitoring_var > 5e-3 or iterations < 5:
-    AHAPS = Aircraft(MTOW_guess=MTOW, OEM_frac=OEM_frac, TAS=TAS_initial, gamma=gamma, lat=lat, day_margin=day_margin, DoD=DoD, airframe=planform, use_batt=use_batt, energy_delta=energy_delta)
+    AHAPS = Aircraft(MTOW_guess=MTOW, TAS=TAS_initial, gamma=gamma, lat=lat, day_margin=day_margin, DoD=DoD, airframe=planform, use_batt=use_batt, energy_delta=energy_delta)
 
     MTOW_current = AHAPS.pow_store.mass + AHAPS.solar.mass + AHAPS.payload.mass + AHAPS.internal_struct.total_structure_weight + AHAPS.Prop_mass + AHAPS.compute_subsys_mass() + m_skid()
 
@@ -92,8 +89,6 @@ while monitoring_var > 5e-3 or iterations < 5:
     struct_frac_prev = struct_frac
     gen_subsys_frac_prev = gen_subsys_frac
 
-    OEM_frac = payload_frac + gen_subsys_frac + struct_frac
-
     iterations += 1
     error_vec = np.roll(error_vec, 1)
     error_vec[0] = error
@@ -119,9 +114,9 @@ print("Final energy storage system mass:", AHAPS.pow_store.mass)
 print("Final energy storage system volume:", AHAPS.pow_store.volume)
 
 
-# K2 = structure.K2
-# print("Oswald efficiency: ", 1/(K2 * structure.AR * np.pi))
-# print("Max CL/CD:", structure.CL_CD_max)
+K2 = structure.K2
+print("Oswald efficiency: ", 1/(K2 * structure.AR * np.pi))
+print("Max CL/CD:", structure.CL_CD_max)
 
 
 # aero = structure.llt_analysis(series=True, alpha=np.linspace(-10.0, 20.0, 30))
