@@ -61,7 +61,7 @@ class Mass_moments:
 
         self.cg = (-2.19, 0.0, 0.0)
         self.root = (-0.7, 0.0, 0.0)
-        self.body_centre = (0.0, 0.0, 0.0) # body axis central point
+        # self.body_centre = (0.0, 0.0, 0.0) # body axis central point
 
         self.b        = 28.80
         self.half_b   = self.b / 2
@@ -294,7 +294,7 @@ class Mass_moments:
             mass = skin_density * skin_thickness * perimeter * seg_len
 
             # Centroid: spar midpoint + cross-section offset
-            p_inner = np.array(self.body_centre) + y_inner * u # todo check if root use is correct and not body centre
+            p_inner = np.array(self.root) + y_inner * u # todo
             rc_spar = p_inner + 0.5 * seg_len * u
             rc      = rc_spar + np.array([-x_skin, 0.0, z_skin])
             d       = rc - np.array(self.cg)
@@ -342,13 +342,13 @@ class Mass_moments:
         θ0 = self.twist
         θt = self.twist_rate
 
-        x0, y0, z0 = self.body_centre # todo check if root use is correct and not body centre
+        x0, y0, z0 = self.root
         xcg, ycg, zcg = self.cg
 
         # spanwise twist (for completeness only)
         twist = θ0 + θt * y_span
 
-        # position in aircraft body axes (root frame) # todo check if root use is correct and not body centre
+        # position in aircraft body axes (root frame)
         x_rib = x0 - y_span * np.tan(Λ)
         y_rib = y0 + y_span
         z_rib = z0 - y_span * np.tan(Γ)
@@ -439,7 +439,7 @@ class Mass_moments:
 
         # Centroid in the global body axes
         centroid_global = (
-                np.array(self.body_centre) + # todo check if root use is correct and not body centre
+                np.array(self.root) +
                 y_centroid_local * u_spar +
                 np.array([-x_centroid_local, 0.0, 0.0])  # Assuming chord is aligned with x-axis
         )
@@ -537,10 +537,10 @@ class Mass_moments:
         θ0 = self.twist
         θt = self.twist_rate
 
-        x0, y0, z0 = self.body_centre # todo check if root use is correct and not body centre
+        x0, y0, z0 = self.root
         xcg, ycg, zcg = self.cg
 
-        # position in aircraft body axes (root frame) # todo check if root use is correct and not body centre
+        # position in aircraft body axes (root frame)
         x_motor = x0 - y_span * np.tan(Λ) + x_offset
         y_motor = y0 + y_span
         z_motor = z0 - y_span * np.tan(Γ)
