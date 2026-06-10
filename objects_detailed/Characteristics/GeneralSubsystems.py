@@ -163,9 +163,9 @@ class ControlSystem:
     def __init__(self):                                     # Initialise with proper values
         self.power_required = 0.0
         self.actuator_mass = 1.95 #kg
-        self.actuator_volume = 8.464365e-4 #m^3, HS-7955TG servo
-        self.actuator_current = 4.5 #A, HS-7955TG servo estimated average current
-        self.actuator_power = 28 * self.actuator_current * 0.1 #W, 6V * 1.5A, HS-7955TG servo estimated average power
+        self.actuator_volume = 8.464365e-4 #m^3,  servo
+        self.actuator_current = 4.5 #A, servo rated current
+        self.actuator_power = 28 * self.actuator_current * 0.05 #W, 28V * 4.5A, estimated average power
         self.mass_cables = 0.020 #kg/m AWG16
         self.diameter_cable = 0.003 #m, estimated diameter of the cables
         self.volume_cable = np.pi * (self.diameter_cable/2)**2 * 1 #m^3, estimated volume of 1 m of cable

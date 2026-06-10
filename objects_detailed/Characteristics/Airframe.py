@@ -96,26 +96,26 @@ class airframe:
                             airfoil=self.foil),  
                         ]
                         ),
-                    # asb.Wing(
-                    # name="Rudder",
-                    # symmetric = True,
-                    # xsecs=[
-                    #     asb.WingXSec(
-                    #         xyz_le=[(self.b/2) * np.tan(self.le_sweep),
-                    #                 self.b/2,
-                    #                 (self.b/2) * np.tan(self.dihedral)],
-                    #         chord=self.c_t,
-                    #         twist=0,
-                    #         airfoil=self.foil),
-                    #     asb.WingXSec(
-                    #         xyz_le=[(self.b/2) * np.tan(self.le_sweep),
-                    #                 self.b/2,
-                    #                 (self.b/2) * np.tan(self.dihedral)+1.5],
-                    #         chord=self.c_t,
-                    #         twist=0,
-                    #         airfoil=self.foil),
-                    #     ]
-                    #     ),
+                    asb.Wing(
+                    name="Rudder",
+                    symmetric = True,
+                    xsecs=[
+                        asb.WingXSec(
+                            xyz_le=[(self.b/2) * np.tan(self.le_sweep),
+                                    self.b/2,
+                                    (self.b/2) * np.tan(self.dihedral)],
+                            chord=self.c_t,
+                            twist=0,
+                            airfoil=asb.Airfoil("naca0012")),
+                        asb.WingXSec(
+                            xyz_le=[(self.b/2) * np.tan(self.le_sweep),
+                                    self.b/2,
+                                    (self.b/2) * np.tan(self.dihedral)+1.5],
+                            chord=self.c_t,
+                            twist=0,
+                            airfoil=asb.Airfoil("naca0012")),
+                        ]
+                        ),
                     ],
             # fuselages=[
             #     asb.Fuselage(

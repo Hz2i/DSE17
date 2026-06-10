@@ -102,7 +102,7 @@ class Aircraft:
                 self.CL_CD = CL_current/CD_current
                 self.TAS_cruise = self.TAS
 
-            cl_margin = 1.0
+            cl_margin = 0.8
 
             if CL_current > cl_margin * self.airframe.CL_max:
                 CL_current = cl_margin * self.airframe.CL_max
