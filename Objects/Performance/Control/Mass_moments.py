@@ -65,9 +65,9 @@ class Mass_moments:
 
         self.b        = 28.80
         self.half_b   = self.b / 2
+        self.AR       = 20
         self.c        = self.b / self.AR
         self.S        = self.b * self.c
-        self.AR       = 20
         self.sweep    = np.radians(15)
         self.dihedral = np.radians(9)
         self.twist    = np.radians(4.675) # twist not used - assumption that effect is minimal
