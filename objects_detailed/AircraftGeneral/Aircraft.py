@@ -21,7 +21,7 @@ from objects_detailed.Methods.Heat_Management import heat_conduction
 # Post-implementation note: I was slightly wrong
 
 class Aircraft:
-    def __init__(self, MTOW_guess=200.0, TAS=25.0, h=18500.0, gamma=0.0, lat=30.0, day_margin=0, DoD=0.8, airframe=airframe(), m_skid=8.0, Srudder_Sw=0.07, comp=ComputerSystem(), comms=CommunicationSystem(), flight_con=FlightConditionsSystem(), payload=PayloadSystem(), ctrls=ControlSystem(), use_batt=True, energy_delta=0.0):
+    def __init__(self, MTOW_guess=200.0, TAS=25.0, h=18500.0, gamma=0.0, lat=30.0, day_margin=0, DoD=0.8, airframe=airframe(), m_skid=8.0, comp=ComputerSystem(), comms=CommunicationSystem(), flight_con=FlightConditionsSystem(), payload=PayloadSystem(), ctrls=ControlSystem(), use_batt=True, energy_delta=0.0):
         self.MTOW = MTOW_guess
         self.const = Constants()
 
@@ -33,7 +33,6 @@ class Aircraft:
         self.ctrls = ctrls
 
         self.m_skid = m_skid
-        self.Srudder_Sw = Srudder_Sw
 
         self.pow_store = None
         self.use_batt = use_batt
@@ -84,7 +83,7 @@ class Aircraft:
         while surface_check or final_sim:
             self.airframe.define_geometry()
             if simulation_required or final_sim:
-                self.airframe.compute_polar(alt=self.h, TAS=self.TAS, res=5, plot=True)
+                self.airframe.compute_polar(alt=self.h, TAS=self.TAS, res=5, plot=False)
                 S_simulated = self.airframe.S
                 simulation_required = False
 
@@ -182,7 +181,9 @@ class Aircraft:
             Plot=False
         )
 
-        self.airframe.m_total = self.internal_struct.total_structure_weight * (1.0 + self.Srudder_Sw) + self.m_skid
+        self.mass_winglet = 2.0 * (self.airframe.winglet_h/self.airframe.b) * self.internal_struct.total_structure_weight
+
+        self.airframe.m_total = self.internal_struct.total_structure_weight + self.m_skid + self.mass_winglet
 
 
     def compute_subsys_pow(self):
