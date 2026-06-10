@@ -7,11 +7,17 @@ matplotlib.use('TkAgg')   # or 'Qt5Agg' if you have PyQt5 installed
 import matplotlib.pyplot as plt
 
 from Objects.Performance.Control.Mass_moments import Mass_moments
+from Objects.Performance.Control.Control import Control_Surface_Sizing
+# cs = Control_Surface_Sizing()
+# CXu, CXa, CXq, CXde, CZu, CZa, CZq, CZde, Cm, Cmu, Cma, Cmq, Cmde, CYb, CYp, CYr, CYda, CYdr, Clb, Clp, Clr, Clda, Cldr, Cnb, Cnp, Cnr, Cnda, Cndr = cs.Coefficients()
 
 
-class Coeff_Values(Mass_moments):
+class Coeff_Values(Mass_moments, Control_Surface_Sizing):
 
     def __init__(self):
+        cs = Control_Surface_Sizing()
+        CXu, CXa, CXq, CXde, CZu, CZa, CZq, CZde, Cm, Cmu, Cma, Cmq, Cmde, CYb, CYp, CYr, CYda, CYdr, Clb, Clp, Clr, Clda, Cldr, Cnb, Cnp, Cnr, Cnda, Cndr = cs.Coefficients()
+
         super().__init__()
         self.m = 170
         self.V0 = 27.94
@@ -57,47 +63,47 @@ class Coeff_Values(Mass_moments):
 
         # Stability derivatives
         self.CX0 = self.W * sin(self.th0) / (0.5 * self.rho * self.V0 ** 2 * self.S) # CHECK
-        self.CXu = -2 * self.CD          # standard approximation: CXu ≈ -2*CD
-        self.CXa = +0.9868407
+        self.CXu = CXu          # standard approximation: CXu ≈ -2*CD # todo likely causing phugoid error
+        self.CXa = CXa
         self.CXadot = +0.0
-        self.CXq = 1.1470932
-        self.CXde = 0
-        self.CXdt = 0
+        self.CXq = CXq
+        self.CXde = CXde
+        self.CXdt = +0.0
 
         self.CZ0 = -self.CL # CHECK
-        self.CZu = -2 * self.CL          # standard approximation
-        self.CZa = -5.1064415
+        self.CZu = CZu        # standard approximation
+        self.CZa = CZa
         self.CZadot = -0.0
-        self.CZq = -5.1677895
-        self.CZde = 0
-        self.CZdt = 0
+        self.CZq = CZq
+        self.CZde = CZde
+        self.CZdt = +0.0
 
-        self.Cm0 = 0
-        self.Cmu = +0.0
+        self.Cm0 = Cm
+        self.Cmu = Cmu
         self.Cmadot = +0.0
-        self.Cmq = -5.8458962
-        self.CmTc = -0.0
-        self.Cmde = 0.0
+        self.Cmq = Cmq
+        self.CmTc = +0.0
+        self.Cmde = Cmde
 
-        self.CYb = -0.1497744
+        self.CYb = CYb
         self.CYbdot = 0.
-        self.CYp = -0.1608418
-        self.CYr = +0.0366229
-        self.CYda = 0
-        self.CYdr = 0
+        self.CYp = CYp
+        self.CYr = CYr
+        self.CYda = CYda
+        self.CYdr = CYdr
 
-        self.Clb = -0.0845726
-        self.Clp = -0.7594234
-        self.Clr = +0.0204966
-        self.Clda = -0.0
-        self.Cldr = +0.0
+        self.Clb = Clb
+        self.Clp = Clp
+        self.Clr = Clr
+        self.Clda = Clda
+        self.Cldr = Cldr
 
-        self.Cnb = -0.0027290 # sign not looking correct
-        self.Cnbdot = 0.
-        self.Cnp = -0.1287038
-        self.Cnr = -0.0081057
-        self.Cnda = 0
-        self.Cndr = 0
+        self.Cnb = Cnb
+        self.Cnbdot = +0.0
+        self.Cnp = Cnp
+        self.Cnr = Cnr
+        self.Cnda = Cnda
+        self.Cndr = Cndr
 
 
 class Dynamic_Analysis:

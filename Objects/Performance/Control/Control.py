@@ -1099,7 +1099,12 @@ class Control_Surface_Sizing():
         plt.plot(cg_range, cma_list)
         plt.show()
 
+    def Coefficients(self):
+        CXu, CXa, CXq, CXde, CZu, CZa, CZq, CZde, Cm, Cmu, Cma, Cmq, Cmde = self.Pitching_Coefficients(other_coeffs=True)
+        CYb, CYp, CYr, CYda, CYdr, Clb, Clp, Clr, Clda, Cldr = self.Rolling_Coefficients(other_coeffs=True)
+        Cnb, Cnp, Cnr, Cnda, Cndr = self.Yawing_Coefficients(other_coeffs=True)
 
+        return CXu, CXa, CXq, CXde, CZu, CZa, CZq, CZde, Cm, Cmu, Cma, Cmq, Cmde, CYb, CYp, CYr, CYda, CYdr, Clb, Clp, Clr, Clda, Cldr, Cnb, Cnp, Cnr, Cnda, Cndr
 
 
 
@@ -1116,10 +1121,8 @@ if __name__ == "__main__":
     cs = Control_Surface_Sizing()
     # cs.Airplane_Geo()
     # cs.airplane.draw()
-    #cs.Control_Check()
+    # cs.Control_Check()
     # cs.Control_Sizing()
-    print(cs.Pitching_Coefficients(other_coeffs=True))
-    print(cs.Rolling_Coefficients(other_coeffs=True))
-    print(cs.Yawing_Coefficients(other_coeffs=True))
-    # cs.Spiral_Check()
+    # cs.Coefficients()
+    cs.Spiral_Check()
     # cs.Cm_check()
