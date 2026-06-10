@@ -10,6 +10,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../Char
 
 # Now you can import the Airframe module
 import Components_Materials
+import Airframe
 
 points_loads = 50
 
@@ -209,3 +210,7 @@ def deflection_analysis():          # Compute all relevant deflections
 
 def dynamic_analysis():             # Check dynamic loads
     pass
+
+if __name__ == "__main__":
+    airframe = Airframe.airframe(S=69.20, A=20, qc_sweep=15.0/180*np.pi, taper=1.0, dihedral=0.0 , airfoil=asb.Airfoil("mh91"), display=False, init_polar=False)
+    print(airfoil_properties(airframe.foil, airframe.c_r))
