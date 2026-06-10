@@ -43,7 +43,7 @@ class airframe:
         self.e = None
         self.x_ac = None
 
-        self.m_wing = None                # Currently initialised with None; Class 2 estimation methods required!
+        self.m_total = None                # Currently initialised with None; Class 2 estimation methods required!
         self.v_int_wing = None            # Currently initialised with None; Stress calculations and internal design required!
         self.v_tot_wing = None            # Currently initialised with None
 
@@ -96,26 +96,26 @@ class airframe:
                             airfoil=self.foil),  
                         ]
                         ),
-                    asb.Wing(
-                    name="Rudder",
-                    symmetric = True,
-                    xsecs=[
-                        asb.WingXSec(
-                            xyz_le=[(self.b/2) * np.tan(self.le_sweep),
-                                    self.b/2,
-                                    (self.b/2) * np.tan(self.dihedral)],
-                            chord=self.c_t,
-                            twist=0,
-                            airfoil=self.foil),
-                        asb.WingXSec(
-                            xyz_le=[(self.b/2) * np.tan(self.le_sweep),
-                                    self.b/2,
-                                    (self.b/2) * np.tan(self.dihedral)+1.5],
-                            chord=self.c_t,
-                            twist=0,
-                            airfoil=self.foil),
-                        ]
-                        ),
+                    # asb.Wing(
+                    # name="Rudder",
+                    # symmetric = True,
+                    # xsecs=[
+                    #     asb.WingXSec(
+                    #         xyz_le=[(self.b/2) * np.tan(self.le_sweep),
+                    #                 self.b/2,
+                    #                 (self.b/2) * np.tan(self.dihedral)],
+                    #         chord=self.c_t,
+                    #         twist=0,
+                    #         airfoil=self.foil),
+                    #     asb.WingXSec(
+                    #         xyz_le=[(self.b/2) * np.tan(self.le_sweep),
+                    #                 self.b/2,
+                    #                 (self.b/2) * np.tan(self.dihedral)+1.5],
+                    #         chord=self.c_t,
+                    #         twist=0,
+                    #         airfoil=self.foil),
+                    #     ]
+                    #     ),
                     ],
             # fuselages=[
             #     asb.Fuselage(

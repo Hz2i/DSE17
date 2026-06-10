@@ -21,7 +21,7 @@ from objects_detailed.Methods.Heat_Management import heat_conduction
 # Post-implementation note: I was slightly wrong
 
 class Aircraft:
-    def __init__(self, MTOW_guess=200.0, TAS=25.0, h=18500.0, gamma=0.0, lat=30.0, day_margin=0, DoD=0.8, airframe=airframe(), comp=ComputerSystem(), comms=CommunicationSystem(), flight_con=FlightConditionsSystem(), payload=PayloadSystem(), ctrls=ControlSystem(), use_batt=True, energy_delta=0.0):
+    def __init__(self, MTOW_guess=200.0, TAS=25.0, h=18500.0, gamma=0.0, lat=30.0, day_margin=0, DoD=0.8, airframe=airframe(), m_skid=8.0, Srudder_Sw=0.07, comp=ComputerSystem(), comms=CommunicationSystem(), flight_con=FlightConditionsSystem(), payload=PayloadSystem(), ctrls=ControlSystem(), use_batt=True, energy_delta=0.0):
         self.MTOW = MTOW_guess
         self.const = Constants()
 
@@ -31,6 +31,9 @@ class Aircraft:
         self.flight_con = flight_con
         self.payload = payload
         self.ctrls = ctrls
+
+        self.m_skid = m_skid
+        self.Srudder_Sw = Srudder_Sw
 
         self.pow_store = None
         self.use_batt = use_batt
@@ -48,7 +51,6 @@ class Aircraft:
 
         self.e = None
         self.CL_CD = None
-        self.CD0 = None
         self.CL_opt = None
 
         self.inner_iter()
@@ -108,6 +110,8 @@ class Aircraft:
                 self.CL_CD = CL_current/CD_current
                 self.TAS_cruise = (self.MTOW*self.const.g / (0.5 * am.Atmosphere(self.h).density[0] * self.airframe.S * CL_current))**0.5
 
+            self.CL_cruise = CL_current
+            self.CD_cruise = CD_current
             self.alpha = (CL_current - self.airframe.CL0)/self.airframe.CL_alpha
 
             self.T_req = self.MTOW*self.const.g/self.CL_CD + self.MTOW*self.const.g * np.sin(np.radians(self.gamma))
@@ -177,6 +181,8 @@ class Aircraft:
             airfoil_geometry=airfoil_geometry,
             Plot=False
         )
+
+        self.airframe.m_total = self.internal_struct.total_structure_weight * (1.0 + self.Srudder_Sw) + self.m_skid
 
 
     def compute_subsys_pow(self):
