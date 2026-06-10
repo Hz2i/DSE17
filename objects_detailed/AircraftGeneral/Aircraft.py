@@ -84,7 +84,7 @@ class Aircraft:
         while surface_check or final_sim:
             self.airframe.define_geometry()
             if simulation_required or final_sim:
-                self.airframe.compute_polar(alt=self.h, TAS=self.TAS, res=5, plot=False)
+                self.airframe.compute_polar(alt=self.h, TAS=self.TAS, res=5, plot=True)
                 S_simulated = self.airframe.S
                 simulation_required = False
 

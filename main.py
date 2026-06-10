@@ -21,7 +21,7 @@ gen_subsys_frac_prev = 0.05
 
 
 MTOW_initial = 100.0
-TAS_initial = 27.5
+TAS_initial = 32.0
 gamma = 0.0
 h_cruise = 18500.0
 lat = 30.0
@@ -154,12 +154,13 @@ if save_bool == "Y":
     print(" - Wing QC sweep:", AHAPS.airframe.qc_sweep, file=out_file)
     print(" - Wing LE sweep:", AHAPS.airframe.le_sweep, file=out_file)
     print(" - Wing dihedral:", AHAPS.airframe.dihedral, file=out_file)
-    print(" - Wing internal structure parameters:", AHAPS.internal_struct, file=out_file)
+    print(" - Wing internal structure parameters:", AHAPS.internal_struct.optimized_geometry, file=out_file)
 
     out_file = open(powers_file_ID, "w")
 
     print(" - Final total power consumption:", AHAPS.Pow_req, file=out_file)
     print(" - Propulsive power at cruise:", AHAPS.Pow_motor, file=out_file)
+    print(" - Propeller diameter:", AHAPS.prop.D, file=out_file)
     print(" - Heating power at cruise:", AHAPS.Pow_heat, file=out_file)
     print(" - Power storage system mass:", AHAPS.pow_store.mass, file=out_file)
     print(" - Power storage system volume:", AHAPS.pow_store.volume, file=out_file)
