@@ -16,13 +16,13 @@ class Control_Surface_Sizing():
 
         self.AR = 20
         self.wing_sweep = np.radians(15)     # radians
-        self.b = 37.2            # full span [m]
+        self.b = 33.405196780593336           # full span [m]
         self.c = self.b / self.AR               # chord [m]
         self.S = self.b * self.c      # Wing area [m^2]
-        self.dihedral = np.radians(9.0)
-        self.twist = -4.675
+        self.dihedral = np.radians(2.0)
+        self.twist = -2 #-4.675
 
-        self.x_cg = 1.7
+        self.x_cg = 2.275
 
         self.inner_elevon_frac = 0.124
         self.outer_elevon_frac = 0.227
@@ -39,7 +39,7 @@ class Control_Surface_Sizing():
         self.end_outer_elevon    = None
 
         # Operating point (can be overridden before calling vlm_run)
-        self.op_point = asb.OperatingPoint(atmosphere=Atmosphere(altitude=60000) ,velocity=27.94, alpha=8.35)
+        self.op_point = asb.OperatingPoint(atmosphere=Atmosphere(altitude=60000) ,velocity=32.45, alpha=10.3)
 
         self.q_check = True
         self.p_check = True
@@ -888,7 +888,7 @@ class Control_Surface_Sizing():
 
         return p, p_req
 
-    def Yaw_Check(self, T_eng=17, fraction_outer_engine=0.6):
+    def Yaw_Check(self, T_eng=17, fraction_outer_engine=0.67):
         Cndr, Cnr = self.Yawing_Coefficients()
         r_req = np.radians(5)   # yaw  rate, now defined nose to left [rad/s]
 
@@ -1127,7 +1127,7 @@ if __name__ == "__main__":
     # cs.Airplane_Geo()
     # cs.airplane.draw()
     # cs.Control_Check()
-    # cs.Control_Sizing()
+    cs.Control_Sizing()
     # cs.Coefficients()
     # cs.Spiral_Check()
     # cs.Cm_check()

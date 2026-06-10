@@ -58,7 +58,7 @@ class Coeff_Values(Mass_moments, Control_Surface_Sizing):
         # self.CNha = 2 * pi * self.Ah / (self.Ah + 2)
         # self.depsda = 4 / (self.A + 2)
 
-        # Lift and drag coefficient
+        # # Lift and drag coefficient
         # self.CL = 2 * self.W / (self.rho * self.V0 ** 2 * self.S)
         # self.CD = self.CD0 + (self.CLa * self.alpha0) ** 2 / (pi * self.A * self.e)
 
@@ -71,7 +71,7 @@ class Coeff_Values(Mass_moments, Control_Surface_Sizing):
         self.CXde = CXde
         self.CXdt = +0.0
 
-        self.CZ0 = -self.CL # CHECK
+        self.CZ0 = self.W * sin(self.th0) / (0.5 * self.rho * self.V0 ** 2 * self.S) # CHECK
         self.CZu = CZu        # standard approximation
         self.CZa = CZa
         self.CZadot = -0.0
