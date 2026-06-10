@@ -162,7 +162,7 @@ class PayloadSystem: # finish cables here
 class ControlSystem:
     def __init__(self):                                     # Initialise with proper values
         self.power_required = 0.0
-        self.actuator_mass = 0.065 #kg, HS-7955TG servo
+        self.actuator_mass = 1.95 #kg
         self.actuator_volume = 0.040 * 0.020 * 0.037 #m^3, HS-7955TG servo
         self.actuator_current = 1.5 #A, HS-7955TG servo estimated average current
         self.actuator_power = 6 * self.actuator_current #W, 6V * 1.5A, HS-7955TG servo estimated average power
@@ -181,8 +181,8 @@ class ControlSystem:
         self.compute_control_system()
 
 
-    def compute_control_system(self): #Assumed a total of 4 actuators (ailerons, elevator, rudder), so all characteristics are multiplied by 4
-        self.mass = (self.actuator_mass + self.mass_cables + self.mass_pushrod + self.joints_mass_ratio * self.mass_pushrod) * 4
+    def compute_control_system(self): #Assumed a total of 4 actuators (ailerons, elevator, rudder), so all characteristics are multiplied by 6
+        self.mass = (self.actuator_mass + self.mass_cables + self.mass_pushrod + self.joints_mass_ratio * self.mass_pushrod) * 6
         self.volume = (self.actuator_volume + self.volume_pushrod + self.volume_cable) * 4
         self.power = (self.actuator_power + self.power_loss_cable) * 4
         # return self.CS_mass, self.CS_volume, self.CS_power_required

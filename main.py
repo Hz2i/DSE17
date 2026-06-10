@@ -172,7 +172,7 @@ if save_bool == "Y":
 
     print(" - CD0:", AHAPS.airframe.CD0, file=out_file)
     print(" - K1 (drag polar coefficient):", AHAPS.airframe.K1, file=out_file)
-    print(" - K2 (drag polar coefficient):", AHAPS.K2, file=out_file)
+    print(" - K2 (drag polar coefficient):", AHAPS.airframe.K2, file=out_file)
     print(" - Cruise CL:", AHAPS.CL_cruise, file=out_file)
     print(" - Cruise CD:", AHAPS.CD_cruise, file=out_file)
     print(" - Cruise AoA:", AHAPS.alpha, file=out_file)
