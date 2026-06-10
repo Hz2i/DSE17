@@ -4,7 +4,7 @@ import aerosandbox.numpy as np
 import matplotlib.pyplot as plt
 from scipy.integrate import trapezoid
 from scipy.interpolate import interp1d
-from scipy.optimize import brentq
+from scipy.optimize import brentq, minimize_scalar
 
 # SPEED + ALTITUDE
 v_inf = 27.6  # Freestream velocity in m/s
@@ -16,12 +16,12 @@ mach_number = v_inf / speed_of_sound
 
 # Propeller Constants
 Nb = 2            # Number of blades
-D = 2           # Propeller Diameter (m)
+D = 1.8           # Propeller Diameter (m)
 R_abs = D / 2.0   # Tip radius (m)
 
 airfoil_names = ["S1223", "NACA4412", "E387", "SD7037", "FX63137"] 
 
-alphas_sweep = np.linspace(-30, 30, 250)
+alphas_sweep = np.linspace(-30, 85, 250)
 
 # radial geometry and blade distributions
 r = np.linspace(0.1, 1, 100)  # Normalized radius (r/R)
@@ -34,7 +34,7 @@ beta_deg = beta_07 + (0.4387 + 0.3040*r - 3.9616*r**2 + 5.1180*r**3 - 1.6284*r**
 
 
 # advance ratio sweep
-lambda_J = np.linspace(0.3, 1.0, 30)
+lambda_J = np.linspace(0.3, 1.0, 100)
 
 # storage for results per airfoil
 results = {}
@@ -83,7 +83,13 @@ for name in airfoil_names:
 
             try:
                 # Solve for the true operating angle of attack
-                true_alpha_deg = brentq(equilibrium_equation, -25, 25)
+                true_alpha_deg = brentq(equilibrium_equation, -35, 80)
+            except ValueError:
+                # Fallback: Deep stall minimizer (Crucial for Take-Off)
+                res = minimize_scalar(lambda a: abs(equilibrium_equation(a)), bounds=(-35, 80), method='bounded')
+                true_alpha_deg = res.x
+            
+            try:
                 true_phi_rad = np.radians(beta_deg[i] - true_alpha_deg)
 
                 # Extract true viscous forces at this operating point
@@ -110,7 +116,7 @@ for name in airfoil_names:
                 dT_dr[i] = b[i] * velocity_term * (cl_local * np.cos(true_phi_rad) - cd_local * np.sin(true_phi_rad)) * F_local
                 dM_dr[i] = b[i] * velocity_term * (cl_local * np.sin(true_phi_rad) + cd_local * np.cos(true_phi_rad)) * r_abs[i] * F_local
 
-            except (ValueError, ZeroDivisionError):
+            except ZeroDivisionError:
                 # if stall or numerical issue
                 dT_dr[i] = 0.0
                 dM_dr[i] = 0.0    
@@ -140,31 +146,39 @@ for name in airfoil_names:
 
 
 # Plotting: compare airfoils
-fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
+fig, ax1 = plt.subplots(1, figsize=(8, 5))
 colors = plt.cm.tab10.colors
 
 # Plot 1: Efficiency Curve for all airfoils
 for idx, name in enumerate(results.keys()):
     ax1.plot(results[name]['J'], results[name]['ETA'], '-', color=colors[idx % len(colors)], linewidth=2, label=f"{name}")
 # ax1.axvline(0.75, color='gray', linestyle='--', alpha=0.7, label='Design Point (J=0.75)')
-ax1.set_xlabel('Advance Ratio (J)', fontsize=11)
-ax1.set_ylabel('Propeller Efficiency ($\\eta$)', fontsize=11)
-ax1.set_title('Propeller Efficiency Curve Comparison', fontsize=12, weight='bold')
-ax1.set_xlim(0.3, 1)
+ax1.set_xlabel('Advance Ratio ($\\lambda$)', fontsize=14)
+ax1.set_ylabel('Propeller Efficiency ($\\eta_{prop}$)', fontsize=14)
+# ax1.set_title('Propeller Efficiency Curve Comparison', fontsize=12, weight='bold')
+ax1.set_xlim(0.3, 1.0)
 ax1.set_ylim(0.2, 1.0)
 ax1.grid(True, linestyle=':', alpha=0.6)
-ax1.legend(loc='lower left')
+ax1.legend(loc='lower left', fontsize=11)
+# make x and y font larger
+ax1.tick_params(axis='both', which='major', labelsize=11)
+# design point annotation
+# optimal_idx = np.argmax(results['SD7037']['ETA'])
+# ax1.annotate('Design Point (SD7037)', xy=(results['SD7037']['J'][optimal_idx], results['SD7037']['ETA'][optimal_idx]),
+#              xytext=(results['SD7037']['J'][optimal_idx]+0.05, results['SD7037']['ETA'][optimal_idx]-0.1),
+#              arrowprops=dict(facecolor='black', shrink=0.05, width=1, headwidth=5),
+#              fontsize=10, weight='bold')
 
-# Plot 2: Dimensionless Coefficients Curve for all airfoils
-for idx, name in enumerate(results.keys()):
-    ax2.plot(results[name]['J'], results[name]['CT'], 'o-', color=colors[idx % len(colors)], linewidth=1.5, label=f"{name} C_T", markersize=4)
-    ax2.plot(results[name]['J'], results[name]['CP'], 's--', color=colors[idx % len(colors)], linewidth=1.5, label=f"{name} C_P", markersize=4)
-ax2.set_xlabel('Advance Ratio (J)', fontsize=11)
-ax2.set_ylabel('Coefficient Value', fontsize=11)
-ax2.set_title('Thrust and Power Coefficients vs. Advance Ratio', fontsize=12, weight='bold')
-ax2.set_xlim(0.3, 0.85)
-ax2.grid(True, linestyle=':', alpha=0.6)
-ax2.legend(loc='upper right', fontsize='small')
+# # Plot 2: Dimensionless Coefficients Curve for all airfoils
+# for idx, name in enumerate(results.keys()):
+#     ax2.plot(results[name]['J'], results[name]['CT'], 'o-', color=colors[idx % len(colors)], linewidth=1.5, label=f"{name} C_T", markersize=4)
+#     ax2.plot(results[name]['J'], results[name]['CP'], 's--', color=colors[idx % len(colors)], linewidth=1.5, label=f"{name} C_P", markersize=4)
+# ax2.set_xlabel('Advance Ratio (J)', fontsize=11)
+# ax2.set_ylabel('Coefficient Value', fontsize=11)
+# ax2.set_title('Thrust and Power Coefficients vs. Advance Ratio', fontsize=12, weight='bold')
+# ax2.set_xlim(0.3, 0.85)
+# ax2.grid(True, linestyle=':', alpha=0.6)
+# ax2.legend(loc='upper right', fontsize='small')
 
 plt.tight_layout()
 plt.show()
@@ -183,4 +197,24 @@ plt.title('Blade Pitch Distribution Along the Span', fontsize=12, weight='bold')
 plt.grid(True, linestyle=':', alpha=0.6)
 # plt.xlim(0.1, 1)
 # plt.ylim(0, 40)
+plt.show()
+
+
+b_rel = (0.084241 - 0.85789*r + 4.7176*r**2 - 9.6225*r**3 + 8.5004*r**4 - 2.7959*r**5)
+
+# plot beta and b over percentage of radius in one figure
+fig, ax1 = plt.subplots(figsize=(8, 5))
+ax1.plot(r, beta_deg, 'b-', linewidth=2, label='Blade Pitch Angle $\\beta$ (degrees)')
+ax1.set_xlabel('Normalized Radius (r/R)', fontsize=14)
+ax1.set_ylabel('Blade Pitch Angle $\\beta$ (degrees)', fontsize=14, color='b')
+ax1.tick_params(axis='y', labelcolor='b')
+ax1.grid(True, linestyle=':', alpha=0.6)
+ax2 = ax1.twinx()
+ax2.plot(r, b_rel, 'r--', linewidth=2, label='Normalized Chord Length ($b/D$)')
+ax2.set_ylabel('Normalized Chord Length $b/D$ (m)', fontsize=14, color='r')
+ax2.tick_params(axis='y', labelcolor='r')
+# fig.suptitle('Blade Geometry Distribution Along the Span', fontsize=12, weight='bold')
+# fig.legend(loc='upper right', fontsize=11)
+ax1.tick_params(axis='both', which='major', labelsize=11)
+ax2.tick_params(axis='both', which='major', labelsize=11)
 plt.show()
