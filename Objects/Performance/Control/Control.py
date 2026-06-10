@@ -24,10 +24,10 @@ class Control_Surface_Sizing():
 
         self.x_cg = 1.7
 
-        self.inner_elevon_frac = 0.1217
-        self.outer_elevon_frac = 0.2883
+        self.inner_elevon_frac = 0.124
+        self.outer_elevon_frac = 0.227
         self.height_winglet = 1.9 # height of winglet above main wing [m]
-        self.rudder_frac = 0.4130
+        self.rudder_frac = 0.876
         self.fraction_outer_engine = None
 
         self.S_winglet = 2 * self.height_winglet * self.c
@@ -1127,7 +1127,7 @@ if __name__ == "__main__":
     # cs.Airplane_Geo()
     # cs.airplane.draw()
     # cs.Control_Check()
-    cs.Control_Sizing()
+    # cs.Control_Sizing()
     # cs.Coefficients()
     # cs.Spiral_Check()
     # cs.Cm_check()
