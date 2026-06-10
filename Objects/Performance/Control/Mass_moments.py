@@ -78,6 +78,41 @@ class Mass_moments:
         self.battery_thickness_fraction = 0.10
         self.battery_density            = 2180.0
 
+        m_total = 170.0  # MTOM [kg]
+
+        I_spar = self.spar_inertia_fd(mass=20, length=self.half_b)
+
+        I_batt, _ = self.batteries_inertia_fd(
+            total_mass=40.5,
+            span_sections=[(0.0, self.half_b / 3), (2 * self.half_b / 3, self.half_b)],
+        )
+        I_skin, _ = self.skin_inertia_fd(
+            skin_density=1390.0,
+            skin_thickness=0.0002,
+            span_sections=[(0.0, self.half_b)],
+        )
+        ribs = [(0.6, 0), (0.6, 0.5 * self.half_b), (0.6, self.half_b)]
+        _, I_ribs = self.wing_rib_inertia_full(ribs)
+
+        I_solar, _ = self.solar_panel_inertia_fd(
+            surface_density=0.665,
+            span_limits=(self.half_b * 0.05, self.half_b * 0.95),
+            chord_limits=(0.05, 0.95),
+        )
+        motors = [(2.0, 0.25 * self.half_b, 0.5), (2.0, 0.5 * self.half_b, 0.5)]
+        _, I_motors = self.motor_inertia_full(motors)
+
+        I_payload = self.payload_inertia_fd(mass=20.0, x_pos=0.75)
+
+        I_combined = I_spar + I_batt + I_skin + I_ribs + I_solar + I_motors + I_payload
+
+        # KX2, KZ2, KXZ — normalised by b
+        (self.k_x_nd,
+         self.k_y_nd,
+         self.k_z_nd,
+         self.k_xz_nd) = self.non_dimensional_radius_of_gyration(I_combined, m_total, self.b)
+
+
     # ------------------------------------------------------------------ #
     #  internal helpers
     # ------------------------------------------------------------------ #
@@ -615,31 +650,13 @@ class Mass_moments:
         return k_x, k_y, k_z, k_xz
 
     def non_dimensional_radius_of_gyration(self, I_total, M_total, reference_length=None):
-        """
-        Calculate the non-dimensional radius of gyration about the x, y, and z axes.
-        Normalizes by the wingspan (b) by default, but can use any reference length.
-
-        Parameters
-        ----------
-        I_total : np.ndarray (3x3)
-            Combined inertia tensor of the aircraft [kg·m²].
-        M_total : float
-            Total mass of the aircraft [kg].
-        reference_length : float, optional
-            Reference length for normalization (default: wingspan `b`).
-
-        Returns
-        -------
-        k_x_nd, k_y_nd, k_z_nd : float
-            Non-dimensional radius of gyration about the x, y, and z axes.
-        """
         if reference_length is None:
-            reference_length = self.b  # Default: wingspan
+            reference_length = self.b
 
         k_x, k_y, k_z, k_xz = self.radius_of_gyration(I_total, M_total)
 
         k_x_nd = k_x / reference_length
-        k_y_nd = k_y / reference_length
+        k_y_nd = k_y / reference_length  # ← use reference_length consistently, not hardcoded c
         k_z_nd = k_z / reference_length
         k_xz_nd = k_xz / (reference_length ** 2)
 

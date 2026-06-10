@@ -1,37 +1,49 @@
 from math import *
 import numpy as np
-import control.matlab as control
+import control.matlab as control_matlab
+import control
+import matplotlib
+matplotlib.use('TkAgg')   # or 'Qt5Agg' if you have PyQt5 installed
+import matplotlib.pyplot as plt
 
-from Objects.Performance.Control import Mass_moments
+from Objects.Performance.Control.Mass_moments import Mass_moments
 
 
 class Coeff_Values(Mass_moments):
 
     def __init__(self):
-        self.m = 170 #MTOM
-        self.V0 = 27.94 # [m/s]
+        super().__init__()
+        self.m = 170
+        self.V0 = 27.94
         self.b = 28.8
         self.c = 1.44
         self.S = self.b * self.c
 
-        # Constant values concerning atmosphere and gravity
-        self.rho0 = 1.2250  # air density at sea level [kg/m^3]
-        self.lmda = -0.0065  # temperature gradient in ISA [K/m]
-        self.Temp0 = 288.15  # temperature at sea level in ISA [K]
-        self.R = 287.05  # specific gas constant [m^2/sec^2K]
-        self.g = 9.81  # gravity constant [m/sec^2]
+        # Atmosphere
+        self.rho0 = 1.2250
+        self.lmda = -0.0065
+        self.Temp0 = 288.15
+        self.R = 287.05
+        self.g = 9.81
+        self.rho = 0.115318
+        self.W = self.m * self.g
 
-        # Air density [kg/m^3]
-        self.rho = 0.115318 # 60k ft no ISA dev
-        self.W = self.m * self.g  # aircraft weight [N]
+        # Aerodynamic constants — fill in your actual values
+        self.CD0 = 0.01  # zero-lift drag coefficient
+        self.CLa = 5.1064415  # lift curve slope [1/rad]
+        self.alpha0 = 0.0  # trim angle of attack [rad]
+        self.A = self.b ** 2 / self.S  # aspect ratio (or set manually: 20)
+        self.e = 0.85  # Oswald efficiency factor
+        self.th0 = 0.0  # trim pitch angle [rad]
+        self.Cma = -1.0  # pitch moment curve slope (placeholder)
 
         # Constant values concerning aircraft inertia
         self.muc = self.m / (self.rho * self.S * self.c)
         self.mub = self.m / (self.rho * self.S * self.b)
-        self.KX2 = Mass_moments.k_x_nd ** 2
-        self.KZ2 = Mass_moments.k_z_nd ** 2
-        self.KXZ = Mass_moments.k_xz_nd
-        self.KY2 = Mass_moments.k_y_nd ** 2
+        self.KX2 = self.k_x_nd ** 2
+        self.KZ2 = self.k_z_nd ** 2
+        self.KXZ = self.k_xz_nd
+        self.KY2 = self.k_y_nd ** 2
 
         # Aerodynamic constants
         # self.Cmac = 0
@@ -45,33 +57,34 @@ class Coeff_Values(Mass_moments):
 
         # Stability derivatives
         self.CX0 = self.W * sin(self.th0) / (0.5 * self.rho * self.V0 ** 2 * self.S) # CHECK
-        self.CXu = -0.0
+        self.CXu = -2 * self.CD          # standard approximation: CXu ≈ -2*CD
         self.CXa = +0.9868407
         self.CXadot = +0.0
         self.CXq = 1.1470932
-        self.CXde = ---
-        self.CXdt = 0.0
+        self.CXde = 0
+        self.CXdt = 0
 
-        self.CZ0 = -self.W * cos(self.th0) / (0.5 * self.rho * self.V0 ** 2 * self.S) # CHECK
-        self.CZu = -0.0
+        self.CZ0 = -self.CL # CHECK
+        self.CZu = -2 * self.CL          # standard approximation
         self.CZa = -5.1064415
         self.CZadot = -0.0
         self.CZq = -5.1677895
-        self.CZde = ---
-        self.CZdt = 0.0
+        self.CZde = 0
+        self.CZdt = 0
 
-        self.Cm0 = ---
+        self.Cm0 = 0
         self.Cmu = +0.0
         self.Cmadot = +0.0
         self.Cmq = -5.8458962
         self.CmTc = -0.0
+        self.Cmde = 0.0
 
         self.CYb = -0.1497744
         self.CYbdot = 0.
         self.CYp = -0.1608418
         self.CYr = +0.0366229
-        self.CYda = ---
-        self.CYdr = ---
+        self.CYda = 0
+        self.CYdr = 0
 
         self.Clb = -0.0845726
         self.Clp = -0.7594234
@@ -83,12 +96,14 @@ class Coeff_Values(Mass_moments):
         self.Cnbdot = 0.
         self.Cnp = -0.1287038
         self.Cnr = -0.0081057
-        self.Cnda = ---
-        self.Cndr = ---
+        self.Cnda = 0
+        self.Cndr = 0
 
-class Dynamic_Analysis(param = Coeff_Values):
 
-    def __init__(self, param):
+class Dynamic_Analysis:
+    def __init__(self, param=None):
+        if param is None:
+            param = Coeff_Values()
 
         # Symmetric Matrices
         self.A_s = [[param.V0 * param.CXu / (2 * param.c * param.muc), param.V0 * param.CXa / (2 * param.c * param.muc),
@@ -160,3 +175,139 @@ class Dynamic_Analysis(param = Coeff_Values):
 
         self.sys_s = control.ss(self.A_s, B_s, C_s, D_s)
         self.sys_a = control.ss(self.A_a, B_a, C_a, D_a)
+
+class Plotting(Dynamic_Analysis):
+    def __init__(self, param=None):
+        if param is None:
+            param = Coeff_Values()
+        super().__init__(param)
+        self.param = param
+
+    def plot_phugoid(self, u_perturb=1.0, t_end=200.0, dt=0.01):
+        x0 = [u_perturb, 0.0, 0.0, 0.0]
+        t = np.arange(0, t_end, dt)
+        U = np.zeros((1, len(t)))
+        t, y = control.forced_response(self.sys_s, T=t, U=U, X0=x0)
+
+        # Check for divergence
+        if np.any(np.abs(y) > 1e6):
+            print("WARNING: phugoid response is diverging — check symmetric poles")
+
+        fig, axes = plt.subplots(3, 1, figsize=(10, 8), sharex=True)
+        axes[0].plot(t, y[0])
+        axes[0].set_ylabel('Δu [m/s]')
+        axes[1].plot(t, np.degrees(y[2]))
+        axes[1].set_ylabel('θ [deg]')
+        axes[2].plot(t, np.degrees(y[1]))
+        axes[2].set_ylabel('α [deg]')
+        for ax in axes:
+            ax.grid(True, alpha=0.3)
+            ax.axhline(0, color='k', lw=0.6)
+        axes[-1].set_xlabel('Time [s]')
+        fig.suptitle(f'Phugoid — Δu₀ = {u_perturb} m/s')
+        plt.tight_layout()
+        plt.show()
+
+    def plot_short_period(self, alpha_perturb_deg=2.0, t_end=10.0, dt=0.001):
+        x0 = [0.0, np.radians(alpha_perturb_deg), 0.0, 0.0]
+        t = np.arange(0, t_end, dt)
+        U = np.zeros((1, len(t)))
+        t, y = control.forced_response(self.sys_s, T=t, U=U, X0=x0)
+
+        fig, axes = plt.subplots(2, 1, figsize=(10, 5), sharex=True)
+        axes[0].plot(t, np.degrees(y[1]))
+        axes[0].set_ylabel('α [deg]')
+        axes[1].plot(t, np.degrees(y[3]))
+        axes[1].set_ylabel('q [deg/s]')
+        for ax in axes:
+            ax.grid(True, alpha=0.3)
+            ax.axhline(0, color='k', lw=0.6)
+        axes[-1].set_xlabel('Time [s]')
+        fig.suptitle(f'Short-period — Δα₀ = {alpha_perturb_deg}°')
+        plt.tight_layout()
+        plt.show()
+
+    def plot_dutch_roll(self, beta_perturb_deg=5.0, t_end=30.0, dt=0.01):
+        x0 = [np.radians(beta_perturb_deg), 0.0, 0.0, 0.0]
+        t = np.arange(0, t_end, dt)
+        U = np.zeros((2, len(t)))  # 2 inputs: aileron + rudder
+        t, y = control.forced_response(self.sys_a, T=t, U=U, X0=x0)  # sys_a
+
+        fig, axes = plt.subplots(3, 1, figsize=(10, 8), sharex=True)
+        axes[0].plot(t, np.degrees(y[0]))
+        axes[0].set_ylabel('β [deg]')
+        axes[1].plot(t, np.degrees(y[1]))
+        axes[1].set_ylabel('φ [deg]')
+        axes[2].plot(t, np.degrees(y[3]))
+        axes[2].set_ylabel('r [deg/s]')
+        for ax in axes:
+            ax.grid(True, alpha=0.3)
+            ax.axhline(0, color='k', lw=0.6)
+        axes[-1].set_xlabel('Time [s]')
+        fig.suptitle(f'Dutch roll — Δβ₀ = {beta_perturb_deg}°')
+        plt.tight_layout()
+        plt.show()
+
+    def plot_spiral(self, phi_perturb_deg=5.0, dt=0.01):
+        x0 = [0.0, np.radians(phi_perturb_deg), 0.0, 0.0]
+
+        t_long = np.arange(0, 120.0, dt)
+        U_long = np.zeros((2, len(t_long)))
+        t_l, y_l = control.forced_response(self.sys_a, T=t_long, U=U_long, X0=x0)
+
+        fig, axes = plt.subplots(2, 1, figsize=(10, 6), sharex=True)
+        axes[0].plot(t_l, np.degrees(y_l[1]))
+        axes[0].set_ylabel('φ [deg]')
+        axes[1].plot(t_l, np.degrees(y_l[3]))
+        axes[1].set_ylabel('r [deg/s]')
+        for ax in axes:
+            ax.grid(True, alpha=0.3)
+            ax.axhline(0, color='k', lw=0.6)
+        axes[-1].set_xlabel('Time [s]')
+        fig.suptitle(f'Spiral mode — Δφ₀ = {phi_perturb_deg}°')
+        plt.tight_layout()
+        plt.show()
+
+    def plot_poles(self):
+        fig, ax = plt.subplots(figsize=(7, 5))
+        for sys, label, color in [
+            (self.sys_s, 'symmetric', 'steelblue'),
+            (self.sys_a, 'asymmetric', 'tomato'),
+        ]:
+            poles = control.poles(sys)
+            ax.scatter(poles.real, poles.imag,
+                       marker='x', s=100, linewidths=2,
+                       color=color, label=label)
+            for p in poles:
+                ax.annotate(f'  {p:.3f}', (p.real, p.imag), fontsize=7)
+        ax.axvline(0, color='k', lw=0.8, ls='--')
+        ax.axhline(0, color='k', lw=0.8, ls='--')
+        ax.set_xlabel('Real')
+        ax.set_ylabel('Imaginary')
+        ax.set_title('Poles')
+        ax.legend()
+        ax.grid(True, alpha=0.3)
+        plt.tight_layout()
+        plt.show()
+
+if __name__ == "__main__":
+    p = Coeff_Values()
+    plot = Plotting(p)
+
+    print("Symmetric poles:", control.poles(plot.sys_s))
+    print(f"CXu:  {p.CXu}")
+    print(f"CZu:  {p.CZu}")
+    print(f"CX0:  {p.CX0}")
+    print(f"CZ0:  {p.CZ0}")
+    print(f"CL:   {p.CL}")
+    print(f"CD:   {p.CD}")
+    print(f"KY2:  {p.KY2}")
+    print(f"muc:  {p.muc}")
+    print(f"V0:   {p.V0}")
+    print(f"rho:  {p.rho}")
+
+    plot.plot_poles()
+    plot.plot_phugoid(u_perturb=1.0, t_end=200)
+    plot.plot_short_period(alpha_perturb_deg=2.0, t_end=10)
+    plot.plot_dutch_roll(beta_perturb_deg=5.0, t_end=30)
+    plot.plot_spiral(phi_perturb_deg=5.0)
