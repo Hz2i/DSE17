@@ -163,7 +163,7 @@ class ControlSystem:
     def __init__(self):                                     # Initialise with proper values
         self.power_required = 0.0
         self.actuator_mass = 1.95 #kg
-        self.actuator_volume = 0.040 * 0.020 * 0.037 #m^3, HS-7955TG servo
+        self.actuator_volume = 8.464365e-4 #m^3, HS-7955TG servo
         self.actuator_current = 4.5 #A, HS-7955TG servo estimated average current
         self.actuator_power = 28 * self.actuator_current * 0.1 #W, 6V * 1.5A, HS-7955TG servo estimated average power
         self.mass_cables = 0.020 #kg/m AWG16
@@ -182,7 +182,7 @@ class ControlSystem:
 
 
     def compute_control_system(self): #Assumed a total of 4 actuators (ailerons, elevator, rudder), so all characteristics are multiplied by 6
-        self.mass = (self.actuator_mass + self.mass_cables + self.mass_pushrod + self.joints_mass_ratio * self.mass_pushrod) * 6
-        self.volume = (self.actuator_volume + self.volume_pushrod + self.volume_cable) * 4
-        self.power = (self.actuator_power + self.power_loss_cable) * 4
+        self.mass = (self.actuator_mass) * 6
+        self.volume = (self.actuator_volume) * 6
+        self.power = (self.actuator_power) * 6
         # return self.CS_mass, self.CS_volume, self.CS_power_required
