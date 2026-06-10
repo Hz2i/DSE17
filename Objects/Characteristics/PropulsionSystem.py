@@ -273,11 +273,11 @@ class PropulsionSystem:
         
 if __name__ == "__main__":
     ahaps = PropulsionSystem(
-        v_inf_cruise=27.6, 
-        required_thrust_cruise=52.0, 
-        m_TO=198.0, 
-        S=41.5,
-        CL_max= 1/0.8
+        v_inf_cruise=32.45494362484863, 
+        required_thrust_cruise=65.54910335953765, 
+        m_TO=278.1416060277118, 
+        S=55.79535859750816,
+        CL_max= 1.0319550892283087
     )
 
     ahaps.run_full_analysis()
