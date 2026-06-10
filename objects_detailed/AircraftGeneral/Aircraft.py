@@ -181,7 +181,7 @@ class Aircraft:
             Plot=False
         )
 
-        self.mass_winglet = 2.0 * (self.airframe.winglet_h/self.airframe.b) * self.internal_struct.total_structure_weight
+        self.mass_winglet = (2.0 * (self.airframe.winglet_h/self.airframe.b) * self.internal_struct.total_structure_weight) * 0.5
 
         self.airframe.m_total = self.internal_struct.total_structure_weight + self.m_skid + self.mass_winglet
 
