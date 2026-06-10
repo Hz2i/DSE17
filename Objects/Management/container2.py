@@ -169,7 +169,8 @@ def main():
         {'name': 'proppelor 4',    'width': 0.3,  'height': 0.3,  'depth': 1.5},
         {'name': 'Battery box 1',      'width': 0.251,  'height': 0.251,  'depth': 0.251},
         {'name': 'Battery box 2',      'width': 0.251,  'height': 0.251,  'depth': 0.251},
-        {'name': 'Battery box 3',      'width': 0.251,  'height': 0.251,  'depth': 0.251}
+        {'name': 'Battery box 3',      'width': 0.251,  'height': 0.251,  'depth': 0.251},
+        {'name': 'Battery box 4',      'width': 0.251,  'height': 0.251,  'depth': 0.251}
     ]
 
     packets = build_packets_from_list(wing_list)
