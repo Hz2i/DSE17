@@ -20,7 +20,7 @@ class PropulsionSystem:
         # ---------------------------------------------------------
         # Trade-off parameters
         # ---------------------------------------------------------
-        self.airfoil_name = "SD7037"
+        self.airfoil_name = "sd7037"
         self.Nb = 2
         self.num_engines = 4
         
@@ -172,31 +172,150 @@ class PropulsionSystem:
         tip_mach_cr = tip_speed_cr / a_cr if a_cr > 0 else 0.0
         
         # =========================================================
-        # Take-Off Analysis
+        # Take-Off Analysis (Motor-Constrained Kinematic Simulation)
         # =========================================================
-        s_TOG = 20
         C_L_TO = 0.8 * self.CL_max
         f_LW = 1.2
+        mu_runway = 0.2  # Rolling friction for wheels max max max
+        C_D_TO = 0.024    # Estimated drag coefficient
         
-        v_TO = f_LW * np.sqrt(2 * 9.81 * self.m_TO / (C_L_TO * self.rho_to * self.S))
-        P_TO_Total_Watts = ((self.m_TO * 9.81)**2) / (s_TOG * self.rho_to * self.S * C_L_TO)
+        v_initial = 5.0   # The human push-off speed (m/s)
+        v_TO = np.sqrt(f_LW * 2 * 9.81 * self.m_TO / (C_L_TO * self.rho_to * self.S))
         
-        res_power_per_motor = P_TO_Total_Watts / self.num_engines
+        # Rated Motor Power limit (Watts mechanical at the shaft)
+        P_TO_mech_motor = 1162.0 * self.eta_motor 
         
         alphas_to = np.linspace(-30, 85, 300)
         aero_to = asb.Airfoil(self.airfoil_name).get_aero_from_neuralfoil(alpha=alphas_to, Re=1_000_000, mach=0.05)
-        # Linear interp safeguards against runaway values in deep stall
         cl_interp_to = interp1d(alphas_to, aero_to['CL'], kind='linear', fill_value="extrapolate")
         cd_interp_to = interp1d(alphas_to, aero_to['CD'], kind='linear', fill_value="extrapolate")
         
-        # Optimizer to find the precise RPM that absorbs the available Roskam Take-Off Power
+        # ---------------------------------------------------------
+        # 1. Safely Find Take-Off RPM (Constrained at 5 m/s)
+        # ---------------------------------------------------------
         def power_residual(rpm_guess):
-            _, _, P_mech_guess, eta_guess = self._evaluate_bemt(v_TO, rpm_guess, self.D, self.rho_to, cl_interp_to, cd_interp_to)
-            return P_mech_guess - res_power_per_motor*eta_guess
+            # Evaluate at v_initial because this is where power demand is HIGHEST
+            _, _, P_mech_guess, _ = self._evaluate_bemt(v_initial, rpm_guess, self.D, self.rho_to, cl_interp_to, cd_interp_to)
+            return P_mech_guess - P_TO_mech_motor
             
         takeoff_rpm = brentq(power_residual, 100, 3000)
         
-        # Final evaluation at the exact Take-Off RPM
+        # ---------------------------------------------------------
+        # 2. Simulate the Full Take-Off Roll (With Data Logging)
+        # ---------------------------------------------------------
+        v_ground = v_initial
+        x_distance = 0.0
+        t_time = 0.0
+        dt = 0.05 # simulation time step in seconds
+        
+        # --- NEW: Telemetry Arrays for Plotting ---
+        hist_t = []
+        hist_v = []
+        hist_x = []
+        hist_thrust = []
+        hist_drag = []
+        hist_friction = []
+        hist_lift = []
+        hist_accel = []
+        
+        print(f"\n--- Simulating Take-Off Roll from {v_initial} m/s to {v_TO:.2f} m/s ---")
+        
+        
+        while v_ground < v_TO and t_time < 60.0:
+            Lift = 0.5 * self.rho_to * (v_ground**2) * self.S * C_L_TO
+            Drag = 0.5 * self.rho_to * (v_ground**2) * self.S * C_D_TO
+            WoW = max(0.0, (self.m_TO * 9.81) - Lift)
+            Friction = mu_runway * WoW
+            
+            # Get real-time thrust as the propeller unloads
+            T_single, _, _, _ = self._evaluate_bemt(v_ground, takeoff_rpm, self.D, self.rho_to, cl_interp_to, cd_interp_to)
+            Total_Thrust = T_single * self.num_engines
+            
+            Net_Force = Total_Thrust - Drag - Friction
+            
+            if Net_Force <= 0:
+                print(f"FAILED: Aircraft stopped accelerating at {v_ground:.2f} m/s")
+                break
+                
+            acceleration = Net_Force / self.m_TO
+            
+            # --- NEW: Log the data before updating kinematics ---
+            hist_t.append(t_time)
+            hist_v.append(v_ground)
+            hist_x.append(x_distance)
+            hist_thrust.append(Total_Thrust)
+            hist_drag.append(Drag)
+            hist_friction.append(Friction)
+            hist_lift.append(Lift)
+            hist_accel.append(acceleration)
+            
+            # Update kinematics
+            v_ground += acceleration * dt
+            x_distance += v_ground * dt
+            t_time += dt
+
+        self.s_TOG = x_distance 
+
+        # ---------------------------------------------------------
+        # 3. Plotting the Take-Off Telemetry Dashboard
+        # ---------------------------------------------------------
+        import matplotlib.pyplot as plt
+
+        fig, axs = plt.subplots(3, 1, figsize=(10, 12), sharex=True)
+
+        # --- Plot 1: Kinematics (Distance & Velocity) ---
+        ax1 = axs[0]
+        ax1.plot(hist_t, hist_v, 'b-', label='Velocity (m/s)', linewidth=2.5)
+        ax1.set_ylabel('Velocity (m/s)', color='b', fontsize=12)
+        ax1.tick_params(axis='y', labelcolor='b')
+        ax1.grid(True, alpha=0.3)
+
+        ax1_twin = ax1.twinx()
+        ax1_twin.plot(hist_t, hist_x, 'g--', label='Distance (m)', linewidth=2.5)
+        ax1_twin.set_ylabel('Distance (m)', color='g', fontsize=12)
+        ax1_twin.tick_params(axis='y', labelcolor='g')
+        ax1.set_title('Take-Off Kinematics: Velocity & Ground Roll', fontsize=14, fontweight='bold')
+        
+        # Combine legends for ax1
+        lines_1, labels_1 = ax1.get_legend_handles_labels()
+        lines_1t, labels_1t = ax1_twin.get_legend_handles_labels()
+        ax1.legend(lines_1 + lines_1t, labels_1 + labels_1t, loc='upper left')
+
+        # --- Plot 2: Forces (Thrust vs Drag & Friction) ---
+        ax2 = axs[1]
+        ax2.plot(hist_t, hist_thrust, 'r-', label='Total Propeller Thrust', linewidth=2.5)
+        ax2.plot(hist_t, hist_drag, 'k-', label='Aerodynamic Drag', linewidth=2)
+        ax2.plot(hist_t, hist_friction, 'y-', label='Rolling Friction', linewidth=2)
+        ax2.set_ylabel('Force (N)', fontsize=12)
+        ax2.set_title('Forces During Take-Off', fontsize=14, fontweight='bold')
+        ax2.legend(loc='best')
+        ax2.grid(True, alpha=0.3)
+
+        # --- Plot 3: Acceleration and Lift ---
+        ax3 = axs[2]
+        ax3.plot(hist_t, hist_accel, 'm-', label='Acceleration (m/s²)', linewidth=2.5)
+        ax3.set_ylabel('Acceleration (m/s²)', color='m', fontsize=12)
+        ax3.tick_params(axis='y', labelcolor='m')
+        ax3.set_xlabel('Time (seconds)', fontsize=12)
+        ax3.grid(True, alpha=0.3)
+
+        ax3_twin = ax3.twinx()
+        ax3_twin.plot(hist_t, hist_lift, 'c-', label='Aerodynamic Lift', linewidth=2.5)
+        ax3_twin.axhline(self.m_TO * 9.81, color='k', linestyle=':', label='Aircraft Weight (Take-Off Threshold)')
+        ax3_twin.set_ylabel('Force (N)', color='c', fontsize=12)
+        ax3_twin.tick_params(axis='y', labelcolor='c')
+        ax3.set_title('Acceleration Drop-off & Lift Generation', fontsize=14, fontweight='bold')
+
+        # Combine legends for ax3
+        lines_3, labels_3 = ax3.get_legend_handles_labels()
+        lines_3t, labels_3t = ax3_twin.get_legend_handles_labels()
+        ax3.legend(lines_3 + lines_3t, labels_3 + labels_3t, loc='center right')
+
+        plt.tight_layout()
+        plt.show()
+        # ---------------------------------------------------------
+        # 3. Final evaluation at the exact Liftoff Speed
+        # ---------------------------------------------------------
         T_to, M_to, P_mech_to, eta_to = self._evaluate_bemt(v_TO, takeoff_rpm, self.D, self.rho_to, cl_interp_to, cd_interp_to)
         P_elec_to = P_mech_to / self.eta_elec
 
@@ -219,6 +338,7 @@ class PropulsionSystem:
         m_blades = 2.89*0.7 * (self.D)/(2.1357)# 70 percent of kg from CAD
         m_total_per_engine = m_esc + m_motor + m_add + m_rod +  m_hub + m_blades
         m_total_all_engines = m_total_per_engine * self.num_engines
+
 
         # =========================================================
         # REPORT
@@ -246,7 +366,7 @@ class PropulsionSystem:
         print(f"Take-Off Mass (m_TO)     : {self.m_TO} kg")
         print(f"Wing Reference Area (S)  : {self.S} m²")
         print(f"Calculated T.O. Speed    : {v_TO:.2f} m/s")
-        print(f"Total Roskam Power       : {P_TO_Total_Watts / 1000.0:.3f} kW")
+        print(f"Total Mech Power         : {P_TO_mech_motor * self.num_engines / 1000.0:.3f} kW")
         print(f"Corresponding T.O. RPM   : {takeoff_rpm:.0f} RPM")
         print("-------------------------------------------------------")
         print(f"PER MOTOR / PROPELLER:")
@@ -262,19 +382,24 @@ class PropulsionSystem:
         print(f"  Total Electrical Power : {(P_elec_to * self.num_engines) / 1000.0:.3f} kW")
         print("=======================================================\n")
 
+        print(f"Calculated T.O. Speed    : {v_TO:.2f} m/s")
+        print(f"Ground Roll Distance     : {self.s_TOG:.1f} meters")
+        print(f"Time to Liftoff          : {t_time:.1f} seconds")
+
         print("\n=======================================================")
         print(f"                    MASS ESTIMATE")
         print("=======================================================")
         print(f"""Estimated Mass per Engine: {m_total_per_engine:.2f} kg""")
         print(f"Total Mass for All Engines: {m_total_all_engines:.2f} kg")
         print("=======================================================\n")
+        return P_elec_cr * self.num_engines, m_total_all_engines
         
 if __name__ == "__main__":
     ahaps = PropulsionSystem(
         v_inf_cruise=27.6, 
-        required_thrust_cruise=52.0, 
-        m_TO=198.0, 
-        S=41.5,
+        required_thrust_cruise=62.0, 
+        m_TO=210.0, 
+        S=49.5,
         CL_max= 1/0.8
     )
 
