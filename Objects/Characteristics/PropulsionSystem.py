@@ -176,7 +176,7 @@ class PropulsionSystem:
         # =========================================================
         C_L_TO = 0.8 * self.CL_max
         f_LW = 1.2
-        mu_runway = 0.1  # Rolling friction for wheels max max max
+        mu_runway = 0.04  # Rolling friction for wheels max max max
         C_D_TO = 0.024    # Estimated drag coefficient
         
         v_initial = 5.0   # The human push-off speed (m/s)
@@ -334,7 +334,7 @@ class PropulsionSystem:
         m_motor = 0.8 # motor kg
         m_add = 0.4 # cables, rod, insulation, etc. 200 gram nacelle 100 gram cable 100 gram insulation, etc
         m_rod = 1200 * (0.025/2)**2*np.pi*0.5  # density * volume of a 0.5m long, 25mm diameter lightweight carbon rod, 300 grams
-        m_hub = 6.36*0.20 * (self.D)/(2.1357) # 20 percent of kg from CAD
+        m_hub = 0.4 #6.36*0.20 * (self.D)/(2.1357) # 20 percent of kg from CAD
         m_blades = 2.89*0.7 * (self.D)/(2.1357)# 70 percent of kg from CAD
         m_total_per_engine = m_esc + m_motor + m_add + m_rod +  m_hub + m_blades
         m_total_all_engines = m_total_per_engine * self.num_engines
