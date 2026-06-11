@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from objects_detailed.Characteristics.ReferenceGeometries import *
-import aerosandbox.tools.pretty_plots as p
+# import aerosandbox.tools.pretty_plots as p
 from objects_detailed.ModifiedLibraries.lifting_line_ADJUSTED import LiftingLine as LLT_Adjusted
 
 class fuselage:

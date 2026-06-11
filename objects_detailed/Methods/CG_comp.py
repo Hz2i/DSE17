@@ -915,7 +915,7 @@ class CG_comp:
 
 if __name__ == "__main__":
     airframe = Airframe.airframe(S=55.8, A=20, qc_sweep=15.0/180*np.pi, taper=1.0, dihedral=0.0 , airfoil=asb.Airfoil("mh91"), display=False, init_polar=False)
-    airfoil_geometry = SparGeometryParam.AirfoilGeometry(Airframe = airframe)
+    airfoil_geometry = SparGeometryParam.AirfoilGeometry(Airframe = airframe, t_skin_airfoil=0.00015, plot=False)
     '''INPUT SELF'''
-    battery_cross_section = Available_BatteryCrossSection(AirGEO=airfoil_geometry, width_clamp=0.0569)
-    cg_calculator = CG_comp(x_cg_goal=2.275, batt_section=2, airframe=airframe, Batt=battery_cross_section, Wing_sections=Sections.Sections(airframe=airframe, Plot=False), t_skin_airfoil=0.0002)
+    battery_cross_section = Available_BatteryCrossSection(AirGEO=airfoil_geometry, width_clamp=0.0569, plot=False)
+    cg_calculator = CG_comp(x_cg_goal=2.275, batt_section=2, airframe=airframe, Batt=battery_cross_section, Wing_sections=Sections.Sections(airframe=airframe, Plot=False), t_skin_airfoil=0.00015)
