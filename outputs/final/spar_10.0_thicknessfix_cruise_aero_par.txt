@@ -1,0 +1,12 @@
+ - TAS at cruise: 32.6778192462328
+ - Thrust at cruise: 73.20711132260334
+ - CD0: 0.010152350291815488
+ - K1 (drag polar coefficient): -0.001430921742347619
+ - K2 (drag polar coefficient): 0.015554672713480764
+ - Cruise CL: 0.8276451836542078
+ - Cruise CD: 0.01962295194909339
+ - Lift over drag at cruise: 42.177404592403654
+ - Cruise AoA: 10.422023830646188
+ - Maximum CL: 1.0345564795677598
+ - Lift gradient: 0.10077978625296673
+ - CL at 0 AoA: -0.2226841503216405
