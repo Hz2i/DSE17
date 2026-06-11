@@ -56,9 +56,9 @@ class SolarPower:
         self.days = np.arange(1, 366) if days is None else np.asarray(days, dtype=int)
         #self.solar_area_m2 = float(solar_area_m2)
 
-        self.efficiency = 0.2
+        self.efficiency = 0.3*0.97**2*0.95
         self.I0 = 1378.0
-        self.powLimS = 250.0
+        self.powLimS = 270.0
 
         #self.incidence_angle_rad = self.calc_daily_mean_incidence_angle(self.days)
         #self.power_per_m2_W = self.calc_power_per_m2(self.days)
@@ -105,7 +105,7 @@ class MissionProfile:
         self.S_guess = Aircraft.solar.area
         self.solarpower = solarpower
 
-        self.E_battery_guess = self.m_battery_guess * 400 * 3600  # J
+        self.E_battery_guess = self.m_battery_guess * 500 * 3600 * 0.96  # J
 
         # given
         self.g = 9.81
@@ -292,25 +292,25 @@ class MissionProfile:
 
         return Profile_passed, sunrise_time, sunset_time
 
-MTOW = 206.74
-TAS_initial = 25.0
+MTOW = 278.8
+TAS_initial = 32.5
 gamma = 0.0
 h_cruise = 60000*0.3048
-lat = 45.0
+lat = 30.0
 day_margin = 0
 use_batt = True
 energy_delta = 0.0
-DoD = 0.7
+DoD = 0.8
 night_time = 0.0
 
-S = 43.61
-Sh_S = 0.15
-Sv_S = 0.1
+S = 55.795
+Sh_S = 0.0
+Sv_S = 0.0
 
 # Choose planform type (uncomment the required one):
 
 # Traditional wing planform:
-wing_geo = wing(S=S,A=25.0, qc_sweep=0.0*np.pi/180, taper=1.0, dihedral=0.0*np.pi/180.0)
+wing_geo = wing(S=S,A=20.0, qc_sweep=15.0*np.pi/180, taper=1.0, dihedral=0.0*np.pi/180.0)
 fus_geo = fuselage()
 emp_geo = empennage(S_h = S*Sh_S, S_v = S*Sv_S,lh=8.0,h_AR=5,v_AR=2)
 nac_geo = nacelles(nr_of_engines=4)
@@ -343,7 +343,7 @@ sunset = np.zeros(len(day_of_year))
 for i in range(len(day_of_year)):
     for j in range(len(time_of_day)):
         print(f"Day {day_of_year[i]}, time {time_of_day[j]/3600} hours")
-        deployability[i][j], sunrise[i], sunset[i] = mission_profile.climb_profile(plot=False,extra_power=300,h_cloud=8000,cloud_intensity_effect = 0.35,day_of_year = day_of_year[i], start_time = time_of_day[j], time_step = dt2)
+        deployability[i][j], sunrise[i], sunset[i] = mission_profile.climb_profile(plot=False,extra_power=300,h_cloud=18500,cloud_intensity_effect = 0.35,day_of_year = day_of_year[i], start_time = time_of_day[j], time_step = dt2)
         print(deployability[i][j])
 
 import numpy as np
