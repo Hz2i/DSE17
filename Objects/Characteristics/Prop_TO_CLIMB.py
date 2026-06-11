@@ -28,7 +28,7 @@ v_initial = 5.0  # m/s human push-off speed
 
 # Take-off model assumptions
 f_LW = 1.2
-mu_runway = 0.15
+mu_runway = 0.10 # ANDERSON
 C_D_TO = 0.024
 P_TO_ELEC_PER_MOTOR = 1162.0  # W electrical per motor
 DT = 0.05
@@ -357,7 +357,7 @@ def evaluate_climb_state(propulsion, diameter, v_climb, altitude_m, p_battery_pe
 TO_BATTERY_PER_MOTOR = result['power_battery_total'] / 4
 CLIMB_BATTERY_PER_MOTOR = TO_BATTERY_PER_MOTOR * 0.80 
 
-# IAN change the speed
+# IAN change the speed!!!!
 v_climb_target = 30.0  # m/s
 
 # Altitudes from 100 to 60,000 ft (converted to meters)
