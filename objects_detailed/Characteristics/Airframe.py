@@ -144,7 +144,7 @@ class airframe:
             drawn_airplane.fuselages = [f.subdivide_sections(2) for f in drawn_airplane.fuselages]
             drawn_airplane.draw_three_view()
             # self.geometry_asb.draw_three_view()
-            p.show_plot(dpi=600)
+            # p.show_plot(dpi=600)
 
 
     def llt_analysis(self, series=False, alpha=5.0, alt=18500.0, TAS=25.0, resolution=20):

@@ -172,8 +172,8 @@ class CG_comp:
         self.mass_actuator = 1.95 #[kg]
         self.actuator_chord_pos = 0.7*self.airframe.c_r
         self.outer_elevon_offset = 0.9*self.airframe.b/2
-        self.outer_elevon_length = 0.185*self.airframe.b/2
-        self.inner_elevon_length = 0.051*self.airframe.b/2
+        self.outer_elevon_length = 0.25*self.airframe.b/2
+        self.inner_elevon_length = 0.1*self.airframe.b/2
         self.elevon_chord = 0.3*self.airframe.c_r
 
         #Positions
@@ -918,4 +918,4 @@ if __name__ == "__main__":
     airfoil_geometry = SparGeometryParam.AirfoilGeometry(Airframe = airframe, t_skin_airfoil=0.00015, plot=False)
     '''INPUT SELF'''
     battery_cross_section = Available_BatteryCrossSection(AirGEO=airfoil_geometry, width_clamp=0.0569, plot=False)
-    cg_calculator = CG_comp(x_cg_goal=2.275, batt_section=2, airframe=airframe, Batt=battery_cross_section, Wing_sections=Sections.Sections(airframe=airframe, Plot=False), t_skin_airfoil=0.00015)
+    cg_calculator = CG_comp(x_cg_goal=2.275, batt_section=3, airframe=airframe, Batt=battery_cross_section, Wing_sections=Sections.Sections(airframe=airframe, Plot=False), t_skin_airfoil=0.00015)

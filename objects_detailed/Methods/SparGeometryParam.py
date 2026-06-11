@@ -179,7 +179,7 @@ class AirfoilGeometry:
         plt.show()
 
 class SparGeometryOptimization:
-    def __init__(self, I_xx_spar_req, I_yy_spar_req, I_xx_sleeve_req, I_yy_sleeve_req, n_sections, airframe = Airframe(), airfoil_geometry = AirfoilGeometry(), min_eccentricity_factor=1.1, optimize_variables = optimize_variables, determined_geometry = determined_geometry, Plot=False):
+    def __init__(self, I_xx_spar_req, I_yy_spar_req, I_xx_sleeve_req, I_yy_sleeve_req, n_sections, airframe = Airframe(), airfoil_geometry = AirfoilGeometry(), min_eccentricity_factor=1.1, optimize_variables = optimize_variables, determined_geometry = determined_geometry, Plot=False, Optimize=False):
         self.I_xx_spar_req = I_xx_spar_req
         self.I_yy_spar_req = I_yy_spar_req
         self.I_xx_sleeve_req = I_xx_sleeve_req
@@ -237,12 +237,13 @@ class SparGeometryOptimization:
         self.pa_rho = pa.rho
 
         #Optimized Geometry
-        self.optimized_geometry = self.optimize_geometry_H_clamp_with_asb()
-        #print(f"Optimized Geometry: {self.optimized_geometry}")
-        self.total_mass_spar, self.total_length_inc_clamp, self.total_span_exc_sleeve_clamp = self.calc_Mass_structure_span(self.optimized_geometry)
-        self.Weight_skin = self.calculate_airfoil_skin_weight(self.optimized_geometry, self.total_length_inc_clamp, self.total_span_exc_sleeve_clamp)
-        self.Weight_ribs = self.calculate_rib_weight(airframe, self.optimized_geometry)
-        self.total_structure_weight = self.total_mass_spar + self.Weight_skin+ self.Weight_ribs
+        if Optimize:
+            self.optimized_geometry = self.optimize_geometry_H_clamp_with_asb()
+            #print(f"Optimized Geometry: {self.optimized_geometry}")
+            self.total_mass_spar, self.total_length_inc_clamp, self.total_span_exc_sleeve_clamp = self.calc_Mass_structure_span(self.optimized_geometry)
+            self.Weight_skin = self.calculate_airfoil_skin_weight(self.optimized_geometry, self.total_length_inc_clamp, self.total_span_exc_sleeve_clamp)
+            self.Weight_ribs = self.calculate_rib_weight(airframe, self.optimized_geometry)
+            self.total_structure_weight = self.total_mass_spar + self.Weight_skin+ self.Weight_ribs
         if Plot:
             self.Plot_optimized_geometry(self.optimized_geometry["r_top"], self.optimized_geometry["t_spar"], self.optimized_geometry["t_sleeve"], self.optimized_geometry["Clamp_width"], self.optimized_geometry["eccentricity_factor"])
 
