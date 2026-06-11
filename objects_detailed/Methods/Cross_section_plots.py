@@ -18,7 +18,7 @@ import Sections
 import CG_comp
 
 def Plot_Cross_Section(Clamp=False, Control_Surface=False, Skid=False, Battery=False, cut='A'):
-    airframe = Airframe.airframe(S=55.8, A=20, qc_sweep=15.0/180*np.pi, taper=1.0, dihedral=0.0 , airfoil=asb.Airfoil("mh91"), display=False, init_polar=False)
+    airframe = Airframe.airframe(S=62.94, A=20, qc_sweep=15.0/180*np.pi, taper=1.0, dihedral=0.0 , airfoil=asb.Airfoil("mh91"), display=False, init_polar=False)
     airfoil_geometry = SparGeometryParam.AirfoilGeometry(Airframe = airframe, t_skin_airfoil=0.00015, plot=False)
     spar_optimizer = SparGeometryParam.SparGeometryOptimization(
             I_xx_spar_req=1e-7,  # Placeholder values for required inertia, these should be calculated based on load cases
@@ -32,13 +32,13 @@ def Plot_Cross_Section(Clamp=False, Control_Surface=False, Skid=False, Battery=F
             Plot=False,
             Optimize=False
         )
-    batt_section = CG_comp.Available_BatteryCrossSection(AirGEO=airfoil_geometry, width_clamp=0.0569, plot=False)
+    
     r_top = 0.010466944193631492
-    t_spar = 0.0017313900367461794
+    t_spar = 0.002499999975015052
     t_sleeve = 0.005728992976302554
-    Clamp_width = 0.05693388838726299
-    eccentricity_factor = 10.000000093991648
-
+    Clamp_width = 0.0768877032096635
+    eccentricity_factor = 5
+    batt_section = CG_comp.Available_BatteryCrossSection(AirGEO=airfoil_geometry, width_clamp=Clamp_width, plot=False)
 
     geometry = spar_optimizer.calc_geometry_H_clamp(t_spar, t_sleeve, Clamp_width, eccentricity_factor)
     xcentroid = airfoil_geometry.x_centroid

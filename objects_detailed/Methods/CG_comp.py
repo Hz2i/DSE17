@@ -97,7 +97,7 @@ class CG_comp:
                  AirGEO = SparGeometryParam.AirfoilGeometry(),
                  Wing_sections = Sections.Sections(),
                  battery_char = Components_Materials.battery(),
-                 t_skin_airfoil=0.0002):
+                 t_skin_airfoil=0.00015):
         
         #Selection
         self.selected_section = batt_section # [0,1,2,3,4,5,6]
@@ -138,10 +138,10 @@ class CG_comp:
         self.l_sleeve = 1
         self.x_cg_spar_structure_wrt_LE = self.AirGEO.x_max_thickness
         #CrossSectionWeight
-        self.cs_w_clamp = 2.78 #Hollow Clamp Assumption
-        self.cs_w_rubber = 0.068
-        self.cs_w_sleeve = 1.623
-        self.cs_w_spar = 0.18
+        self.cs_w_clamp = 3.043 #Hollow Clamp Assumption
+        self.cs_w_rubber = 0.1352
+        self.cs_w_sleeve = 2.182
+        self.cs_w_spar = 0.5191
         # self.plot_mesh_plotly()
         #Centroid of Airfoil
         self.x_centroid, self.z_centroid = self.Calculate_Airfoil_Centroid()
@@ -158,10 +158,10 @@ class CG_comp:
         self.mass_comms_ssr = Comms.ssr_mass*Comms.redundancy
         self.mass_comms_elt = Comms.elt_mass*Comms.redundancy
         '''PUT IN BY HAND'''
-        self.mass_battery_total = 129.679 #[kg]
+        self.mass_battery_total = 145.11 #[kg]
         self.volume_battery_tot = self.mass_battery_total / self.battery_char.massRho
         '''PUT IN BY HAND'''
-        self.prop_eng = 16.129/2 #[kg] Combining 2!!
+        self.prop_eng = 16.49/2 #[kg] Combining 2!!
         self.prop_sticklength = 0.5 #[m]
         '''PUT IN BY HAND'''
         self.total_skid_mass = 9.15 #[kg]
@@ -316,7 +316,7 @@ class CG_comp:
         self.mass_wingtips = 3.7 #[kg] (Assumptions)
 
     def x_cg_solar_panel(self):
-        self.solar_panel_area = 54.2
+        self.solar_panel_area = 61.1
         self.mass_solar_panel = self.solar_panel_area * Components_Materials.solar_panel().surfRho
         self.x_solar_panel = ((self.airframe.b/2)*np.tan(self.airframe.le_sweep))/2 + self.x_centroid
         self.y_solar_panel = ((self.airframe.b/2)/2)
@@ -914,8 +914,8 @@ class CG_comp:
 
 
 if __name__ == "__main__":
-    airframe = Airframe.airframe(S=55.8, A=20, qc_sweep=15.0/180*np.pi, taper=1.0, dihedral=0.0 , airfoil=asb.Airfoil("mh91"), display=False, init_polar=False)
+    airframe = Airframe.airframe(S=62.94, A=20, qc_sweep=15.0/180*np.pi, taper=1.0, dihedral=0.0 , airfoil=asb.Airfoil("mh91"), display=False, init_polar=False)
     airfoil_geometry = SparGeometryParam.AirfoilGeometry(Airframe = airframe, t_skin_airfoil=0.00015, plot=False)
     '''INPUT SELF'''
-    battery_cross_section = Available_BatteryCrossSection(AirGEO=airfoil_geometry, width_clamp=0.0569, plot=False)
+    battery_cross_section = Available_BatteryCrossSection(AirGEO=airfoil_geometry, width_clamp=0.0769, plot=False)
     cg_calculator = CG_comp(x_cg_goal=2.275, batt_section=3, airframe=airframe, Batt=battery_cross_section, Wing_sections=Sections.Sections(airframe=airframe, Plot=False), t_skin_airfoil=0.00015)
