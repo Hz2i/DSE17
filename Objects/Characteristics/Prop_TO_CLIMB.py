@@ -17,12 +17,12 @@ except ModuleNotFoundError:
 
 
 # DESIGN INPUTS
-D = 1.7045684187645866  # m (already optimized for cruise)
-v_inf_cruise = 32.45494362484863  # m/s
-required_thrust_cruise = 65.54910335953765  # N
-m_TO = 278.1416060277118 + 10.0  # kg 10 for landing gear!!
-S = 55.79535859750816  # m^2
-CL_max = 1.0319550892283087  # -
+D = 1.7890472741146266  # m (already optimized for cruise)
+v_inf_cruise = 32.6778192462328  # m/s
+required_thrust_cruise = 73.20711132260334  # N
+m_TO = 314.7488229658079 + 10.0  # kg 10 for landing gear!!
+S = 62.123856477999105  # m^2
+CL_max = 1.0326581035917963  # -
 
 v_initial = 5.0  # m/s human push-off speed
 
@@ -250,27 +250,28 @@ if __name__ == "__main__":
     takeoff_rpm = solve_power_limited_takeoff_rpm(propulsion, D, cl_interp_to, cd_interp_to)
     result = simulate_takeoff_roll(propulsion, D, takeoff_rpm, cl_interp_to, cd_interp_to)
 
-#     print("================ Take-off Computation ================")
-#     print(f"Fixed Propeller Diameter      : {D:.4f} m")
-#     print(f"Power-Limited Take-off RPM    : {takeoff_rpm:.0f} RPM")
-#     print(f"Lift-off Speed                : {result['v_to']:.2f} m/s")
-#     print(f"Ground Roll Distance          : {result['distance']:.1f} m")
-#     print(f"Take-off Time                 : {result['time']:.2f} s")
-#     print("------------------------------------------------------")
-#     print(f"thrust per propeller at liftoff : {result['thrust_liftoff_per_prop']:.2f} N")
-#     print(f"Liftoff Shaft Power per Prop  : {result['power_mech_liftoff_per_prop']:.2f} W")
-#     print(f"Liftoff Motor Input per Prop  : {result['power_motor_input_per_prop']:.2f} W")
-#     print(f"Liftoff Battery Power per Prop: {result['power_battery_per_prop']:.2f} W")
-#     print(f"Liftoff Total Battery Power   : {result['power_battery_total'] / 1000.0:.3f} kW")
-#     print(f"Liftoff Tip Mach              : {result['tip_mach_liftoff']:.3f}")
-#     if result["failed"]:
-#         print(f"WARNING: Acceleration stalled at {result['failure_speed']:.2f} m/s")
-#     print("======================================================")
-#     print(f"Reference Cruise Total Elec Power: {cruise_power_total / 1000.0:.3f} kW")
+    print("================ Take-off Computation ================")
+    print(f"Fixed Propeller Diameter      : {D:.4f} m")
+    print(f"Power-Limited Take-off RPM    : {takeoff_rpm:.0f} RPM")
+    print(f"Lift-off Speed                : {result['v_to']:.2f} m/s")
+    print(f"Ground Roll Distance          : {result['distance']:.1f} m")
+    print(f"Take-off Time                 : {result['time']:.2f} s")
+    print("------------------------------------------------------")
+    print(f"thrust per propeller at liftoff : {result['thrust_liftoff_per_prop']:.2f} N")
+    print(f"Torque per propeller at liftoff : {result['torque_liftoff_per_prop']:.2f} Nm")
+    print(f"Liftoff Shaft Power per Prop  : {result['power_mech_liftoff_per_prop']:.2f} W")
+    print(f"Liftoff Motor Input per Prop  : {result['power_motor_input_per_prop']:.2f} W")
+    print(f"Liftoff Battery Power per Prop: {result['power_battery_per_prop']:.2f} W")
+    print(f"Liftoff Total Battery Power   : {result['power_battery_total'] / 1000.0:.3f} kW")
+    print(f"Liftoff Tip Mach              : {result['tip_mach_liftoff']:.3f}")
+    if result["failed"]:
+        print(f"WARNING: Acceleration stalled at {result['failure_speed']:.2f} m/s")
+    print("======================================================")
+    print(f"Reference Cruise Total Elec Power: {cruise_power_total / 1000.0:.3f} kW")
 
-#     plot_takeoff_dashboard(result, m_TO)
+    plot_takeoff_dashboard(result, m_TO)
 
-# print(f"\nBattery power at liftoff: {result['power_battery_total']/1000.0:.3f} kW")
+print(f"\nBattery power at liftoff: {result['power_battery_total']/1000.0:.3f} kW")
 
 
 # =============================================================
