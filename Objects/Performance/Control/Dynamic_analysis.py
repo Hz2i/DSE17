@@ -61,7 +61,7 @@ class Coeff_Values(Mass_moments, Control_Surface_Sizing):
 
         # Stability derivatives
         self.CX0 = self.W * sin(self.th0) / (0.5 * self.rho * self.V0 ** 2 * self.S) # CHECK
-        self.CXu = CXu
+        self.CXu = -CXu
         self.CXa = CXa
         self.CXadot = +0.0
         self.CXq = CXq
@@ -76,7 +76,7 @@ class Coeff_Values(Mass_moments, Control_Surface_Sizing):
         self.CZde = CZde
         self.CZdt = +0.0
 
-        self.Cm0 = Cm
+        self.Cm0 = 0 #Cm
         self.Cmu = Cmu
         self.Cmadot = +0.0
         self.Cmq = Cmq

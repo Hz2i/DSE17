@@ -20,13 +20,13 @@ class Control_Surface_Sizing():
         self.c = self.b / self.AR               # chord [m]
         self.S = self.b * self.c      # Wing area [m^2]
         self.dihedral = np.radians(2.0)
-        self.twist = -2 #-4.675
+        self.twist = -7
 
-        self.x_cg = 2.275
+        self.x_cg = 2.585 #2.275
 
         self.inner_elevon_frac = 0.124
         self.outer_elevon_frac = 0.227
-        self.height_winglet = 1.9 # height of winglet above main wing [m]
+        self.height_winglet = 2.0 # height of winglet above main wing [m]
         self.rudder_frac = 0.876
         self.fraction_outer_engine = None
 
@@ -34,12 +34,12 @@ class Control_Surface_Sizing():
         self.winglet_area_fraction = self.S_winglet / self.S
 
         self.half_span = self.b / 2
-        self.start_inner_elevon = None
+        self.start_inner_elevon  = None
         self.elevon_connection   = None
         self.end_outer_elevon    = None
 
         # Operating point (can be overridden before calling vlm_run)
-        self.op_point = asb.OperatingPoint(atmosphere=Atmosphere(altitude=60000) ,velocity=32.45, alpha=10.3)
+        self.op_point = asb.OperatingPoint(atmosphere=Atmosphere(altitude=60000 * 0.3048) ,velocity=32.45, alpha=10.3) # todo adding atmospher alt returns wacky results which disgree with aeros sim
 
         self.q_check = True
         self.p_check = True
@@ -179,7 +179,7 @@ class Control_Surface_Sizing():
                             control_surfaces=[
                                 asb.ControlSurface(
                                     name="rudder_left",
-                                    hinge_point=0.8,
+                                    hinge_point=0.6,
                                     deflection=delta_rudder,
                                     trailing_edge=True,
                                     symmetric=False,
@@ -888,15 +888,15 @@ class Control_Surface_Sizing():
 
         return p, p_req
 
-    def Yaw_Check(self, T_eng=17, fraction_outer_engine=0.67):
+    def Yaw_Check(self, T_eng=50, fraction_outer_engine=0.67):
         Cndr, Cnr = self.Yawing_Coefficients()
         r_req = np.radians(5)   # yaw  rate, now defined nose to left [rad/s]
 
         #OEI
         y_eng=fraction_outer_engine*self.half_span
         M_engine = T_eng*y_eng
-        rho_cruise = 1.225 #self.op_point.atmosphere.density()
-        k = 2
+        rho_cruise = self.op_point.atmosphere.density()
+        k = 1.5
         print(self.op_point.velocity)
         print(self.op_point.atmosphere.density())
         Cn_OEI_counter = k*M_engine/(0.5*rho_cruise*(self.op_point.velocity ** 2)*self.S*self.b) # Required Cn to counteract OEI yawing moment
@@ -1126,8 +1126,7 @@ if __name__ == "__main__":
     cs = Control_Surface_Sizing()
     # cs.Airplane_Geo()
     # cs.airplane.draw()
-    # cs.Control_Check()
     # cs.Control_Sizing()
-    cs.Coefficients()
+    # cs.Coefficients()
     # cs.Spiral_Check()
-    # cs.Cm_check()
+    cs.Cm_check()
