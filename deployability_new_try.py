@@ -5,6 +5,7 @@ import ambiance as am
 from Objects.Characteristics.PowerSystem_sizing import solar_incidence
 from Objects.Constants import Constants
 from Objects.Characteristics.PropulsionSystem import PropulsionSystem
+from Objects.Characteristics.Prop_TO_CLIMB import evaluate_climb_state
 from Objects.Characteristics.ReferenceGeometries import airfoil_e334, airfoil_e387
 from Objects.AircraftGeneral.Aircraft import Aircraft
 from Objects.Characteristics.Airframe import wing, empennage, fuselage, nacelles
@@ -70,7 +71,7 @@ class SolarPower:
         decl_deg = 23.45 * np.sin(np.deg2rad((360.0 / 365.0) * (day_of_year + 10.0)))
         return np.deg2rad(decl_deg)
 
-    def calc_power_per_m2(self,h,h_cloud=8000,cloud_intensity_effect = 0.35, day_of_year=0,time_passed=0,starting_timeofday=0):
+    def calc_power_per_m2(self,h,h_cloud=8000,cloud_intensity_effect = 0.0711, day_of_year=0,time_passed=0,starting_timeofday=0):
         lat = self.latitude_rad
         days_passed = (time_passed+starting_timeofday) // (24*60*60)
         days_from_solstice = day_of_year + 10 + days_passed
@@ -99,11 +100,14 @@ class SolarPower:
 # Mission profile
 # -----------------------------
 class MissionProfile:
-    def __init__(self, solarpower = SolarPower(), Aircraft=Aircraft()):
+    def __init__(self, Propulsion,D,p_battery_per_motor solarpower = SolarPower(), Aircraft=Aircraft()):
         self.m_battery_guess = Aircraft.pow_store.mass
         self.gamma_guess = 2
         self.S_guess = Aircraft.solar.area
         self.solarpower = solarpower
+        self.propulsion = Propulsion
+        self.D = D
+        self.climb_battery_per_motor = p_battery_per_motor
 
         self.E_battery_guess = self.m_battery_guess * 500 * 3600 * 0.96  # J
 
@@ -117,7 +121,7 @@ class MissionProfile:
         self.Pavg_cruise_subsys = Aircraft.Pow_req - Aircraft.Pow_motor
         self.eta_prop = Aircraft.prop.overall_eff
         self.LD = Aircraft.CL_CD
-        self.V_cruise = 25
+        self.V_cruise = 32.0
         self.CL_max = 0.8*Aircraft.wing.CL_max
         self.nr_of_engines = Aircraft.nac.nr_of_engines
 
@@ -179,7 +183,7 @@ class MissionProfile:
 
     def Calc_Pa(self,h,extra_power):
         V = self.Calc_V_Pr_climb(h)[0]
-        propsystem = PropulsionSystem(T=(self.Pprop_cruise+extra_power)*self.eta_prop/V / self.nr_of_engines, velocity=V, alt=h, rpm=1000.0, torque=4.0, motor_temp=-40.0,propeller_diameter=1.5)
+        propsystem = evaluate_climb_state(self.propulsion,self.D,V,h,self.climb_battery_per_motor)
 
         return propsystem.power_required*propsystem.overall_eff * self.nr_of_engines,  propsystem.power_required * self.nr_of_engines
     
@@ -292,8 +296,9 @@ class MissionProfile:
 
         return Profile_passed, sunrise_time, sunset_time
 
-MTOW = 278.8
-TAS_initial = 32.5
+
+MTOW = 278.1416060277118
+TAS_initial = 32.4
 gamma = 0.0
 h_cruise = 60000*0.3048
 lat = 30.0
@@ -303,7 +308,7 @@ energy_delta = 0.0
 DoD = 0.8
 night_time = 0.0
 
-S = 55.795
+S = 55.79535859750816
 Sh_S = 0.0
 Sv_S = 0.0
 
@@ -323,7 +328,33 @@ nac_geo = nacelles(nr_of_engines=4)
 
 aircraft_class = Aircraft(MTOW_guess=MTOW, TAS=TAS_initial, gamma=gamma, lat=30, day_margin=day_margin, DoD=DoD,Sh_S = Sh_S, Sv_S = Sv_S, wing=wing_geo, fus=fus_geo, emp=emp_geo, nac=nac_geo, use_batt=use_batt, energy_delta=energy_delta)
 
-mission_profile = MissionProfile(solarpower=SolarPower(latitude_deg=lat),Aircraft=aircraft_class)
+# DESIGN INPUTS
+D = 1.7045684187645866  # m (already optimized for cruise)
+v_inf_cruise = 32.45494362484863  # m/s
+required_thrust_cruise = 65.54910335953765  # N
+m_TO = 278.1416060277118 + 10.0  # kg 10 for landing gear!!
+S = 55.79535859750816  # m^2
+CL_max = 1.0319550892283087  # -
+
+propulsion = PropulsionSystem(
+        v_inf_cruise=V_inf_cruise,
+        required_thrust_cruise=required_thrust_cruise,
+        m_TO=m_TO,
+        S=S,
+        CL_max=CL_max,
+    )
+
+cruise_power_total, _ = propulsion.run_full_analysis()
+propulsion.D = D
+
+cl_interp_to, cd_interp_to = build_takeoff_airfoil_interpolants(propulsion)
+takeoff_rpm = solve_power_limited_takeoff_rpm(propulsion, D, cl_interp_to, cd_interp_to)
+result = simulate_takeoff_roll(propulsion, D, takeoff_rpm, cl_interp_to, cd_interp_to)
+
+TO_BATTERY_PER_MOTOR = result['power_battery_total'] / 4
+CLIMB_BATTERY_PER_MOTOR = TO_BATTERY_PER_MOTOR * 0.80 
+
+mission_profile = MissionProfile(Propulsion=propulsion,D=D,p_battery_per_motor=solarpower=SolarPower(latitude_deg=lat),Aircraft=aircraft_class)
 
 #print(mission_profile.Calc_V_Pr_climb(0))
 #print(mission_profile.Calc_Pa(0))

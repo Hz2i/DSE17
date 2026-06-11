@@ -360,10 +360,10 @@ class SparGeometryOptimization:
         
         opti = asb.Opti()
 
-        t_spar = opti.variable(init_guess=float(self.t_spar), lower_bound=self.CFRP_LIMIT_t, upper_bound=0.02)
         t_sleeve = opti.variable(init_guess=float(self.t_sleeve), lower_bound=self.Titanium_LIMIT_t, upper_bound=0.02)
         clamp_width = opti.variable(init_guess=float(self.t_connection), lower_bound=0.02, upper_bound=min(self.Available_width, 0.3))
-        eccentricity_factor = opti.variable(init_guess=float(self.eccentricity_factor), lower_bound=self.min_eccentricity_factor, upper_bound=10.0)
+        eccentricity_factor = opti.variable(init_guess=float(self.eccentricity_factor), lower_bound=self.min_eccentricity_factor, upper_bound=5.0)
+        t_spar = opti.variable(init_guess=float(self.t_spar), lower_bound=self.CFRP_LIMIT_t*eccentricity_factor, upper_bound=0.02)
 
         g = self.calc_geometry_H_clamp(t_spar, t_sleeve, clamp_width, eccentricity_factor)
 

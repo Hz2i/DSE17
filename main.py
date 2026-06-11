@@ -20,7 +20,7 @@ struct_frac_prev = 0.35
 gen_subsys_frac_prev = 0.05
 
 
-MTOW_initial = 100.0
+MTOW_initial = 270.0
 TAS_initial = 25.0
 gamma = 0.0
 h_cruise = 18500.0
@@ -37,7 +37,7 @@ S = 36.0
 # Flying wing planform:
 fus_geo = fuselage(D=0.0, L1=0.0, L2=0.0, L3=0.0)
 nac_geo = nacelles(nr_of_engines=0, pos=[])
-planform = airframe(S=S, A=20.0, qc_sweep=15.0*np.pi/180, taper=1.0, dihedral=0.0*np.pi/180.0, twist=-4.675, winglet_h=2.1, fus=fus_geo, nac=nac_geo, display=True, init_polar=True)
+planform = airframe(S=S, A=20.0, qc_sweep=15.0*np.pi/180, taper=1.0, dihedral=0.0*np.pi/180.0, twist=-4.675, winglet_h=2.1, fus=fus_geo, nac=nac_geo, display=False, init_polar=True)
 
 MTOW = MTOW_initial
 

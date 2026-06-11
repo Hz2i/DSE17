@@ -1,0 +1,8 @@
+ - Final MTOW: 314.7488229658079
+ - Energy storage system mass: 143.34875568696356
+ - Energy generation system mass: 24.141645356193195
+ - Total structural mass: 92.45356048404898
+ - Total skid mass: 9.154117743305742
+ - Total winglet mass (both included): 4.6836546565625365
+ - Propulsion system mass: 16.448657221748118
+ - Total general subsystem mass: 17.525929247
