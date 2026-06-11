@@ -8,9 +8,6 @@ import matplotlib.pyplot as plt
 
 from Objects.Performance.Control.Mass_moments import Mass_moments
 from Objects.Performance.Control.Control import Control_Surface_Sizing
-# cs = Control_Surface_Sizing()
-# CXu, CXa, CXq, CXde, CZu, CZa, CZq, CZde, Cm, Cmu, Cma, Cmq, Cmde, CYb, CYp, CYr, CYda, CYdr, Clb, Clp, Clr, Clda, Cldr, Cnb, Cnp, Cnr, Cnda, Cndr = cs.Coefficients()
-
 
 class Coeff_Values(Mass_moments, Control_Surface_Sizing):
 
@@ -27,22 +24,22 @@ class Coeff_Values(Mass_moments, Control_Surface_Sizing):
         self.S = cs.S
 
         # Atmosphere
-        self.rho0 = cs.op_point.atmosphere.density() # todo change?
+        self.rho0 = 1.225
         self.lmda = -0.0065
         self.Temp0 = 288.15
         self.R = 287.05
         self.g = 9.81
-        self.rho = 0.115318
+        self.rho = cs.op_point.atmosphere.density()
         self.W = self.m * self.g
 
-        # Aerodynamic constants — fill in your actual values
-        self.CD0 = 0.01  # zero-lift drag coefficient
-        self.CLa = 5.1064415  # lift curve slope [1/rad]
-        self.alpha0 = 0.0  # trim angle of attack [rad]
-        self.A = self.b ** 2 / self.S  # aspect ratio (or set manually: 20)
-        self.e = 0.85  # Oswald efficiency factor
+        # # Aerodynamic constants — fill in your actual values
+        # self.CD0 = 0.01  # zero-lift drag coefficient
+        # self.CLa = 5.1064415  # lift curve slope [1/rad]
+        # self.alpha0 = 0.0  # trim angle of attack [rad]
+        # self.A = self.b ** 2 / self.S  # aspect ratio (or set manually: 20)
+        # self.e = 0.85  # Oswald efficiency factor
         self.th0 = 0.0  # trim pitch angle [rad]
-        self.Cma = -1.0  # pitch moment curve slope (placeholder)
+        self.Cma = Cma  # pitch moment curve slope (placeholder)
 
         # Constant values concerning aircraft inertia
         self.muc = self.m / (self.rho * self.S * self.c)
@@ -64,7 +61,7 @@ class Coeff_Values(Mass_moments, Control_Surface_Sizing):
 
         # Stability derivatives
         self.CX0 = self.W * sin(self.th0) / (0.5 * self.rho * self.V0 ** 2 * self.S) # CHECK
-        self.CXu = -CXu          # standard approximation: CXu ≈ -2*CD # todo likely causing phugoid error
+        self.CXu = CXu
         self.CXa = CXa
         self.CXadot = +0.0
         self.CXq = CXq

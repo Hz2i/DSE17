@@ -423,7 +423,7 @@ class Control_Surface_Sizing():
                     coeff_key="F_b",
                 ))
                 print(F)
-                CXu_list.append(self.bodyforce_to_bodycoeff(F[0,0]))
+                CXu_list.append(self.bodyforce_to_bodycoeff(F[0,0]) * self.op_point.velocity)
                 self.op_point.velocity = self.op_point.velocity - i
             print(CXu_list)
             CXu = (CXu_list[len(self.coeff_delta) - 1] - CXu_list[0]) / (self.coeff_delta[np.size(self.coeff_delta) - 1] - self.coeff_delta[0])
@@ -438,7 +438,7 @@ class Control_Surface_Sizing():
                 outer_symmetric=False,
                 coeff_key="CL",
             )
-            # print("CL:", CL)
+            print("CL:", CL)
             CLa = self._sweep_single(
                 self.deflection_points,
                 delta_inner_fn=lambda i: 0,
@@ -447,7 +447,7 @@ class Control_Surface_Sizing():
                 outer_symmetric=False,
                 coeff_key="CLa",
             )
-            # print("CLa:", CLa, "/rad")
+            print("CLa:", CLa, "/rad")
             CD = self._sweep_single(
                 self.deflection_points,
                 delta_inner_fn=lambda i: 0,
@@ -456,7 +456,7 @@ class Control_Surface_Sizing():
                 outer_symmetric=False,
                 coeff_key="CD",
             )
-            # print("CD:", CD)
+            print("CD:", CD)
             CDa = self._sweep_single(
                 self.deflection_points,
                 delta_inner_fn=lambda i: 0,
@@ -465,7 +465,7 @@ class Control_Surface_Sizing():
                 outer_symmetric=False,
                 coeff_key="CDa",
             )
-            # print("CDa:", CDa, "/rad")
+            print("CDa:", CDa, "/rad")
             print(self.op_point.alpha)
             CXa = (
                     -CDa * np.cos(np.radians(self.op_point.alpha))
@@ -535,7 +535,7 @@ class Control_Surface_Sizing():
                     coeff_key="F_b",
                 ))
                 # print(F[2,0])
-                CZu_list.append(self.bodyforce_to_bodycoeff(F[2, 0]))
+                CZu_list.append(self.bodyforce_to_bodycoeff(F[2, 0]) * self.op_point.velocity)
                 self.op_point.velocity = self.op_point.velocity - i
             # print(CZu_list)
             CZu = (CZu_list[len(self.coeff_delta) - 1] - CZu_list[0]) / (
@@ -1127,7 +1127,7 @@ if __name__ == "__main__":
     # cs.Airplane_Geo()
     # cs.airplane.draw()
     # cs.Control_Check()
-    cs.Control_Sizing()
-    # cs.Coefficients()
+    # cs.Control_Sizing()
+    cs.Coefficients()
     # cs.Spiral_Check()
     # cs.Cm_check()
