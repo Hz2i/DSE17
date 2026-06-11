@@ -187,32 +187,50 @@ class PropulsionSystem:
         # =========================================================
         # REPORT
         # =========================================================
-        # print("\n=======================================================")
-        # print(f"                        CRUISE")
-        # print("=======================================================")
-        # print(f"Design Airspeed          : {self.v_inf_cr} m/s")
-        # print(f"Optimal Advance Ratio (J): {self.optimal_J:.3f}")
-        # print(f"Sized Propeller Diameter : {self.D:.4f} m")
-        # print(f"Cruise Rotational Speed  : {cruise_rpm:.0f} RPM")
-        # print("-------------------------------------------------------")
-        # print(f"Thrust per Prop          : {T_cr:.2f} N")
-        # print(f"Torque per Prop          : {M_cr:.2f} Nm")
-        # print(f"Mechanical Shaft Power   : {P_mech_cr:.2f} W")
-        # print(f"Electrical Power Draw    : {P_elec_cr:.2f} W  (Motor={self.eta_motor}, ESC={self.eta_esc})")
-        # print(f"Propeller Aerodynamic Eff: {eta_cr * 100:.2f} %")
-        # print(f"Total Aircraft Elec Pwr  : {(P_elec_cr * self.num_engines) / 1000.0:.3f} kW")
-        # print(f"Total Power Available at Propeller: {(P_available_cr * self.num_engines) / 1000.0:.3f} kW")
-        # print(f"Tip Mach (cruise)        : {tip_mach_cr:.3f} {'OK' if tip_mach_cr < 0.7 else 'WARNING: >0.7'}")
+        print("\n=======================================================")
+        print(f"                        CRUISE")
+        print("=======================================================")
+        print(f"Design Airspeed          : {self.v_inf_cr} m/s")
+        print(f"Optimal Advance Ratio (J): {self.optimal_J:.3f}")
+        print(f"Sized Propeller Diameter : {self.D:.4f} m")
+        print(f"Cruise Rotational Speed  : {cruise_rpm:.0f} RPM")
+        print("-------------------------------------------------------")
+        print(f"Thrust per Prop          : {T_cr:.2f} N")
+        print(f"Torque per Prop          : {M_cr:.2f} Nm")
+        print(f"Mechanical Shaft Power   : {P_mech_cr:.2f} W")
+        print(f"Electrical Power Draw    : {P_elec_cr:.2f} W  (Motor={self.eta_motor}, ESC={self.eta_esc})")
+        print(f"Propeller Aerodynamic Eff: {eta_cr * 100:.2f} %")
+        print(f"Total Aircraft Elec Pwr  : {(P_elec_cr * self.num_engines) / 1000.0:.3f} kW")
+        print(f"Total Power Available at Propeller: {(P_available_cr * self.num_engines) / 1000.0:.3f} kW")
+        print(f"Tip Mach (cruise)        : {tip_mach_cr:.3f} {'OK' if tip_mach_cr < 0.7 else 'WARNING: >0.7'}")
+
+
+        print("\n=======================================================")
+        print(f"Mass of all components individually estimated:")
+        print(f"ESC mass per engine      : {m_esc:.3f} kg")
+        print(f"Motor mass per engine    : {m_motor:.3f} kg")
+        print(f"Additional mass per engine (cables, insulation, etc.): {m_add:.3f} kg")
+        print(f"Structural rod mass per engine: {m_rod:.3f} kg")
+        print(f"Hub mass per engine      : {m_hub:.3f} kg")
+        print(f"Blade mass per engine    : {m_blades:.3f} kg")
+        print(f"Total mass per engine    : {m_total_per_engine:.3f} kg")
+        print(f"Total mass for all engines: {m_total_all_engines:.3f} kg")
+
+
 
         return P_elec_cr * self.num_engines, m_total_all_engines
         
+
+
+
+
 if __name__ == "__main__":
     ahaps = PropulsionSystem(
-        v_inf_cruise=32.45494362484863, 
-        required_thrust_cruise=65.54910335953765, 
-        m_TO=278.1416060277118, 
-        S=55.79535859750816,
-        CL_max= 1.0319550892283087
+        v_inf_cruise=32.6778192462328, 
+        required_thrust_cruise=73.20711132260334, 
+        m_TO=314.7488229658079, 
+        S=62.123856477999105,
+        CL_max= 1.0326581035917963
     )
 
     ahaps.run_full_analysis()
