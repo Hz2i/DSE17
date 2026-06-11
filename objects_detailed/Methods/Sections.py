@@ -3,6 +3,7 @@ import os
 import aerosandbox as asb
 import aerosandbox.numpy as np
 import matplotlib.pyplot as plt
+import plotly.graph_objects as go
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../Characteristics')))
 
@@ -15,7 +16,7 @@ class Sections:
         #Initial Guess
         self.main_section_inside = 0.5
         self.airframe = airframe
-        self.max_length = 5.6#From Container #5.6
+        self.max_length = 5.2#From Container #5.6
         self.slanted_span_b_2 = (self.airframe.b/2) / np.cos(self.airframe.qc_sweep)
         self.n_sections = 4
         self.optimized_main_section_inside,_ = self.optimize_sections()
@@ -95,5 +96,6 @@ class Sections:
         plt.tight_layout()
         plt.show()
 
+
 if __name__ == "__main__":
-    sections = Sections(Plot=True, airframe=Airframe.airframe(qc_sweep=np.radians(15), S=69.2, A=20, init_polar=False))
+    sections = Sections(Plot=True, airframe=Airframe.airframe(qc_sweep=np.radians(15), S=55.8, A=20, init_polar=False))

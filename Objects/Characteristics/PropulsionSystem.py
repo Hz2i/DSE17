@@ -170,43 +170,6 @@ class PropulsionSystem:
         tip_speed_cr = np.sqrt(tip_tangential_cr**2 + self.v_inf_cr**2)
         a_cr = self.atmo_cr.speed_of_sound()
         tip_mach_cr = tip_speed_cr / a_cr if a_cr > 0 else 0.0
-        
-        # =========================================================
-        # Take-Off Analysis
-        # =========================================================
-        # s_TOG = 100
-        # C_L_TO = 0.8 * self.CL_max
-        # f_LW = 1.2
-        
-        # v_TO = f_LW * np.sqrt(2 * 9.81 * self.m_TO / (C_L_TO * self.rho_to * self.S))
-        # P_TO_Total_Watts = ((self.m_TO * 9.81)**2) / (s_TOG * self.rho_to * self.S * C_L_TO)
-        
-        # res_power_per_motor = P_TO_Total_Watts / self.num_engines
-        
-        # alphas_to = np.linspace(-30, 85, 300)
-        # aero_to = asb.Airfoil(self.airfoil_name).get_aero_from_neuralfoil(alpha=alphas_to, Re=1_000_000, mach=0.05)
-        # # Linear interp safeguards against runaway values in deep stall
-        # cl_interp_to = interp1d(alphas_to, aero_to['CL'], kind='linear', fill_value="extrapolate")
-        # cd_interp_to = interp1d(alphas_to, aero_to['CD'], kind='linear', fill_value="extrapolate")
-        
-        # # Optimizer to find the precise RPM that absorbs the available Roskam Take-Off Power
-        # def power_residual(rpm_guess):
-        #     _, _, P_mech_guess, eta_guess = self._evaluate_bemt(v_TO, rpm_guess, self.D, self.rho_to, cl_interp_to, cd_interp_to)
-        #     return P_mech_guess - res_power_per_motor*eta_guess
-            
-        # takeoff_rpm = brentq(power_residual, 100, 3000)
-        
-        # Final evaluation at the exact Take-Off RPM
-        # T_to, M_to, P_mech_to, eta_to = self._evaluate_bemt(v_TO, takeoff_rpm, self.D, self.rho_to, cl_interp_to, cd_interp_to)
-        # P_elec_to = P_mech_to / self.eta_elec
-
-        # # Tip Mach check for Take-Off
-        # n_rps_to = takeoff_rpm / 60.0
-        # omega_to = 2 * np.pi * n_rps_to
-        # tip_tangential_to = omega_to * (self.D / 2.0)
-        # tip_speed_to = np.sqrt(tip_tangential_to**2 + v_TO**2)
-        # a_to = self.atmo_to.speed_of_sound()
-        # tip_mach_to = tip_speed_to / a_to if a_to > 0 else 0.0
 
         # ========================================================
         # mass estimate
@@ -240,44 +203,16 @@ class PropulsionSystem:
         # print(f"Total Aircraft Elec Pwr  : {(P_elec_cr * self.num_engines) / 1000.0:.3f} kW")
         # print(f"Total Power Available at Propeller: {(P_available_cr * self.num_engines) / 1000.0:.3f} kW")
         # print(f"Tip Mach (cruise)        : {tip_mach_cr:.3f} {'OK' if tip_mach_cr < 0.7 else 'WARNING: >0.7'}")
-        
-        # print("\n=======================================================")
-        # print(f"                      TAKE-OFF")
-        # print("=======================================================")
-        # print(f"Take-Off Mass (m_TO)     : {self.m_TO} kg")
-        # print(f"Wing Reference Area (S)  : {self.S} m²")
-        # print(f"Calculated T.O. Speed    : {v_TO:.2f} m/s")
-        # print(f"Total Roskam Power       : {P_TO_Total_Watts / 1000.0:.3f} kW")
-        # print(f"Corresponding T.O. RPM   : {takeoff_rpm:.0f} RPM")
-        # print("-------------------------------------------------------")
-        # print(f"PER MOTOR / PROPELLER:")
-        # print(f"  Take-Off Thrust        : {T_to:.2f} N")
-        # print(f"  Torque                 : {M_to:.2f} Nm")
-        # print(f"  Mechanical Shaft Power : {P_mech_to:.2f} W")
-        # print(f"  Electrical Power Draw  : {P_elec_to:.2f} W")
-        # print(f"  Propeller Aerodynamic Eff: {eta_to * 100:.2f} %")
-        # print("-------------------------------------------------------")
-        # print(f"  Tip Mach (take-off)     : {tip_mach_to:.3f} {'OK' if tip_mach_to < 0.7 else 'WARNING: >0.7'}")
-        # print(f"TOTAL AIRCRAFT (4 Engines):")
-        # print(f"  Total Take-Off Thrust  : {T_to * self.num_engines:.2f} N")
-        # print(f"  Total Electrical Power : {(P_elec_to * self.num_engines) / 1000.0:.3f} kW")
-        # print("=======================================================\n")
 
-        # print("\n=======================================================")
-        # print(f"                    MASS ESTIMATE")
-        # print("=======================================================")
-        # print(f"""Estimated Mass per Engine: {m_total_per_engine:.2f} kg""")
-        # print(f"Total Mass for All Engines: {m_total_all_engines:.2f} kg")
-        # print("=======================================================\n")
         return P_elec_cr * self.num_engines, m_total_all_engines
         
 if __name__ == "__main__":
     ahaps = PropulsionSystem(
-        v_inf_cruise=27.6, 
-        required_thrust_cruise=52.0, 
-        m_TO=198.0, 
-        S=41.5,
-        CL_max= 1/0.8
+        v_inf_cruise=32.45494362484863, 
+        required_thrust_cruise=65.54910335953765, 
+        m_TO=278.1416060277118, 
+        S=55.79535859750816,
+        CL_max= 1.0319550892283087
     )
 
     ahaps.run_full_analysis()
