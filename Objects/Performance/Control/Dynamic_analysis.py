@@ -64,7 +64,7 @@ class Coeff_Values(Mass_moments, Control_Surface_Sizing):
 
         # Stability derivatives
         self.CX0 = self.W * sin(self.th0) / (0.5 * self.rho * self.V0 ** 2 * self.S) # CHECK
-        self.CXu = -CXu          # standard approximation: CXu ≈ -2*CD # todo likely causing phugoid error
+        self.CXu = CXu          # standard approximation: CXu ≈ -2*CD # todo likely causing phugoid error
         self.CXa = CXa
         self.CXadot = +0.0
         self.CXq = CXq

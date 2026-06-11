@@ -91,7 +91,7 @@ class Mass_moments:
             skin_thickness=0.0002,
             span_sections=[(0.0, self.half_b)],
         )
-        ribs = [(0.6, 0), (0.6, 0.5 * self.half_b), (0.6, self.half_b)]
+        ribs = [(0.2, 0.1 * self.half_b), (0.2, 0.2 * self.half_b), (0.2, 0.3 * self.half_b), (0.2, 0.4 * self.half_b), (0.2, 0.5 * self.half_b), (0.2, 0.6 * self.half_b), (0.2, 0.7 * self.half_b), (0.2, 0.8 * self.half_b), (0.2, 0.9 * self.half_b), (0.2, self.half_b)]
         _, I_ribs = self.wing_rib_inertia_full(ribs)
 
         I_solar, _ = self.solar_panel_inertia_fd(
@@ -104,7 +104,9 @@ class Mass_moments:
 
         I_payload = self.payload_inertia_fd(mass=20.0, x_pos=0.75)
 
-        I_combined = I_spar + I_batt + I_skin + I_ribs + I_solar + I_motors + I_payload
+        I_winglet = self.winglet_inertia(mass=1.85)
+
+        I_combined = I_spar + I_batt + I_skin + I_ribs + I_solar + I_motors + I_payload + I_winglet
 
         # KX2, KZ2, KXZ — normalised by b
         (self.k_x_nd,
@@ -620,6 +622,22 @@ class Mass_moments:
             I_total = I_left + I_right
 
         return M_total, I_total # doubled due to wing symmetry
+
+    def winglet_inertia(self, mass):
+
+        pos = self._spar_direction() * self.half_b
+        x, y, z = pos
+
+        I_left = mass * np.array([
+            [y ** 2 + z ** 2, -x * y, -x * z],
+            [-x * y, x ** 2 + z ** 2, -y * z],
+            [-x * z, -y * z, x ** 2 + y ** 2]
+        ])
+
+        I_total = self._include_second_half(I_left)
+
+        return I_total
+
 
     def radius_of_gyration(self, I_total, M_total):
         """
