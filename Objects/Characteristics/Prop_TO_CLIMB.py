@@ -277,14 +277,27 @@ if __name__ == "__main__":
 # CLimb Performance Analysis
 # =============================================================
 
-def evaluate_climb_state(propulsion, diameter, cl_interp, cd_interp, v_climb, altitude_m, p_battery_per_motor):
+def evaluate_climb_state(propulsion, diameter, v_climb, altitude_m, p_battery_per_motor):
     """
     I hope this works
     """
     # atmospheric conditions at this altitude
     atmo = asb.Atmosphere(altitude=altitude_m)
     rho_climb = atmo.density()
+    a_climb = atmo.speed_of_sound()
     
+    current_reynolds = np.interp(altitude_m, [0.0, 18288.0], [1_000_000, 100_000])
+    current_mach = v_climb / a_climb
+
+    alphas = np.linspace(-30.0, 85.0, 300)
+    aero = asb.Airfoil(propulsion.airfoil_name).get_aero_from_neuralfoil(
+        alpha=alphas,
+        Re=current_reynolds,
+        mach=current_mach,
+    )
+    cl_interp_local = interp1d(alphas, aero["CL"], kind="linear", fill_value="extrapolate")
+    cd_interp_local = interp1d(alphas, aero["CD"], kind="linear", fill_value="extrapolate")
+
     # eff
     p_motor_input = p_battery_per_motor * propulsion.eta_esc
     p_mech_target = p_motor_input * propulsion.eta_motor
@@ -296,8 +309,8 @@ def evaluate_climb_state(propulsion, diameter, cl_interp, cd_interp, v_climb, al
             rpm_guess,
             diameter,
             rho_climb,
-            cl_interp,
-            cd_interp
+            cl_interp_local,
+            cd_interp_local
         )
         return p_mech_guess - p_mech_target
 
@@ -313,22 +326,30 @@ def evaluate_climb_state(propulsion, diameter, cl_interp, cd_interp, v_climb, al
         optimal_rpm,
         diameter,
         rho_climb,
-        cl_interp,
-        cd_interp
+        cl_interp_local,
+        cd_interp_local
     )
     
     total_thrust = t_single * propulsion.num_engines
     
-    # Power Available (P_a) = Total Thrust * Velocity. 
-    # This is the actual power pushing the aircraft up and forward.
     power_available = total_thrust * v_climb 
-    
+
+    # Calculate Tip Mach Number
+    n_rps = optimal_rpm / 60.0
+    omega = 2.0 * np.pi * n_rps
+    tip_tangential = omega * (diameter / 2.0)
+    tip_speed = np.sqrt(tip_tangential**2 + v_climb**2)
+    tip_mach = tip_speed / a_climb
+
+
     return {
         "altitude_m": altitude_m,
         "rpm": optimal_rpm,
         "thrust_total": total_thrust,
         "power_available": power_available,
-        "propeller_efficiency": eta_prop
+        "propeller_efficiency": eta_prop,
+        "reynolds": current_reynolds, 
+        "tip_mach": tip_mach          
     }
 
 # --- Setup Inputs ---
@@ -347,20 +368,19 @@ altitudes_m = altitudes_ft * 0.3048
 climb_results = []
 
 print(f"--- Climbing at {v_climb_target} m/s with {CLIMB_BATTERY_PER_MOTOR:.2f} W battery power per motor ---")
-print(f"{'Alt (ft)':>10} | {'Alt (m)':>8} | {'RPM':>6} | {'Total Thrust (N)':>18} | {'Power Available (W)':>20} | {'Prop Eta':>10}")
-print("-" * 85)
+print(f"{'Alt (ft)':>8} | {'Alt (m)':>7} | {'RPM':>5} | {'Thrust (N)':>10} | {'Power (W)':>10} | {'Prop Eta':>8} | {'Reynolds':>8} | {'Tip Mach':>8}")
+print("-" * 84)
 
 for alt_m, alt_ft in zip(altitudes_m, altitudes_ft):
     res = evaluate_climb_state(
         propulsion=propulsion,
         diameter=D,
-        cl_interp=cl_interp_to, # no change in reynolds, okay for no i guess haha
-        cd_interp=cd_interp_to,
         v_climb=v_climb_target,
         altitude_m=alt_m,
         p_battery_per_motor=CLIMB_BATTERY_PER_MOTOR
     )
     
-    print(f"{alt_ft:10.0f} | {alt_m:8.0f} | {res['rpm']:6.0f} | {res['thrust_total']:18.2f} | {res['power_available']:20.2f} | {res['propeller_efficiency']:10.3f}")
+    # Updated 
+    print(f"{alt_ft:8.0f} | {alt_m:7.0f} | {res['rpm']:5.0f} | {res['thrust_total']:10.2f} | {res['power_available']:10.2f} | {res['propeller_efficiency']:8.3f} | {res['reynolds']:8.0f} | {res['tip_mach']:8.3f}")
     
     climb_results.append(res)
