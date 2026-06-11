@@ -258,7 +258,7 @@ class Mass_moments:
 
         for (y_inner, _), fill_length in zip(span_sections, fill_lengths):
             mass    = self.battery_density * A_cross * fill_length
-            p_inner = np.array(self.root) + y_inner * u # todo check if root use is correct and not body centre
+            p_inner = np.array(self.root) + y_inner * u
             rc      = p_inner + 0.5 * fill_length * u
             d       = rc - np.array(self.cg)
 
