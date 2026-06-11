@@ -28,7 +28,7 @@ v_initial = 5.0  # m/s human push-off speed
 
 # Take-off model assumptions
 f_LW = 1.2
-mu_runway = 0.15
+mu_runway = 0.08 # raymer
 C_D_TO = 0.024
 P_TO_ELEC_PER_MOTOR = 1162.0  # W electrical per motor
 DT = 0.05
@@ -188,50 +188,50 @@ def simulate_takeoff_roll(propulsion, diameter, takeoff_rpm, cl_interp_to, cd_in
     }
 
 
-# def plot_takeoff_dashboard(result, mass_kg):
-#     fig, axs = plt.subplots(3, 1, figsize=(10, 12), sharex=True)
+def plot_takeoff_dashboard(result, mass_kg):
+    fig, axs = plt.subplots(3, 1, figsize=(10, 12), sharex=True)
 
-#     ax1 = axs[0]
-#     ax1.plot(result["hist_t"], result["hist_v"], "b-", label="Velocity (m/s)", linewidth=2.2)
-#     ax1.set_ylabel("Velocity (m/s)", color="b", fontsize=11)
-#     ax1.tick_params(axis="y", labelcolor="b")
-#     ax1.grid(True, alpha=0.3)
-#     ax1_twin = ax1.twinx()
-#     ax1_twin.plot(result["hist_t"], result["hist_x"], "g--", label="Distance (m)", linewidth=2.2)
-#     ax1_twin.set_ylabel("Distance (m)", color="g", fontsize=11)
-#     ax1_twin.tick_params(axis="y", labelcolor="g")
-#     ax1.set_title("Take-Off Kinematics: Velocity and Ground Roll", fontsize=13, fontweight="bold")
-#     lines_1, labels_1 = ax1.get_legend_handles_labels()
-#     lines_1t, labels_1t = ax1_twin.get_legend_handles_labels()
-#     ax1.legend(lines_1 + lines_1t, labels_1 + labels_1t, loc="upper left")
+    ax1 = axs[0]
+    ax1.plot(result["hist_t"], result["hist_v"], "b-", label="Velocity (m/s)", linewidth=2.2)
+    ax1.set_ylabel("Velocity (m/s)", color="b", fontsize=11)
+    ax1.tick_params(axis="y", labelcolor="b")
+    ax1.grid(True, alpha=0.3)
+    ax1_twin = ax1.twinx()
+    ax1_twin.plot(result["hist_t"], result["hist_x"], "g--", label="Distance (m)", linewidth=2.2)
+    ax1_twin.set_ylabel("Distance (m)", color="g", fontsize=11)
+    ax1_twin.tick_params(axis="y", labelcolor="g")
+    ax1.set_title("Take-Off Kinematics: Velocity and Ground Roll", fontsize=13, fontweight="bold")
+    lines_1, labels_1 = ax1.get_legend_handles_labels()
+    lines_1t, labels_1t = ax1_twin.get_legend_handles_labels()
+    ax1.legend(lines_1 + lines_1t, labels_1 + labels_1t, loc="upper left")
 
-#     ax2 = axs[1]
-#     ax2.plot(result["hist_t"], result["hist_thrust"], "r-", label="Total Propeller Thrust", linewidth=2.2)
-#     ax2.plot(result["hist_t"], result["hist_drag"], "k-", label="Aerodynamic Drag", linewidth=1.8)
-#     ax2.plot(result["hist_t"], result["hist_friction"], "y-", label="Rolling Friction", linewidth=1.8)
-#     ax2.set_ylabel("Force (N)", fontsize=11)
-#     ax2.set_title("Forces During Take-Off", fontsize=13, fontweight="bold")
-#     ax2.legend(loc="best")
-#     ax2.grid(True, alpha=0.3)
+    ax2 = axs[1]
+    ax2.plot(result["hist_t"], result["hist_thrust"], "r-", label="Total Propeller Thrust", linewidth=2.2)
+    ax2.plot(result["hist_t"], result["hist_drag"], "k-", label="Aerodynamic Drag", linewidth=1.8)
+    ax2.plot(result["hist_t"], result["hist_friction"], "y-", label="Rolling Friction", linewidth=1.8)
+    ax2.set_ylabel("Force (N)", fontsize=11)
+    ax2.set_title("Forces During Take-Off", fontsize=13, fontweight="bold")
+    ax2.legend(loc="best")
+    ax2.grid(True, alpha=0.3)
 
-#     ax3 = axs[2]
-#     ax3.plot(result["hist_t"], result["hist_accel"], "m-", label="Acceleration (m/s^2)", linewidth=2.2)
-#     ax3.set_ylabel("Acceleration (m/s^2)", color="m", fontsize=11)
-#     ax3.tick_params(axis="y", labelcolor="m")
-#     ax3.set_xlabel("Time (s)", fontsize=11)
-#     ax3.grid(True, alpha=0.3)
-#     ax3_twin = ax3.twinx()
-#     ax3_twin.plot(result["hist_t"], result["hist_lift"], "c-", label="Aerodynamic Lift", linewidth=2.2)
-#     ax3_twin.axhline(mass_kg * 9.81, color="k", linestyle=":", label="Aircraft Weight")
-#     ax3_twin.set_ylabel("Force (N)", color="c", fontsize=11)
-#     ax3_twin.tick_params(axis="y", labelcolor="c")
-#     ax3.set_title("Acceleration and Lift Buildup", fontsize=13, fontweight="bold")
-#     lines_3, labels_3 = ax3.get_legend_handles_labels()
-#     lines_3t, labels_3t = ax3_twin.get_legend_handles_labels()
-#     ax3.legend(lines_3 + lines_3t, labels_3 + labels_3t, loc="center right")
+    ax3 = axs[2]
+    ax3.plot(result["hist_t"], result["hist_accel"], "m-", label="Acceleration (m/s^2)", linewidth=2.2)
+    ax3.set_ylabel("Acceleration (m/s^2)", color="m", fontsize=11)
+    ax3.tick_params(axis="y", labelcolor="m")
+    ax3.set_xlabel("Time (s)", fontsize=11)
+    ax3.grid(True, alpha=0.3)
+    ax3_twin = ax3.twinx()
+    ax3_twin.plot(result["hist_t"], result["hist_lift"], "c-", label="Aerodynamic Lift", linewidth=2.2)
+    ax3_twin.axhline(mass_kg * 9.81, color="k", linestyle=":", label="Aircraft Weight")
+    ax3_twin.set_ylabel("Force (N)", color="c", fontsize=11)
+    ax3_twin.tick_params(axis="y", labelcolor="c")
+    ax3.set_title("Acceleration and Lift Buildup", fontsize=13, fontweight="bold")
+    lines_3, labels_3 = ax3.get_legend_handles_labels()
+    lines_3t, labels_3t = ax3_twin.get_legend_handles_labels()
+    ax3.legend(lines_3 + lines_3t, labels_3 + labels_3t, loc="center right")
 
-#     plt.tight_layout()
-#     plt.show()
+    plt.tight_layout()
+    plt.show()
 
 
 if __name__ == "__main__":
@@ -357,7 +357,7 @@ def evaluate_climb_state(propulsion, diameter, v_climb, altitude_m, p_battery_pe
 TO_BATTERY_PER_MOTOR = result['power_battery_total'] / 4
 CLIMB_BATTERY_PER_MOTOR = TO_BATTERY_PER_MOTOR * 0.80 
 
-# IAN change the speed
+# IAN change the speed!!!!
 v_climb_target = 30.0  # m/s
 
 # Altitudes from 100 to 60,000 ft (converted to meters)
