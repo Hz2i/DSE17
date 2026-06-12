@@ -1,0 +1,9 @@
+ - Final total power consumption: 3423.9511975588825
+ - Propulsive power at cruise: 2913.860115633568
+ - Propeller diameter: 1.7282544735754353
+ - Heating power at cruise: 239.60108192531476
+ - Power storage system mass: 133.4492748357427
+ - Power storage system volume: 0.07326955348265064
+ - Power generation system mass: 22.358132540654182
+ - Solar panel area: 55.895331351635456
+ - Total subsystem power: 270.49

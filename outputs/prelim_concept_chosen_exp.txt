@@ -1,0 +1,49 @@
+GENERAL AIRCRAFT PARAMETERS:
+ - Final MTOW: 197.9597616257059
+ - CL/CD at cruise: 37.53515204286815
+ - CD0: 0.00983255207629583
+ - Final power consumption: 1844.2842348814759
+ - Final surface area: 41.47598624261529
+ - Final remaining mass (MTOW - Power System Mass - Payload Mass): 59.3459469433126
+___________________________________
+POWER SYSTEM PARAMETERS:
+ - Final solar panel area: 40.36771396081843
+ - Final solar panel mass: 26.844529783944257
+ - Final solar panel power generation: 4396.583689847875
+ - Final energy storage system mass: 91.76928489844906
+ - Final energy storage system volume: 0.04209600224699498
+ - Final energy storage system capacity: 132147770.25376664
+___________________________________
+PROPULSION SYSTEM PARAMETERS:
+ - Thrust required at cruise: 12.934443820357197
+ - TAS at cruise: 27.63498373977365
+ - Lambda Advance Ratio: 0.3518595411559302
+___________________________________
+FUSELAGE PARAMETERS:
+ - Fuselage diameter: 0.5
+ - Fuselage L1: 0.2
+ - Fuselage L2 (main body): 0.6
+ - Fuselage L3: 0.2
+___________________________________
+WING AND EMPENNAGE PARAMETERS:
+ - Wing surface area: 41.47598624261529
+ - Wing aspect ratio: 20.0
+ - Wing full span: 28.801384078760968
+ - Wing chord: 1.4400692039380485
+ - Wing sweep: 0.2617993877991494
+ - Wing dihedral: 0.0
+ - Wing taper: 1.0
+ - Sh/S: 0
+ - Sv/S: 0
+ - Vertical tail aspect ratio: 1.5
+ - Horizontal tail aspect ratio: 4.0
+ - Vertical tail Surface: 0.0
+ - Horizontal tail Surface: 0.0
+ - Vertical tail span: nan
+ - Horizontal tail span: nan
+ - Vertical tail qc sweep: 0.0
+ - Horizontal tail qc sweep: 0.0
+ - Vertical tail root chord: 0.0
+ - Horizontal tail root chord: 0.0
+ - Vertical tail taper: 1.0
+ - Horizontal tail taper: 1.0

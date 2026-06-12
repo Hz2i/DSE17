@@ -39,7 +39,11 @@ class VnDiagram:
     # CS 25.341(a)(5)(i)
     def gustspeed(self,altitude,dive=False):
         altitude_list = [0,4572,18288]
+<<<<<<< HEAD
         gust_velocity = [17.07,13.41,6.36]
+=======
+        gust_velocity = [17.07*0.5,13.41*0.5,6.36*0.5]
+>>>>>>> detailed_design
         ref_gust = np.interp(altitude,altitude_list,gust_velocity)
 
         H = 107 # gust gradient distance in m, CS25.341(a)(4)

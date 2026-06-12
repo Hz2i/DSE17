@@ -10,7 +10,7 @@ from Objects.Performance.ScissorPlot import ScissorPlot
 from Objects.AircraftGeneral.Aircraft import Aircraft
 
 
-powM_frac_target = 0.3    # From the NASA paper (mass fraction of the power system): 0.30 for the fuel cells, 0.5 or 0.6 for batteries
+powM_frac_target = 0.5    # From the NASA paper (mass fraction of the power system): 0.30 for the fuel cells, 0.5 or 0.6 for batteries
 payload_apprx_frac = 0.2
 
 MTOW_initial = 120.0
@@ -19,7 +19,7 @@ gamma = 0.0
 h_cruise = 18500.0
 lat = 30.0
 day_margin = 0
-use_batt = False
+use_batt = True
 energy_delta = 0.0
 DoD = 0.7
 night_time = 0.0
@@ -37,7 +37,7 @@ Sv_S = 0 # 0.07
 # nac_geo = nacelles(nr_of_engines=4)
 
 # Flying wing planform:
-wing_geo = wing(S=S,A=25.0, qc_sweep=15.0*np.pi/180, taper=1.0, dihedral=0.0*np.pi/180.0, airfoil=airfoil_e334())
+wing_geo = wing(S=S,A=20.0, qc_sweep=15.0*np.pi/180, taper=1.0, dihedral=0.0*np.pi/180.0, airfoil=airfoil_e334())
 fus_geo = fuselage(D=0.5, L1=0.2, L2=0.6, L3=0.2)
 emp_geo = empennage(S_h = 0.0, S_v = 0.0)
 nac_geo = nacelles(nr_of_engines=4)
