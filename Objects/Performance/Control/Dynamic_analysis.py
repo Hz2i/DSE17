@@ -213,7 +213,7 @@ class Plotting(Dynamic_Analysis):
         super().__init__(param)
         self.param = param
 
-    def plot_phugoid(self, u_perturb=1.0, t_end=200.0, dt=0.01):
+    def plot_phugoid(self, u_perturb=0.1, t_end=200.0, dt=0.01):
         x0 = [u_perturb, 0.0, 0.0, 0.0]
         t = np.arange(0, t_end, dt)
         U = np.zeros((1, len(t)))
@@ -248,7 +248,7 @@ class Plotting(Dynamic_Analysis):
         fig, axes = plt.subplots(2, 1, figsize=(10, 5), sharex=True)
         axes[0].plot(t, np.degrees(y[1]))
         axes[0].set_ylabel('α [deg]')
-        axes[1].plot(t, np.degrees(y[3]))
+        axes[1].plot(t, np.degrees(y[3])*32.7/1.774) #todo
         axes[1].set_ylabel('q [deg/s]')
         for ax in axes:
             ax.grid(True, alpha=0.3)
@@ -269,7 +269,7 @@ class Plotting(Dynamic_Analysis):
         axes[0].set_ylabel('β [deg]')
         axes[1].plot(t, np.degrees(y[1]))
         axes[1].set_ylabel('φ [deg]')
-        axes[2].plot(t, np.degrees(y[3]))
+        axes[2].plot(t, np.degrees(y[3])*2*35.479/32.7) #todo
         axes[2].set_ylabel('r [deg/s]')
         for ax in axes:
             ax.grid(True, alpha=0.3)
@@ -289,7 +289,7 @@ class Plotting(Dynamic_Analysis):
         fig, axes = plt.subplots(2, 1, figsize=(10, 6), sharex=True)
         axes[0].plot(t_l, np.degrees(y_l[1]))
         axes[0].set_ylabel('φ [deg]')
-        axes[1].plot(t_l, np.degrees(y_l[3]))
+        axes[1].plot(t_l, np.degrees(y_l[3])*2*35.479/32.7) #todo
         axes[1].set_ylabel('r [deg/s]')
         for ax in axes:
             ax.grid(True, alpha=0.3)
@@ -333,7 +333,7 @@ class Plotting(Dynamic_Analysis):
         fig, axes = plt.subplots(2, 1, figsize=(10, 5), sharex=True)
         axes[0].plot(t, np.degrees(y[1]))
         axes[0].set_ylabel('thi [deg]')
-        axes[1].plot(t, np.degrees(y[2]))
+        axes[1].plot(t, np.degrees(y[2])*2*35.479/32.7) #todo
         axes[1].set_ylabel('p [deg/s]')
         for ax in axes:
             ax.grid(True, alpha=0.3)
@@ -343,7 +343,7 @@ class Plotting(Dynamic_Analysis):
         plt.tight_layout()
         plt.show()
 
-    def plot_elevator_response(self, elevator_deflect_deg=-5.0, t_end=5.0, dt=0.001):
+    def plot_elevator_response(self, elevator_deflect_deg=-20.0, t_end=5.0, dt=0.001):
         x0 = [0.0, 0.0, 0.0, 0.0]
         t = np.arange(0, t_end, dt)
         U = np.zeros((1, int(t_end / dt)))
@@ -355,11 +355,11 @@ class Plotting(Dynamic_Analysis):
         fig, axes = plt.subplots(4, 1, figsize=(10, 5), sharex=True)
         axes[0].plot(t, np.degrees(y[2]))
         axes[0].set_ylabel('theta [deg]')
-        axes[1].plot(t, np.degrees(y[3]))
+        axes[1].plot(t, np.degrees(y[3])*32.7/1.774) #todo
         axes[1].set_ylabel('q [deg/s]')
         axes[2].plot(t, np.degrees(y[1]))
         axes[2].set_ylabel('alpha [deg]')
-        axes[3].plot(t, np.degrees(y[0]))
+        axes[3].plot(t, y[0])
         axes[3].set_ylabel('u')
         for ax in axes:
             ax.grid(True, alpha=0.3)
@@ -386,9 +386,9 @@ if __name__ == "__main__":
     print(f"rho:  {p.rho}")
 
     plot.plot_poles()
-    plot.plot_phugoid(u_perturb=1.0, t_end=200)
-    plot.plot_short_period(alpha_perturb_deg=2.0, t_end=10)
-    plot.plot_dutch_roll(beta_perturb_deg=5.0, t_end=30)
-    plot.plot_spiral(phi_perturb_deg=5.0)
+    plot.plot_phugoid()
+    plot.plot_short_period()
+    plot.plot_dutch_roll()
+    plot.plot_spiral()
     plot.plot_aileron_response()
     plot.plot_elevator_response()

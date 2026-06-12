@@ -674,7 +674,7 @@ class Mass_moments:
         k_x, k_y, k_z, k_xz = self.radius_of_gyration(I_total, M_total)
 
         k_x_nd = k_x / reference_length
-        k_y_nd = k_y / reference_length  # ← use reference_length consistently, not hardcoded c
+        k_y_nd = k_y / self.c #reference_length  # ← use reference_length consistently, not hardcoded c
         k_z_nd = k_z / reference_length
         k_xz_nd = k_xz / (reference_length ** 2)
 
