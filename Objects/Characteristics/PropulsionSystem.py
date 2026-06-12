@@ -198,6 +198,7 @@ class PropulsionSystem:
         print(f"Thrust per Prop          : {T_cr:.2f} N")
         print(f"Torque per Prop          : {M_cr:.2f} Nm")
         print(f"Mechanical Shaft Power   : {P_mech_cr:.2f} W")
+        print(f"Power Available at Prop   : {P_available_cr:.2f} W")
         print(f"Electrical Power Draw    : {P_elec_cr:.2f} W  (Motor={self.eta_motor}, ESC={self.eta_esc})")
         print(f"Propeller Aerodynamic Eff: {eta_cr * 100:.2f} %")
         print(f"Total Aircraft Elec Pwr  : {(P_elec_cr * self.num_engines) / 1000.0:.3f} kW")
