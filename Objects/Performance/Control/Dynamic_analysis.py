@@ -213,7 +213,7 @@ class Plotting(Dynamic_Analysis):
         super().__init__(param)
         self.param = param
 
-    def plot_phugoid(self, u_perturb=0.1, t_end=200.0, dt=0.01):
+    def plot_phugoid(self, u_perturb=3.18/32.7, t_end=200.0, dt=0.01):
         x0 = [u_perturb, 0.0, 0.0, 0.0]
         t = np.arange(0, t_end, dt)
         U = np.zeros((1, len(t)))
@@ -223,22 +223,22 @@ class Plotting(Dynamic_Analysis):
         if np.any(np.abs(y) > 1e6):
             print("WARNING: phugoid response is diverging — check symmetric poles")
 
-        fig, axes = plt.subplots(3, 1, figsize=(10, 8), sharex=True)
-        axes[0].plot(t, y[0])
+        fig, axes = plt.subplots(2, 1, figsize=(10, 8), sharex=True)
+        axes[0].plot(t, y[0]*32.7)
         axes[0].set_ylabel('Δu [m/s]')
         axes[1].plot(t, np.degrees(y[2]))
         axes[1].set_ylabel('θ [deg]')
-        axes[2].plot(t, np.degrees(y[1]))
-        axes[2].set_ylabel('α [deg]')
+        # axes[2].plot(t, np.degrees(y[1]))
+        # axes[2].set_ylabel('α [deg]')
         for ax in axes:
             ax.grid(True, alpha=0.3)
             ax.axhline(0, color='k', lw=0.6)
         axes[-1].set_xlabel('Time [s]')
-        fig.suptitle(f'Phugoid — Δu₀ = {u_perturb} m/s')
+        fig.suptitle(f'Phugoid — Δu₀ = {np.round(u_perturb*32.7, 3)} m/s')
         plt.tight_layout()
         plt.show()
 
-    def plot_short_period(self, alpha_perturb_deg=2.0, t_end=10.0, dt=0.001):
+    def plot_short_period(self, alpha_perturb_deg=2.0, t_end=5.0, dt=0.001):
         x0 = [0.0, np.radians(alpha_perturb_deg), 0.0, 0.0]
         t = np.arange(0, t_end, dt)
         U = np.zeros((1, len(t)))
