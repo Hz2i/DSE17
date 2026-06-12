@@ -725,7 +725,6 @@ class FlyingWingWithWingletsAeroBuildup:
         Cndr = derivatives["Cndr"]
         Cnr = derivatives["Cnr"]
 
-        # Engine lateral arm should usually be fraction of half-span, not full span
         y_eng = fraction_outer_engine * (self.span / 2)
 
         M_engine = T_eng * y_eng
@@ -733,7 +732,7 @@ class FlyingWingWithWingletsAeroBuildup:
         rho = op_point.atmosphere.density()
         q_dyn = 0.5 * rho * op_point.velocity ** 2
 
-        # Use same S_ref as the aero model, not self.wing_area unless intentional
+        # Same S_ref as the aero model
         Cn_OEI = k * M_engine / (q_dyn * self.s_ref_value() * self.span)
 
         deflection_OEI = -Cn_OEI / Cndr
