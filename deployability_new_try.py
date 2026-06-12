@@ -439,13 +439,13 @@ latitudes = [30,45,60]
 for k in range(len(latitudes)):
     mission_profile = MissionProfile(latitude=latitudes[k], cruise_power_total=cruise_power_total, Propulsion=propulsion,D=D,p_battery_per_motor=CLIMB_BATTERY_PER_MOTOR, solarpower=SolarPower(latitude_deg=latitudes[k]),Aircraft=aircraft_class)
 
-    _, _, _ = mission_profile.climb_profile_init(plot=True,extra_power=0,h_cloud=18500,cloud_cover = 4,day_of_year = day_of_year[0], start_time = time_of_day[0], time_step = dt2)
+    _, _, _ = mission_profile.climb_profile_init(plot=False,extra_power=0,h_cloud=18500,cloud_cover = 4,day_of_year = day_of_year[0], start_time = time_of_day[0], time_step = dt2)
 
-    # for i in range(len(day_of_year)):
-    #     for j in range(len(time_of_day)):
-    #         print(f"Day {day_of_year[i]}, time {time_of_day[j]/3600} hours")
-    #         deployability[k][i][j], sunrise[k][i], sunset[k][i] = mission_profile.climb_profile(plot=False,extra_power=1.2,h_cloud=18500,cloud_cover = 4,day_of_year = day_of_year[i], start_time = time_of_day[j], time_step = dt2)
-    #         print(deployability[k][i][j])
+    for i in range(len(day_of_year)):
+        for j in range(len(time_of_day)):
+            print(f"Day {day_of_year[i]}, time {time_of_day[j]/3600} hours")
+            deployability[k][i][j], sunrise[k][i], sunset[k][i] = mission_profile.climb_profile(plot=False,extra_power=1.2,h_cloud=18500,cloud_cover = 4,day_of_year = day_of_year[i], start_time = time_of_day[j], time_step = dt2)
+            print(deployability[k][i][j])
 
 
 sunrise /= 3600
