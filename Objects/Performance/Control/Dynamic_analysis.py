@@ -12,7 +12,7 @@ matplotlib.use('TkAgg')   # or 'Qt5Agg' if you have PyQt5 installed
 import matplotlib.pyplot as plt
 
 from Objects.Performance.Control.Mass_moments import Mass_moments
-from Objects.Performance.Control.Control_trial import FlyingWingWithWingletsAeroBuildup
+from Objects.Performance.Control.Control import FlyingWingWithWingletsAeroBuildup
 
 class Coeff_Values(Mass_moments, FlyingWingWithWingletsAeroBuildup):
 

@@ -1,1132 +1,783 @@
 import aerosandbox as asb
 import aerosandbox.numpy as np
-import matplotlib
 from aerosandbox import Atmosphere
 
-matplotlib.use('TkAgg')
-import matplotlib.pyplot as plt
 
+class FlyingWingWithWingletsAeroBuildup:
+    def __init__(
+        self,
+        span=35.479,
+        root_chord=1.774,
+        tip_chord=1.774,
+        sweep_deg=15,
+        dihedral_deg=1.5,
+        twist_root_deg=0,
+        twist_tip_deg=-4.675,
+        wing_airfoil="mh91",
 
-class Control_Surface_Sizing():
-    def __init__(self):
-        self.coeff = None
-        self.airplane = None
-        self.wing_airfoil = asb.Airfoil("mh91")
-        self.tail_airfoil = asb.Airfoil("naca0012")
+        aspect_ratio = 20.0,
 
-        self.AR = 20
-        self.wing_sweep = np.radians(15)     # radians
-        self.b = 33.405196780593336           # full span [m]
-        self.c = self.b / self.AR               # chord [m]
-        self.S = self.b * self.c      # Wing area [m^2]
-        self.dihedral = np.radians(2.0)
-        self.twist = -7
+        winglet_height=2.0,
+        winglet_root_chord=1.774,
+        winglet_tip_chord=1.774,
+        winglet_sweep_deg=15,
+        winglet_cant_deg=0,
+        winglet_airfoil="naca0012",
 
-        self.x_cg = 2.585 #2.275
+        aileron_tip_gap_frac=0.10,   # gap from tip before aileron starts
+        aileron_span_frac=0.20,      # aileron length, going inwards
+        elevator_span_frac=0.10,     # elevator immediately inboard of aileron
+        control_hinge=0.75,
+        rudder_span_frac=0.8,
+        rudder_hinge=0.75,
 
-        self.inner_elevon_frac = 0.124
-        self.outer_elevon_frac = 0.227
-        self.height_winglet = 2.0 # height of winglet above main wing [m]
-        self.rudder_frac = 0.876
-        self.fraction_outer_engine = None
+        velocity=32.70,
+        altitude=60000 * 0.3048,
+        alpha=10.436,
+        beta=0,
+        x_cg=2.64,
+        z_cg=0,
 
-        self.S_winglet = 2 * self.height_winglet * self.c
-        self.winglet_area_fraction = self.S_winglet / self.S
+        control_layout="elevator_outboard",  # or "aileron_outboard"
+    ):
+        self.span = span
+        self.root_chord = root_chord
+        self.tip_chord = tip_chord
+        self.sweep_deg = sweep_deg
+        self.dihedral_deg = dihedral_deg
+        self.twist_root_deg = twist_root_deg
+        self.twist_tip_deg = twist_tip_deg
+        self.wing_airfoil = asb.Airfoil(wing_airfoil)
+        self.wing_area = span ** 2 / aspect_ratio
 
-        self.half_span = self.b / 2
-        self.start_inner_elevon  = None
-        self.elevon_connection   = None
-        self.end_outer_elevon    = None
+        self.winglet_height = winglet_height
+        self.winglet_root_chord = winglet_root_chord
+        self.winglet_tip_chord = winglet_tip_chord
+        self.winglet_sweep_deg = winglet_sweep_deg
+        self.winglet_cant_deg = winglet_cant_deg
+        self.winglet_airfoil = asb.Airfoil(winglet_airfoil)
 
-        # Operating point (can be overridden before calling vlm_run)
-        self.op_point = asb.OperatingPoint(atmosphere=Atmosphere(altitude=60000 * 0.3048) ,velocity=32.45, alpha=10.3) # todo adding atmospher alt returns wacky results which disgree with aeros sim
+        self.aileron_tip_gap_frac = aileron_tip_gap_frac
+        self.aileron_span_frac = aileron_span_frac
+        self.elevator_span_frac = elevator_span_frac
+        self.control_hinge = control_hinge
+        self.rudder_span_frac = rudder_span_frac
+        self.rudder_hinge = rudder_hinge
 
-        self.q_check = True
-        self.p_check = True
-        self.r_check = True
+        self.velocity = velocity
+        self.altitude = altitude
+        self.alpha = alpha
+        self.beta = beta
 
-        self.d_deflect = 5
-        self.deflection_points = np.arange(-20, 20 + self.d_deflect, self.d_deflect) # don't use floats with arange
-        self.rudder_deflection_points = np.arange(-30, 30 + self.d_deflect, self.d_deflect) # don't use floats with arange
-        self.coeff_delta = [0., 0.1]
+        self.x_cg = x_cg
+        self.z_cg = z_cg
 
-        self.print_plots = False
+        self.control_layout = control_layout
 
-        self.T_eng = None
-        self.y_eng = None
+    def chord_at_y(self, y_abs):
+        half_span = self.span / 2
+        return self.root_chord + (self.tip_chord - self.root_chord) * y_abs / half_span
 
-    # ------------------------------------------------------------------
-    # Geometry
-    # ------------------------------------------------------------------
-    def Airplane_Geo(self, delta_inner=0, delta_outer=0, delta_rudder=0, outer_symmetric=True):
-        """
-        Build the airplane geometry.
+    def twist_at_y(self, y_abs):
+        half_span = self.span / 2
+        return self.twist_root_deg + (
+            self.twist_tip_deg - self.twist_root_deg
+        ) * y_abs / half_span
 
-        Parameters
-        ----------
-        delta_inner     : inner elevon deflection [deg]
-        delta_outer     : outer elevon deflection [deg]
-        delta_rudder    : rudder deflection [deg]
-        outer_symmetric : True  → both outer panels deflect equally (pitch)
-                          False → panels deflect opposite (roll / aileron)
-        """
+    def leading_edge_at_y(self, y):
+        y_abs = abs(y)
+        x = y_abs * np.tand(self.sweep_deg)
+        z = y_abs * np.tand(self.dihedral_deg)
+        return [x, y, z]
 
+    def make_main_wing(
+            self,
+            left_aileron=0,
+            right_aileron=0,
+            left_elevator=0,
+            right_elevator=0,
+    ):
+        half_span = self.span / 2
+        y_tip = half_span
 
-        self.start_inner_elevon = self.half_span * (0.9 - self.inner_elevon_frac - self.outer_elevon_frac)
-        self.elevon_connection = self.half_span * (0.9 - self.outer_elevon_frac)
-        self.end_outer_elevon = self.half_span * 0.9
+        y_control_outer = half_span * (1 - self.aileron_tip_gap_frac)
 
-        self.airplane = asb.Airplane(
-            name="AHAPS",
-            xyz_ref=[self.x_cg, 0, 0],   # CG at ~37% chord — adjust to your actual CG
-            wings=[
-                asb.Wing(
-                    name="Main Wing",
-                    symmetric=True,
-                    xsecs=[
-                        # Root
-                        asb.WingXSec(
-                            xyz_le=[0, 0, 0],
-                            chord=self.c,
-                            twist=self.twist,
-                            airfoil=self.wing_airfoil,
-                        ),
+        if self.control_layout == "elevator_outboard":
+            # tip -> elevator -> aileron -> center
+            y_elevator_outer = y_control_outer
+            y_elevator_inner = y_elevator_outer - half_span * self.elevator_span_frac
 
-                        # Inner elevon starts here (10 % semi-span)
-                        asb.WingXSec(
-                            xyz_le=[
-                                np.tan(self.wing_sweep) * self.start_inner_elevon,
-                                self.start_inner_elevon,
-                                np.tan(self.dihedral)*self.start_inner_elevon,
-                            ],
-                            chord=self.c,
-                            twist=(1-self.start_inner_elevon/self.half_span) * self.twist,
-                            airfoil=self.wing_airfoil,
-                            control_surfaces=[
-                                asb.ControlSurface(
-                                    name="inner_elevon",
-                                    hinge_point=0.75,
-                                    deflection=delta_inner,
-                                    trailing_edge=True,
-                                    symmetric=True,         # always symmetric for pitch
-                                ),
-                            ],
-                        ),
+            y_aileron_outer = y_elevator_inner
+            y_aileron_inner = y_aileron_outer - half_span * self.aileron_span_frac
 
-                        # Transition — inner elevon ends / outer elevon starts (50 % semi-span)
-                        asb.WingXSec(
-                            xyz_le=[
-                                np.tan(self.wing_sweep) * self.elevon_connection,
-                                self.elevon_connection,
-                                np.tan(self.dihedral)*self.elevon_connection,
-                            ],
-                            chord=self.c,
-                            twist=(1-self.elevon_connection/self.half_span) * self.twist,
-                            airfoil=self.wing_airfoil,
-                            control_surfaces=[
-                                asb.ControlSurface(
-                                    name="outer_elevon",
-                                    hinge_point=0.75,
-                                    deflection=delta_outer,
-                                    trailing_edge=True,
-                                    symmetric=outer_symmetric,  # caller decides
-                                ),
-                            ],
-                        ),
+        elif self.control_layout == "aileron_outboard":
+            # tip -> aileron -> elevator -> center
+            y_aileron_outer = y_control_outer
+            y_aileron_inner = y_aileron_outer - half_span * self.aileron_span_frac
 
-                        # Outer elevon ends (90 % semi-span)
-                        asb.WingXSec(
-                            xyz_le=[
-                                np.tan(self.wing_sweep) * self.end_outer_elevon,
-                                self.end_outer_elevon,
-                                np.tan(self.dihedral)*self.end_outer_elevon,
-                            ],
-                            chord=self.c,
-                            twist=(1-self.end_outer_elevon/self.half_span) * self.twist,
-                            airfoil=self.wing_airfoil,
-                        ),
+            y_elevator_outer = y_aileron_inner
+            y_elevator_inner = y_elevator_outer - half_span * self.elevator_span_frac
 
-                        # Tip
-                        asb.WingXSec(
-                            xyz_le=[
-                                np.tan(self.wing_sweep) * self.half_span,
-                                self.half_span,
-                                np.tan(self.dihedral)*self.half_span,
-                            ],
-                            chord=self.c,
-                            twist=0,
-                            airfoil=self.wing_airfoil,
-                        ),
-                    ],
+        else:
+            raise ValueError(
+                "control_layout must be either "
+                "'elevator_outboard' or 'aileron_outboard'."
+            )
+
+        def xsec(y, controls=None):
+            if controls is None:
+                controls = []
+
+            y_abs = abs(y)
+
+            return asb.WingXSec(
+                xyz_le=self.leading_edge_at_y(y),
+                chord=self.chord_at_y(y_abs),
+                twist=self.twist_at_y(y_abs),
+                airfoil=self.wing_airfoil,
+                control_surfaces=controls,
+            )
+
+        left_aileron_surface = asb.ControlSurface(
+            name="left_aileron",
+            symmetric=False,
+            deflection=left_aileron,
+            hinge_point=self.control_hinge,
+        )
+
+        right_aileron_surface = asb.ControlSurface(
+            name="right_aileron",
+            symmetric=False,
+            deflection=right_aileron,
+            hinge_point=self.control_hinge,
+        )
+
+        left_elevator_surface = asb.ControlSurface(
+            name="left_elevator",
+            symmetric=False,
+            deflection=left_elevator,
+            hinge_point=self.control_hinge,
+        )
+
+        right_elevator_surface = asb.ControlSurface(
+            name="right_elevator",
+            symmetric=False,
+            deflection=right_elevator,
+            hinge_point=self.control_hinge,
+        )
+
+        if self.control_layout == "elevator_outboard":
+            xsecs = [
+                xsec(-y_tip),
+                xsec(-y_elevator_outer, [left_elevator_surface]),
+                xsec(-y_elevator_inner, [left_elevator_surface, left_aileron_surface]),
+                xsec(-y_aileron_inner, [left_aileron_surface]),
+                xsec(0),
+                xsec(y_aileron_inner, [right_aileron_surface]),
+                xsec(y_elevator_inner, [right_aileron_surface, right_elevator_surface]),
+                xsec(y_elevator_outer, [right_elevator_surface]),
+                xsec(y_tip),
+            ]
+
+        else:  # "aileron_outboard"
+            xsecs = [
+                xsec(-y_tip),
+                xsec(-y_aileron_outer, [left_aileron_surface]),
+                xsec(-y_aileron_inner, [left_aileron_surface, left_elevator_surface]),
+                xsec(-y_elevator_inner, [left_elevator_surface]),
+                xsec(0),
+                xsec(y_elevator_inner, [right_elevator_surface]),
+                xsec(y_aileron_inner, [right_elevator_surface, right_aileron_surface]),
+                xsec(y_aileron_outer, [right_aileron_surface]),
+                xsec(y_tip),
+            ]
+
+        return asb.Wing(
+            name="Main Flying Wing",
+            symmetric=False,
+            xsecs=xsecs,
+        )
+
+    def make_winglet(self, side="right", rudder_deflection=0):
+        sign = 1 if side == "right" else -1
+        half_span = self.span / 2
+
+        x_root, y_root, z_root = self.leading_edge_at_y(sign * half_span)
+
+        x_tip = x_root + self.winglet_height * np.tand(self.winglet_sweep_deg)
+        y_tip = y_root + sign * self.winglet_height * np.tand(self.winglet_cant_deg)
+        z_tip = z_root + self.winglet_height
+
+        rudder = asb.ControlSurface(
+            name=f"{side}_rudder",
+            symmetric=False,
+            deflection=rudder_deflection,
+            hinge_point=self.rudder_hinge,
+        )
+
+        rudder_frac = self.rudder_span_frac
+
+        x_rudder_end = x_root + rudder_frac * (x_tip - x_root)
+        y_rudder_end = y_root + rudder_frac * (y_tip - y_root)
+        z_rudder_end = z_root + rudder_frac * (z_tip - z_root)
+
+        return asb.Wing(
+            name=f"{side.capitalize()} Winglet",
+            symmetric=False,
+            xsecs=[
+                asb.WingXSec(
+                    xyz_le=[x_root, y_root, z_root],
+                    chord=self.winglet_root_chord,
+                    dihedral=90,
+                    airfoil=self.winglet_airfoil,
+                    control_surfaces=[rudder],
                 ),
-                               # ================= LEFT WINGLET =================
-                asb.Wing(
-                    name="Left Winglet",
-                    symmetric=True,
-                    xsecs=[
-                        asb.WingXSec(
-                            xyz_le=[(np.tan(self.wing_sweep) * self.half_span)+(np.tan(self.wing_sweep) * self.height_winglet), self.half_span, self.height_winglet+(np.tan(self.dihedral)*self.half_span)],
-                            chord=self.c,
-                            twist=0,
-                            airfoil=self.tail_airfoil,
-                        ),
-
-                        asb.WingXSec(
-                            xyz_le=[(np.tan(self.wing_sweep) * self.half_span)+(np.tan(self.wing_sweep)*(self.rudder_frac * self.height_winglet)), self.half_span, self.rudder_frac * self.height_winglet+(np.tan(self.dihedral)*self.half_span)],
-                            chord=self.c,
-                            twist=0,
-                            airfoil=self.tail_airfoil,
-                            control_surfaces=[
-                                asb.ControlSurface(
-                                    name="rudder_left",
-                                    hinge_point=0.6,
-                                    deflection=delta_rudder,
-                                    trailing_edge=True,
-                                    symmetric=False,
-                                )
-                            ],
-                        ),
-                        asb.WingXSec(
-                            xyz_le=[np.tan(self.wing_sweep) * self.half_span, self.half_span, np.tan(self.dihedral)*self.half_span],
-                            chord=self.c,
-                            twist=0,
-                            airfoil=self.tail_airfoil,
-                        ),
-                    ],
+                asb.WingXSec(
+                    xyz_le=[x_rudder_end, y_rudder_end, z_rudder_end],
+                    chord=self.winglet_root_chord + rudder_frac * (
+                            self.winglet_tip_chord - self.winglet_root_chord
+                    ),
+                    dihedral=90,
+                    airfoil=self.winglet_airfoil,
+                    control_surfaces=[rudder],
+                ),
+                asb.WingXSec(
+                    xyz_le=[x_tip, y_tip, z_tip],
+                    chord=self.winglet_tip_chord,
+                    dihedral=90,
+                    airfoil=self.winglet_airfoil,
                 ),
             ],
         )
-        return self.airplane
 
-    # ------------------------------------------------------------------
-    # VLM / AeroBuildup runner
-    # ------------------------------------------------------------------
-    def vlm_run(self, delta_inner=0, delta_outer=0, delta_rudder=0, outer_symmetric=True, verbose=False):
-        """
-        Rebuild the geometry and run AeroBuildup.
-
-        Returns the aero dict (also stored in self.coeff).
-        """
-        self.Airplane_Geo(delta_inner, delta_outer, delta_rudder, outer_symmetric)
-
-        if verbose:
-            print(f"\ndeflections: inner={delta_inner}°  outer={delta_outer}°  rudder={delta_rudder}"
-                  f"outer_symmetric={outer_symmetric}")
-
-        deflected = self.airplane.with_control_deflections({
-            "inner_elevon": delta_inner,
-            "outer_elevon": delta_outer,
-            "rudder_left": delta_rudder,
-        })
-
-        try:
-            ab = asb.AeroBuildup(
-                airplane=deflected,
-                op_point=self.op_point,
-            )
-            aero = ab.run_with_stability_derivatives()
-        except Exception:
-            import traceback
-            print("AeroBuildup failed:")
-            traceback.print_exc()
-            aero = None
-
-        self.coeff = aero
-        return aero
-
-    # ------------------------------------------------------------------
-    # Sweep helper
-    # ------------------------------------------------------------------
-    def _sweep(self, deflection_points, delta_inner_fn, delta_outer_fn, delta_rudder_fn,
-               outer_symmetric, coeff_key):
-        """
-        Generic deflection sweep.  Returns a list of scalar coefficient values.
-        """
-        results = []
-        for i in deflection_points:
-            aero = self.vlm_run(
-                delta_inner=delta_inner_fn(i),
-                delta_outer=delta_outer_fn(i),
-                delta_rudder=delta_rudder_fn(i),
-                outer_symmetric=outer_symmetric,
-            )
-            val = aero.get(coeff_key, None) if aero is not None else None
-            # Flatten to scalar
-            if val is not None:
-                try:
-                    val = float(np.asarray(val).flat[0])
-                except Exception:
-                    val = None
-            results.append(val)
-        return results
-
-    def _sweep_not_flat(self, deflection_points, delta_inner_fn, delta_outer_fn, delta_rudder_fn,
-               outer_symmetric, coeff_key):
-        """
-        Generic deflection sweep.  Returns a list of scalar coefficient values.
-        """
-        results = []
-        for i in deflection_points:
-            aero = self.vlm_run(
-                delta_inner=delta_inner_fn(i),
-                delta_outer=delta_outer_fn(i),
-                delta_rudder=delta_rudder_fn(i),
-                outer_symmetric=outer_symmetric,
-            )
-            val = aero.get(coeff_key, None) if aero is not None else None
-            # Flatten to scalar
-            if val is not None:
-                try:
-                    val = np.array([
-                        [x.item() for x in tup]
-                        for tup in val
-                    ])
-                except Exception:
-                    val = None
-            results.append(val)
-        return results
-
-    # ------------------------------------------------------------------
-    # Sweep helper (single run) | Only for damping coefficients!!! |
-    # ------------------------------------------------------------------
-    def _sweep_single(self, deflection_points, delta_inner_fn, delta_outer_fn, delta_rudder_fn,
-               outer_symmetric, coeff_key):
-        """
-        Generic deflection sweep.  Returns a list of scalar coefficient values.
-        """
-        aero = self.vlm_run(
-            delta_inner=delta_inner_fn(0),
-            delta_outer=delta_outer_fn(0),
-            delta_rudder=delta_rudder_fn(0),
-            outer_symmetric=outer_symmetric
-        )
-        val = aero.get(coeff_key, None) if aero is not None else None
-        # Flatten to scalar
-        if val is not None:
-            try:
-                val = float(np.asarray(val).flat[0])
-            except Exception:
-                val = None
-        return val
-
-    def _sweep_single_not_flat(self, deflection_points, delta_inner_fn, delta_outer_fn, delta_rudder_fn,
-               outer_symmetric, coeff_key):
-        """
-        Generic deflection sweep.  Returns a list of scalar coefficient values.
-        """
-        aero = self.vlm_run(
-            delta_inner=delta_inner_fn(0),
-            delta_outer=delta_outer_fn(0),
-            delta_rudder=delta_rudder_fn(0),
-            outer_symmetric=outer_symmetric
-        )
-        val = aero.get(coeff_key, None) if aero is not None else None
-        # Flatten to scalar
-        if val is not None:
-            try:
-                val = np.array([
-                    [x.item() for x in tup]
-                    for tup in val
-                ])
-            except Exception:
-                val = None
-        return val
-
-    def bodyforce_to_bodycoeff(self, F):
-        # Converts force to coefficient using current operating conditions
-
-        Cf = F/(0.5 * self.op_point.atmosphere.density() * (self.op_point.velocity ** 2) * self.S)
-
-        return Cf
-
-    # ------------------------------------------------------------------
-    # Main analysis
-    # ------------------------------------------------------------------
-    def Pitching_Coefficients(self, other_coeffs=False):
-        """
-        Three sweeps:
-          1. Inner elevon (symmetric) → Cm — pitch authority
-          2. Outer elevon (antisymmetric) → Cl — roll authority
-          3. Rudder → Cn — yaw authority
-        """
-        print("-------------------------------")
-        print("Running inner elevon Cm sweep …")
-        Cm_inner = self._sweep(
-            self.deflection_points,
-            delta_inner_fn=lambda i: i,
-            delta_outer_fn=lambda i: 0,
-            delta_rudder_fn=lambda i: 0,
-            outer_symmetric=True,
-            coeff_key="Cm",
-        )
-        x_np_inner = self._sweep(
-            self.deflection_points,
-            delta_inner_fn=lambda i: i,
-            delta_outer_fn=lambda i: 0,
-            delta_rudder_fn=lambda i: 0,
-            outer_symmetric=True,
-            coeff_key="x_np",
+    def make_airplane(
+        self,
+        left_aileron=0,
+        right_aileron=0,
+        left_elevator=0,
+        right_elevator=0,
+        left_rudder=0,
+        right_rudder=0,
+    ):
+        main_wing = self.make_main_wing(
+            left_aileron=left_aileron,
+            right_aileron=right_aileron,
+            left_elevator=left_elevator,
+            right_elevator=right_elevator,
         )
 
-        if self.print_plots:
-            # ── Plot ──────────────────────────────────────────────────────
-            fig, axes = plt.subplots(1, 2, figsize=(12, 5))
-            fig.suptitle("Elevon Control Effectiveness  (V=" + str(self.op_point.velocity) + "m/s, α=" + str(
-                self.op_point.alpha) + "°)")
-
-            # Left: pitch sweeps
-            axes[0].plot(self.deflection_points, Cm_inner, color="red", label="Cm — inner elevon (sym)")
-            axes[0].axhline(0, color="black", linewidth=0.8, linestyle="--")
-            axes[0].set_xlabel("Elevon deflection [deg]")
-            axes[0].set_ylabel("Cm")
-            axes[0].set_title("Pitch authority")
-            # axes[0, 0].legend()
-            axes[0].grid(True)
-
-            axes[1].plot(self.deflection_points, x_np_inner)
-            axes[1].axhline(0, color="black", linewidth=0.8, linestyle="--")
-            axes[1].set_xlabel("Elevon deflection [deg]")
-            axes[1].set_ylabel("x_np")
-            axes[1].set_title("x_np for pitch")
-            # axes[1, 0].legend()
-            axes[1].grid(True)
-
-            plt.tight_layout()
-            plt.show()
-
-        # ── Control Coefficient Linearisation ─────────────────────────
-        Cmde = (Cm_inner[np.size(self.deflection_points) - 1] - Cm_inner[0]) / np.radians(self.deflection_points[np.size(self.deflection_points) - 1] - self.deflection_points[0])
-
-        print("Running Cmq sweep …")
-        Cmq = self._sweep_single(
-            self.deflection_points,
-            delta_inner_fn=lambda i: 0,
-            delta_outer_fn=lambda i: 0,
-            delta_rudder_fn=lambda i: 0,
-            outer_symmetric=False,
-            coeff_key="Cmq",
-        )
-        print("Cmq:", Cmq, "/rad")
-        print("Cmde:", Cmde, "/rad")
-
-        if other_coeffs:
-            print("Running CXu sweep …")
-            CXu_list = []
-            for i in self.coeff_delta:
-                self.op_point.velocity = self.op_point.velocity + i
-                F= (self._sweep_single_not_flat(
-                    self.deflection_points,
-                    delta_inner_fn=lambda i: 0,
-                    delta_outer_fn=lambda i: 0,
-                    delta_rudder_fn=lambda i: 0,
-                    outer_symmetric=False,
-                    coeff_key="F_b",
-                ))
-                print(F)
-                CXu_list.append(self.bodyforce_to_bodycoeff(F[0,0]) * self.op_point.velocity)
-                self.op_point.velocity = self.op_point.velocity - i
-            print(CXu_list)
-            CXu = (CXu_list[len(self.coeff_delta) - 1] - CXu_list[0]) / (self.coeff_delta[np.size(self.coeff_delta) - 1] - self.coeff_delta[0])
-            print("CXu:", CXu, "/ms-1")
-
-            print("Running CXa and CZa sweep …")
-            CL = self._sweep_single(
-                self.deflection_points,
-                delta_inner_fn=lambda i: 0,
-                delta_outer_fn=lambda i: 0,
-                delta_rudder_fn=lambda i: 0,
-                outer_symmetric=False,
-                coeff_key="CL",
-            )
-            print("CL:", CL)
-            CLa = self._sweep_single(
-                self.deflection_points,
-                delta_inner_fn=lambda i: 0,
-                delta_outer_fn=lambda i: 0,
-                delta_rudder_fn=lambda i: 0,
-                outer_symmetric=False,
-                coeff_key="CLa",
-            )
-            print("CLa:", CLa, "/rad")
-            CD = self._sweep_single(
-                self.deflection_points,
-                delta_inner_fn=lambda i: 0,
-                delta_outer_fn=lambda i: 0,
-                delta_rudder_fn=lambda i: 0,
-                outer_symmetric=False,
-                coeff_key="CD",
-            )
-            print("CD:", CD)
-            CDa = self._sweep_single(
-                self.deflection_points,
-                delta_inner_fn=lambda i: 0,
-                delta_outer_fn=lambda i: 0,
-                delta_rudder_fn=lambda i: 0,
-                outer_symmetric=False,
-                coeff_key="CDa",
-            )
-            print("CDa:", CDa, "/rad")
-            print(self.op_point.alpha)
-            CXa = (
-                    -CDa * np.cos(np.radians(self.op_point.alpha))
-                    + CD * np.sin(np.radians(self.op_point.alpha))
-                    + CLa * np.sin(np.radians(self.op_point.alpha))
-                    + CL * np.cos(np.radians(self.op_point.alpha))
-            )
-            CZa = (
-                    -CDa * np.sin(np.radians(self.op_point.alpha))
-                    - CD * np.cos(np.radians(self.op_point.alpha))
-                    - CLa * np.cos(np.radians(self.op_point.alpha))
-                    + CL * np.sin(np.radians(self.op_point.alpha))
-            )
-            print("CXa:", CXa, "/rad")
-            print("CZa:", CZa, "/rad")
-
-            print("Running CXq sweep …")
-            CLq = self._sweep_single(
-                self.deflection_points,
-                delta_inner_fn=lambda i: 0,
-                delta_outer_fn=lambda i: 0,
-                delta_rudder_fn=lambda i: 0,
-                outer_symmetric=False,
-                coeff_key="CLq",
-            )
-            # print("CLq:", CLq, "/rad")
-            CDq = self._sweep_single(
-                self.deflection_points,
-                delta_inner_fn=lambda i: 0,
-                delta_outer_fn=lambda i: 0,
-                delta_rudder_fn=lambda i: 0,
-                outer_symmetric=False,
-                coeff_key="CDq",
-            )
-            # print("CDq:", CDq, "/rad")
-            CXq = -CDq * np.cos(np.radians(self.op_point.alpha)) + CLq * np.sin(np.radians(self.op_point.alpha))
-            CZq = -CDq * np.sin(np.radians(self.op_point.alpha)) - CLq * np.cos(np.radians(self.op_point.alpha))
-            print("CXq:", CXq, "/rad")
-            print("CZq:", CZq, "/rad")
-
-            print("Running inner elevon CX sweep …")
-            F_inner = self._sweep_not_flat(
-                self.deflection_points,
-                delta_inner_fn=lambda i: i,
-                delta_outer_fn=lambda i: 0,
-                delta_rudder_fn=lambda i: 0,
-                outer_symmetric=True,
-                coeff_key="F_b",
-            )
-            # print(F_inner)
-            CX_inner = [self.bodyforce_to_bodycoeff(arr[0, 0]) for arr in F_inner]
-            # print("CX_inner:", CX_inner)
-            CXde = (CX_inner[np.size(self.deflection_points) - 1] - CX_inner[0]) / np.radians(
-                self.deflection_points[np.size(self.deflection_points) - 1] - self.deflection_points[0])
-            print("CXde:", CXde, "/rad")
-
-            print("Running CZu sweep …")
-            CZu_list = []
-            for i in self.coeff_delta:
-                self.op_point.velocity = self.op_point.velocity + i
-                F = (self._sweep_single_not_flat(
-                    self.deflection_points,
-                    delta_inner_fn=lambda i: 0,
-                    delta_outer_fn=lambda i: 0,
-                    delta_rudder_fn=lambda i: 0,
-                    outer_symmetric=False,
-                    coeff_key="F_b",
-                ))
-                # print(F[2,0])
-                CZu_list.append(self.bodyforce_to_bodycoeff(F[2, 0]) * self.op_point.velocity)
-                self.op_point.velocity = self.op_point.velocity - i
-            # print(CZu_list)
-            CZu = (CZu_list[len(self.coeff_delta) - 1] - CZu_list[0]) / (
-                        self.coeff_delta[np.size(self.coeff_delta) - 1] - self.coeff_delta[0])
-            print("CZu:", CZu, "/ms-1")
-
-            print("Running inner elevon CZ sweep …")
-            F_inner = self._sweep_not_flat(
-                self.deflection_points,
-                delta_inner_fn=lambda i: i,
-                delta_outer_fn=lambda i: 0,
-                delta_rudder_fn=lambda i: 0,
-                outer_symmetric=True,
-                coeff_key="F_b",
-            )
-            # print(F_inner)
-            CZ_inner = [self.bodyforce_to_bodycoeff(arr[2, 0]) for arr in F_inner]
-            # print("CX_inner:", CX_inner)
-            CZde = (CZ_inner[np.size(self.deflection_points) - 1] - CZ_inner[0]) / np.radians(
-                self.deflection_points[np.size(self.deflection_points) - 1] - self.deflection_points[0])
-            print("CZde:", CZde, "/rad")
-
-            print("Running Cm sweep …")
-            Cm = self._sweep_single(
-                self.deflection_points,
-                delta_inner_fn=lambda i: 0,
-                delta_outer_fn=lambda i: 0,
-                delta_rudder_fn=lambda i: 0,
-                outer_symmetric=False,
-                coeff_key="Cm"
-            )
-            print("Cm:", Cm, "/rad")
-
-            print("Running Cmu sweep …")
-            Cmu_list = []
-            for i in self.coeff_delta:
-                self.op_point.velocity = self.op_point.velocity + i
-                Cmu_list.append(self._sweep_single(
-                    self.deflection_points,
-                    delta_inner_fn=lambda i: 0,
-                    delta_outer_fn=lambda i: 0,
-                    delta_rudder_fn=lambda i: 0,
-                    outer_symmetric=False,
-                    coeff_key="Cm",
-                ))
-                self.op_point.velocity = self.op_point.velocity - i
-            Cmu = (Cmu_list[np.size(self.coeff_delta) - 1] - Cmu_list[0]) / (self.coeff_delta[np.size(self.coeff_delta) - 1] - self.coeff_delta[0])
-            print("Cmu:", Cmu, "/rad")
-
-            print("Running inner elevon Cma sweep …")
-            Cma = self._sweep_single(
-                self.deflection_points,
-                delta_inner_fn=lambda i: 0,
-                delta_outer_fn=lambda i: 0,
-                delta_rudder_fn=lambda i: 0,
-                outer_symmetric=False,
-                coeff_key="Cma"
-            )
-            print("Cma:", Cma, "/rad")
-
-        if not other_coeffs:
-            return Cmde, Cmq
-
-        else:
-            return CXu, CXa, CXq, CXde, CZu, CZa, CZq, CZde, Cm, Cmu, Cma, Cmq, Cmde
-
-    def Rolling_Coefficients(self, other_coeffs=False):
-        print("-------------------------------")
-        print("Running outer elevon Cl sweep …")
-        Cl_outer = self._sweep(
-            self.deflection_points,
-            delta_inner_fn=lambda i: 0,
-            delta_outer_fn=lambda i: i,
-            delta_rudder_fn=lambda i: 0,
-            outer_symmetric=False,
-            coeff_key="Cl",
-        )
-        x_np_outer = self._sweep(
-            self.deflection_points,
-            delta_inner_fn=lambda i: 0,
-            delta_outer_fn=lambda i: i,
-            delta_rudder_fn=lambda i: 0,
-            outer_symmetric=True,
-            coeff_key="x_np",
+        left_winglet = self.make_winglet(
+            side="left",
+            rudder_deflection=left_rudder,
         )
 
-        if self.print_plots:
-            # ── Plot ──────────────────────────────────────────────────────
-            fig, axes = plt.subplots(2, 3, figsize=(12, 5))
-            fig.suptitle("Elevon Control Effectiveness  (V=" + str(self.op_point.velocity) + "m/s, α=" + str(self.op_point.alpha) + "°)")
-
-            # Right: roll sweep
-            axes[0].plot(self.deflection_points, Cl_outer, color="blue", label="Cl — outer elevon (antisym)")
-            axes[0].axhline(0, color="black", linewidth=0.8, linestyle="--")
-            axes[0].set_xlabel("Elevon deflection [deg]")
-            axes[0].set_ylabel("Cl")
-            axes[0].set_title("Roll authority")
-            # axes[0, 1].legend()
-            axes[0].grid(True)
-
-            axes[1].plot(self.deflection_points, x_np_outer)
-            axes[1].axhline(0, color="black", linewidth=0.8, linestyle="--")
-            axes[1].set_xlabel("Elevon deflection [deg]")
-            axes[1].set_ylabel("x_np")
-            axes[1].set_title("x_np for roll")
-            # axes[1, 1].legend()
-            axes[1].grid(True)
-
-            plt.tight_layout()
-            plt.show()
-
-        # ── Control Coefficient Linearisation ─────────────────────────
-        Clda = (Cl_outer[np.size(self.deflection_points) - 1] - Cl_outer[0]) / np.radians(self.deflection_points[np.size(self.deflection_points) - 1] - self.deflection_points[0])
-
-        print("Running Clp sweep …")
-        Clp = self._sweep_single(
-            self.deflection_points,
-            delta_inner_fn=lambda i: 0,
-            delta_outer_fn=lambda i: 0,
-            delta_rudder_fn=lambda i: 0,
-            outer_symmetric=False,
-            coeff_key="Clp",
+        right_winglet = self.make_winglet(
+            side="right",
+            rudder_deflection=right_rudder,
         )
-        print("Clp:", Clp, "/rad")
-        print("Clda:", Clda, "/rad")
 
-        if other_coeffs:
-            print("Running CYb sweep …")
-            CYb = self._sweep_single(
-                self.deflection_points,
-                delta_inner_fn=lambda i: 0,
-                delta_outer_fn=lambda i: 0,
-                delta_rudder_fn=lambda i: 0,
-                outer_symmetric=False,
-                coeff_key="CYb",
-            )
-            print("CYb:", CYb, "/rad")
+        s_ref = self.span * (self.root_chord + self.tip_chord) / 2
 
-            print("Running CYp sweep …")
-            CYp = self._sweep_single(
-                self.deflection_points,
-                delta_inner_fn=lambda i: 0,
-                delta_outer_fn=lambda i: 0,
-                delta_rudder_fn=lambda i: 0,
-                outer_symmetric=False,
-                coeff_key="CYp",
-            )
-            print("CYp:", CYp, "/rad")
-
-            print("Running CYr sweep …")
-            CYr = self._sweep_single(
-                self.deflection_points,
-                delta_inner_fn=lambda i: 0,
-                delta_outer_fn=lambda i: 0,
-                delta_rudder_fn=lambda i: 0,
-                outer_symmetric=False,
-                coeff_key="CYr",
-            )
-            print("CYr:", CYr, "/rad")
-
-            print("Running outer elevon CY sweep …")
-            CY_outer = self._sweep(
-                self.deflection_points,
-                delta_inner_fn=lambda i: 0,
-                delta_outer_fn=lambda i: i,
-                delta_rudder_fn=lambda i: 0,
-                outer_symmetric=False,
-                coeff_key="CY",
-            )
-            CYda = (CY_outer[np.size(self.deflection_points) - 1] - CY_outer[0]) / np.radians(
-                self.deflection_points[np.size(self.deflection_points) - 1] - self.deflection_points[0])
-            print("CYda:", CYda, "/rad")
-
-            print("Running rudder CY sweep …")
-            CY_rudder = self._sweep(
-                self.deflection_points,
-                delta_inner_fn=lambda i: 0,
-                delta_outer_fn=lambda i: 0,
-                delta_rudder_fn=lambda i: i,
-                outer_symmetric=False,
-                coeff_key="CY",
-            )
-            CYdr = (CY_rudder[np.size(self.deflection_points) - 1] - CY_rudder[0]) / np.radians(
-                self.deflection_points[np.size(self.deflection_points) - 1] - self.deflection_points[0])
-            print("CYdr:", CYdr, "/rad")
-
-            print("Running Clb sweep …")
-            Clb = self._sweep_single(
-                self.deflection_points,
-                delta_inner_fn=lambda i: 0,
-                delta_outer_fn=lambda i: 0,
-                delta_rudder_fn=lambda i: 0,
-                outer_symmetric=False,
-                coeff_key="Clb",
-            )
-            print("Clb:", Clb, "/rad")
-
-            print("Running Clr sweep …")
-            Clr = self._sweep_single(
-                self.deflection_points,
-                delta_inner_fn=lambda i: 0,
-                delta_outer_fn=lambda i: 0,
-                delta_rudder_fn=lambda i: 0,
-                outer_symmetric=False,
-                coeff_key="Clr",
-            )
-            print("Clr:", Clr, "/rad")
-
-            print("Running rudder Cl sweep …")
-            Cl_rudder = self._sweep(
-                self.deflection_points,
-                delta_inner_fn=lambda i: 0,
-                delta_outer_fn=lambda i: 0,
-                delta_rudder_fn=lambda i: i,
-                outer_symmetric=False,
-                coeff_key="Cl",
-            )
-            Cldr = (Cl_rudder[np.size(self.deflection_points) - 1] - Cl_rudder[0]) / np.radians(
-                self.deflection_points[np.size(self.deflection_points) - 1] - self.deflection_points[0])
-
-        if other_coeffs:
-            return CYb, CYp, CYr, CYda, CYdr, Clb, Clp, Clr, Clda, Cldr
-
-        else:
-            return Clda, Clp
-
-    def Yawing_Coefficients(self, other_coeffs=False):
-        print("-------------------------------")
-        print("Running rudder Cn sweep (antisymmetric / yaw) …")
-        Cn_rudder = self._sweep(
-            self.rudder_deflection_points,
-            delta_inner_fn=lambda i: 0,
-            delta_outer_fn=lambda i: 0,
-            delta_rudder_fn=lambda i: i,
-            outer_symmetric=False,
-            coeff_key="Cn",
+        taper = self.tip_chord / self.root_chord
+        c_ref = (
+            2 / 3
+            * self.root_chord
+            * (1 + taper + taper ** 2)
+            / (1 + taper)
         )
-        x_np_rudder = self._sweep(
-            self.rudder_deflection_points,
-            delta_inner_fn=lambda i: 0,
-            delta_outer_fn=lambda i: 0,
-            delta_rudder_fn=lambda i: i,
-            outer_symmetric=True,
-            coeff_key="x_np",
+
+        return asb.Airplane(
+            name="Flying Wing With Winglets",
+            xyz_ref=[self.x_cg, 0, self.z_cg],
+            wings=[main_wing, left_winglet, right_winglet],
+            s_ref=s_ref,
+            b_ref=self.span,
+            c_ref=c_ref,
         )
-        # print(min(x_np_inner), min(x_np_outer), min(x_np_rudder))
 
-        if self.print_plots:
-            # ── Plot ──────────────────────────────────────────────────────
-            fig, axes = plt.subplots(1, 2, figsize=(12, 5))
-            fig.suptitle("Elevon Control Effectiveness  (V=" + str(self.op_point.velocity) + "m/s, α=" + str(self.op_point.alpha) + "°)")
-
-            # Right: yaw sweep
-            axes[0].plot(self.rudder_deflection_points, Cn_rudder, color="green", label="Cn — rudder (antisym)")
-            axes[0].axhline(0, color="black", linewidth=0.8, linestyle="--")
-            axes[0].set_xlabel("Elevon deflection [deg]")
-            axes[0].set_ylabel("Cn")
-            axes[0].set_title("Yaw authority")
-            # axes[0, 2].legend()
-            axes[0].grid(True)
-
-            axes[1].plot(self.rudder_deflection_points, x_np_rudder)
-            axes[1].axhline(0, color="black", linewidth=0.8, linestyle="--")
-            axes[1].set_xlabel("Elevon deflection [deg]")
-            axes[1].set_ylabel("x_np")
-            axes[1].set_title("x_np for yaw")
-            # axes[1, 2].legend()
-            axes[1].grid(True)
-
-            plt.tight_layout()
-            plt.show()
-
-        # ── Control Coefficient Linearisation ─────────────────────────
-        Cndr = (Cn_rudder[np.size(self.rudder_deflection_points)-1] - Cn_rudder[0])/np.radians(self.rudder_deflection_points[np.size(self.rudder_deflection_points)-1] - self.rudder_deflection_points[0])
-
-        print("Running Cnr sweep …")
-        Cnr = self._sweep_single(
-            self.rudder_deflection_points,
-            delta_inner_fn=lambda i: 0,
-            delta_outer_fn=lambda i: 0,
-            delta_rudder_fn=lambda i: 0,
-            outer_symmetric=False,
-            coeff_key="Cnr",
+    def make_op_point(self):
+        return asb.OperatingPoint(
+            velocity=self.velocity,
+            alpha=self.alpha,
+            beta=self.beta,
+            atmosphere=asb.Atmosphere(altitude=self.altitude),
         )
-        print("Cnr:", Cnr, "/rad")
-        print("Cndr:", Cndr, "/rad")
 
-        if other_coeffs:
+    def run_aerobuildup(self, **control_deflections):
+        airplane = self.make_airplane(**control_deflections)
 
-            print("Running Cnb sweep …")
-            Cnb = self._sweep_single(
-                self.rudder_deflection_points,
-                delta_inner_fn=lambda i: 0,
-                delta_outer_fn=lambda i: 0,
-                delta_rudder_fn=lambda i: 0,
-                outer_symmetric=False,
-                coeff_key="Cnb",
-            )
-            print("Cnb:", Cnb, "/rad")
-
-            print("Running Cnp sweep …")
-            Cnp = self._sweep_single(
-                self.rudder_deflection_points,
-                delta_inner_fn=lambda i: 0,
-                delta_outer_fn=lambda i: 0,
-                delta_rudder_fn=lambda i: 0,
-                outer_symmetric=False,
-                coeff_key="Cnp",
-            )
-            print("Cnp:", Cnp, "/rad")
-
-            print("Running outer elevon Cn sweep …")
-            Cn_outer = self._sweep(
-                self.deflection_points,
-                delta_inner_fn=lambda i: 0,
-                delta_outer_fn=lambda i: 0,
-                delta_rudder_fn=lambda i: i,
-                outer_symmetric=False,
-                coeff_key="Cn",
-            )
-            Cnda = (Cn_outer[np.size(self.deflection_points) - 1] - Cn_outer[0]) / np.radians(
-                self.deflection_points[np.size(self.deflection_points) - 1] - self.deflection_points[0])
-            print("Cnda:", Cnda, "/rad")
-
-        if other_coeffs:
-            return Cnb, Cnp, Cnr, Cnda, Cndr
-
-        else:
-            return Cndr, Cnr
-
-    # ------------------------------------------------------------------
-    # Control requirements check (placeholder)
-    # ------------------------------------------------------------------
-    def Pitch_Check(self):
-        Cmde, Cmq = self.Pitching_Coefficients()
-        q_req = np.radians(7)  # pitch rate [rad/s]
-
-        q = Cmde/Cmq*(np.radians(self.deflection_points[np.size(self.deflection_points)-1]))*self.op_point.velocity/self.c
-        print("Q:", np.degrees(q), "deg/s")
-
-        return q, q_req
-
-    def Roll_Check(self):
-        Clda, Clp = self.Rolling_Coefficients()
-        p_req = np.radians(10)  # roll  rate [rad/s]
-
-        p = Clda / Clp * (np.radians(
-            self.deflection_points[np.size(self.deflection_points) - 1])) * 2 * self.op_point.velocity / self.b
-        print("P:", np.degrees(p), "deg/s")
-
-        return p, p_req
-
-    def Yaw_Check(self, T_eng=50, fraction_outer_engine=0.67):
-        Cndr, Cnr = self.Yawing_Coefficients()
-        r_req = np.radians(5)   # yaw  rate, now defined nose to left [rad/s]
-
-        #OEI
-        y_eng=fraction_outer_engine*self.half_span
-        M_engine = T_eng*y_eng
-        rho_cruise = self.op_point.atmosphere.density()
-        k = 1.5
-        print(self.op_point.velocity)
-        print(self.op_point.atmosphere.density())
-        Cn_OEI_counter = k*M_engine/(0.5*rho_cruise*(self.op_point.velocity ** 2)*self.S*self.b) # Required Cn to counteract OEI yawing moment
-        print(Cn_OEI_counter)
-        deflection_OEI = -Cn_OEI_counter/Cndr
-        print("OEI Deflection", np.degrees(deflection_OEI), "deg/s")
-        deflection_max = np.radians(self.rudder_deflection_points[np.size(self.rudder_deflection_points) - 1])
-
-        r = Cndr / Cnr * (deflection_max-deflection_OEI) * 2 * self.op_point.velocity / self.b
-        # r = Cndr / Cnr * (np.radians(self.deflection_points[np.size(self.deflection_points) - 1])) * 2 * self.op_point.velocity / self.b
-        print("R:", np.degrees(r), "deg/s")
-
-        return r, r_req
-
-    def Spiral_Check(self):
-        aero = self.vlm_run(
-            delta_inner=0, delta_outer=0, delta_rudder=0,
-            outer_symmetric=False,
+        aero = asb.AeroBuildup(
+            airplane=airplane,
+            op_point=self.make_op_point(),
         )
-        Clb = float(np.asarray(aero["Clb"]).flat[0])
-        Cnb = float(np.asarray(aero["Cnb"]).flat[0])
-        Clr = float(np.asarray(aero["Clr"]).flat[0])
-        Cnr = float(np.asarray(aero["Cnr"]).flat[0])
 
-        criterion = Clb * Cnr - Cnb * Clr
+        return aero.run_with_stability_derivatives()
 
-        print(f"  Cl_beta = {Clb:.5f}")
-        print(f"  Cn_beta = {Cnb:.5f}")
-        print(f"  Cl_r    = {Clr:.5f}")
-        print(f"  Cn_r    = {Cnr:.5f}")
-        print(f"  Spiral criterion (Cl_beta*Cn_r - Cn_beta*Cl_r) = {criterion:.6f}")
+    def s_ref_value(self):
+        return self.span * (self.root_chord + self.tip_chord) / 2
 
-        if criterion > 0:
-            print("Spiral mode is stable")
-        else:
-            print("Spiral mode is unstable")
+    def c_ref_value(self):
+        taper = self.tip_chord / self.root_chord
+        return (
+            2 / 3
+            * self.root_chord
+            * (1 + taper + taper ** 2)
+            / (1 + taper)
+        )
 
-        return criterion
+    def body_axis_coefficients(self, result, alpha_deg):
+        alpha = np.radians(alpha_deg)
 
-    def Control_Sizing(self):
-        p, p_req = self.Roll_Check()
-        d_size_aileron = 0.1
-        if p > p_req:
-            while self.p_check:
-                print("Aileron fraction:", self.outer_elevon_frac)
-                self.outer_elevon_frac -= d_size_aileron
+        CL = result["CL"]
+        print(CL)
+        CD = result["CD"]
+        print(CD)
+        CY = result["CY"]
+        Cl = result["Cl"]
+        Cm = result["Cm"]
+        Cn = result["Cn"]
 
-                if self.outer_elevon_frac < 0.0001:
-                    self.outer_elevon_frac += d_size_aileron/2
-                    d_size_aileron = d_size_aileron/2
+        CX = -CD * np.cos(alpha) + CL * np.sin(alpha)
+        CZ = -CD * np.sin(alpha) - CL * np.cos(alpha)
 
-                p, p_req = self.Roll_Check()
+        return {
+            "CX": CX,
+            "CY": CY,
+            "CZ": CZ,
+            "Cl": Cl,
+            "Cm": Cm,
+            "Cn": Cn,
+        }
 
-                if p < p_req:
-                    if d_size_aileron > 0.001:
-                        print("Aileron fraction failed guess:", self.outer_elevon_frac)
-                        self.outer_elevon_frac += d_size_aileron #!!!!!
-                        d_size_aileron = d_size_aileron/2
-                    else:
-                        self.p_check = False
-                        self.outer_elevon_frac += d_size_aileron
-                        p, p_req = self.Roll_Check()
-                        print("----Final aileron fraction:", self.outer_elevon_frac)
-                        print("----Final roll rate:", np.degrees(p), "deg/s")
-                        # cs.airplane.draw()
-        elif p < p_req:
-            while self.p_check:
-                print("Aileron fraction:", self.outer_elevon_frac)
-                self.outer_elevon_frac += d_size_aileron
-                p, p_req = self.Roll_Check()
-                if p > p_req:
-                    if d_size_aileron > 0.001:
-                        print("Aileron fraction failed guess:", self.outer_elevon_frac)
-                        self.outer_elevon_frac -= d_size_aileron #!!!!!
-                        d_size_aileron = d_size_aileron / 2
-                    else:
-                        self.p_check = False
-                        # self.outer_elevon_frac -= d_size_aileron
-                        p, p_req = self.Roll_Check()
-                        print("----Final aileron fraction:", self.outer_elevon_frac)
-                        print("----Final roll rate:", np.degrees(p), "deg/s")
-                        # cs.airplane.draw()
+    def run_aerobuildup_custom(
+        self,
+        velocity=None,
+        alpha=None,
+        beta=None,
+        p=0,
+        q=0,
+        r=0,
+        **control_deflections,
+    ):
+        if velocity is None:
+            velocity = self.velocity
+        if alpha is None:
+            alpha = self.alpha
+        if beta is None:
+            beta = self.beta
 
+        airplane = self.make_airplane(**control_deflections)
 
-        q, q_req = self.Pitch_Check()
-        d_size_elevator = 0.1
-        if q > q_req:
-            while self.q_check:
-                print("Elevator fraction", self.inner_elevon_frac)
-                self.inner_elevon_frac -= d_size_elevator
+        op_point = asb.OperatingPoint(
+            velocity=velocity,
+            alpha=alpha,
+            beta=beta,
+            p=p,
+            q=q,
+            r=r,
+            atmosphere=asb.Atmosphere(altitude=self.altitude),
+        )
 
-                if self.inner_elevon_frac < 0.0001:
-                    self.inner_elevon_frac += d_size_elevator/2
-                    d_size_elevator = d_size_elevator/2
+        aero = asb.AeroBuildup(
+            airplane=airplane,
+            op_point=op_point,
+        ).run()
 
-                q, q_req = self.Pitch_Check()
-                if q < q_req:
-                    if d_size_elevator > 0.001:
-                        print("Elevator fraction failed guess:", self.inner_elevon_frac)
-                        self.inner_elevon_frac += d_size_elevator #!!!!!
-                        d_size_elevator = d_size_elevator/ 2
-                    else:
-                        self.q_check = False
-                        self.inner_elevon_frac += d_size_elevator
-                        q, q_req = self.Pitch_Check()
-                        print("----Final elevator fraction:", self.inner_elevon_frac)
-                        print("----Final pitch rate:", np.degrees(q), "deg/s")
-                        #cs.airplane.draw()
+        return self.body_axis_coefficients(aero, alpha)
 
-        elif q < q_req:
-            while self.q_check:
-                print("Elevator fraction", self.inner_elevon_frac)
-                self.inner_elevon_frac += d_size_elevator
-                q, q_req = self.Pitch_Check()
-                if q > q_req:
-                    if d_size_elevator > 0.001:
-                        print("Elevator fraction failed guess:", self.inner_elevon_frac)
-                        self.inner_elevon_frac -= d_size_elevator #!!!!!
-                        d_size_elevator = d_size_elevator/ 2
-                    else:
-                        self.q_check = False
-                        # self.inner_elevon_frac -= d_size_elevator
-                        q, q_req = self.Pitch_Check()
-                        print("----Final elevator fraction:", self.inner_elevon_frac)
-                        print("----Final pitch rate:", np.degrees(q), "deg/s")
-                        #cs.airplane.draw()
+    def compute_all_derivatives(
+        self,
+        du_frac=0.01,
+        dalpha_deg=0.25,
+        dbeta_deg=0.25,
+        rate_hat=0.01,
+        dcontrol_deg=1.0,
+    ):
+        """
+        Returns:
+        CXu, CXa, CXq, CXde,
+        CZu, CZa, CZq, CZde,
+        Cm, Cmu, Cma, Cmq, Cmde,
+        CYb, CYp, CYr, CYda, CYdr,
+        Clb, Clp, Clr, Clda, Cldr,
+        Cnb, Cnp, Cnr, Cnda, Cndr
 
-        r, r_req = self.Yaw_Check()
-        d_size_rudder = 0.1
-        if r > r_req:
-            while self.r_check:
-                print("Rudder fraction:", self.rudder_frac)
-                self.rudder_frac -= d_size_rudder
+        Derivative conventions:
+            u derivative: per u/V
+            alpha, beta: per radian
+            p derivative: per p*b/(2V)
+            q derivative: per q*c/(2V)
+            r derivative: per r*b/(2V)
+            controls: per radian
+        """
 
-                if self.rudder_frac < 0.0001:
-                    self.rudder_frac += d_size_rudder/2
-                    d_size_rudder = d_size_rudder/2
+        V = self.velocity
+        c_ref = self.c_ref_value()
+        b_ref = self.span
 
-                r, r_req = self.Yaw_Check()
-                if r < r_req:
-                    if d_size_rudder > 0.001:
-                        print("Rudder fraction failed guess:", self.rudder_frac)
-                        self.rudder_frac += d_size_rudder #!!!!!
-                        d_size_rudder = d_size_rudder/ 2
-                    else:
-                        self.r_check = False
-                        self.rudder_frac += d_size_rudder
-                        r, r_req = self.Yaw_Check()
-                        print("----Final rudder fraction:", self.rudder_frac)
-                        print("----Final yaw rate:", np.degrees(r), "deg/s")
-                        cs.airplane.draw()
-        elif r < r_req:
-            while self.r_check:
-                print("Rudder fraction:", self.rudder_frac)
-                self.rudder_frac += d_size_rudder
-                r, r_req = self.Yaw_Check()
-                if r > r_req:
-                    if d_size_rudder > 0.001:
-                        print("Rudder fraction failed guess:", self.rudder_frac)
-                        self.rudder_frac -= d_size_rudder #!!!!!
-                        d_size_rudder = d_size_rudder / 2
-                    else:
-                        self.r_check = False
-                        # self.rudder_frac -= d_size_rudder
-                        r, r_req = self.Yaw_Check()
-                        print("----Final rudder fraction:", self.rudder_frac)
-                        print("----Final yaw rate:", np.degrees(r), "deg/s")
-                        cs.airplane.draw()
+        d_alpha_rad = np.radians(dalpha_deg)
+        d_beta_rad = np.radians(dbeta_deg)
+        d_control_rad = np.radians(dcontrol_deg)
 
-        print("------------Final Values--------------")
-        print("Final aileron fraction:", self.outer_elevon_frac)
-        print("----Final roll rate:", np.degrees(p), "deg/s")
-        print("Final elevator fraction:", self.inner_elevon_frac)
-        print("----Final pitch rate:", np.degrees(q), "deg/s")
-        print("Final rudder fraction:", self.rudder_frac)
-        print("----Final yaw rate:", np.degrees(r), "deg/s")
+        # Base
+        base = self.run_aerobuildup_custom()
+        Cm_base = base["Cm"]
 
-    def Cm_check(self):
-        cg_range = np.linspace(0., 3., 30)
-        cm_list = []
-        cma_list =[]
+        # u derivatives
+        plus = self.run_aerobuildup_custom(velocity=V * (1 + du_frac))
+        minus = self.run_aerobuildup_custom(velocity=V * (1 - du_frac))
 
-        for i in cg_range:
-            self.x_cg = i
-            cs.Airplane_Geo()
-            cm = cs._sweep_single(self.deflection_points,
-            delta_inner_fn=lambda i: 0,
-            delta_outer_fn=lambda i: 0,
-            delta_rudder_fn=lambda i: 0,
-            outer_symmetric=False,
-            coeff_key="Cm"
-            )
-            cm_list.append(cm)
+        CXu = (plus["CX"] - minus["CX"]) / (2 * du_frac)
+        CZu = (plus["CZ"] - minus["CZ"]) / (2 * du_frac)
+        Cmu = (plus["Cm"] - minus["Cm"]) / (2 * du_frac)
 
-            cma = cs._sweep_single(self.deflection_points,
-            delta_inner_fn=lambda i: 0,
-            delta_outer_fn=lambda i: 0,
-            delta_rudder_fn=lambda i: 0,
-            outer_symmetric=False,
-            coeff_key="Cma"
-            )
-            cma_list.append(cma)
+        # alpha derivatives
+        plus = self.run_aerobuildup_custom(alpha=self.alpha + dalpha_deg)
+        minus = self.run_aerobuildup_custom(alpha=self.alpha - dalpha_deg)
 
-        plt.plot(cg_range, cm_list)
-        plt.plot(cg_range, cma_list)
-        plt.show()
+        CXa = (plus["CX"] - minus["CX"]) / (2 * d_alpha_rad)
+        CZa = (plus["CZ"] - minus["CZ"]) / (2 * d_alpha_rad)
+        Cma = (plus["Cm"] - minus["Cm"]) / (2 * d_alpha_rad)
+
+        # beta derivatives
+        plus = self.run_aerobuildup_custom(beta=self.beta + dbeta_deg)
+        minus = self.run_aerobuildup_custom(beta=self.beta - dbeta_deg)
+
+        CYb = (plus["CY"] - minus["CY"]) / (2 * d_beta_rad)
+        Clb = (plus["Cl"] - minus["Cl"]) / (2 * d_beta_rad)
+        Cnb = (plus["Cn"] - minus["Cn"]) / (2 * d_beta_rad)
+
+        # pitch-rate derivatives q_hat = q*c/(2V)
+        q_rate = rate_hat * V / c_ref # todo removed *2
+
+        plus = self.run_aerobuildup_custom(q=q_rate)
+        minus = self.run_aerobuildup_custom(q=-q_rate)
+
+        CXq = (plus["CX"] - minus["CX"]) / (2 * rate_hat)
+        CZq = (plus["CZ"] - minus["CZ"]) / (2 * rate_hat)
+        Cmq = (plus["Cm"] - minus["Cm"]) / (2 * rate_hat)
+
+        # roll-rate derivatives p_hat = p*b/(2V)
+        p_rate = rate_hat * 2 * V / b_ref
+
+        plus = self.run_aerobuildup_custom(p=p_rate)
+        minus = self.run_aerobuildup_custom(p=-p_rate)
+
+        CYp = (plus["CY"] - minus["CY"]) / (2 * rate_hat)
+        Clp = (plus["Cl"] - minus["Cl"]) / (2 * rate_hat)
+        Cnp = (plus["Cn"] - minus["Cn"]) / (2 * rate_hat)
+
+        # yaw-rate derivatives r_hat = r*b/(2V)
+        r_rate = rate_hat * 2 * V / b_ref
+
+        plus = self.run_aerobuildup_custom(r=r_rate)
+        minus = self.run_aerobuildup_custom(r=-r_rate)
+
+        CYr = (plus["CY"] - minus["CY"]) / (2 * rate_hat)
+        Clr = (plus["Cl"] - minus["Cl"]) / (2 * rate_hat)
+        Cnr = (plus["Cn"] - minus["Cn"]) / (2 * rate_hat)
+
+        # elevator derivatives
+        plus = self.run_aerobuildup_custom(
+            left_elevator=dcontrol_deg,
+            right_elevator=dcontrol_deg,
+        )
+        minus = self.run_aerobuildup_custom(
+            left_elevator=-dcontrol_deg,
+            right_elevator=-dcontrol_deg,
+        )
+
+        CXde = (plus["CX"] - minus["CX"]) / (2 * d_control_rad)
+        CZde = (plus["CZ"] - minus["CZ"]) / (2 * d_control_rad)
+        Cmde = (plus["Cm"] - minus["Cm"]) / (2 * d_control_rad)
+
+        # aileron derivatives
+        plus = self.run_aerobuildup_custom(
+            left_aileron=-dcontrol_deg,
+            right_aileron=dcontrol_deg,
+        )
+        minus = self.run_aerobuildup_custom(
+            left_aileron=dcontrol_deg,
+            right_aileron=-dcontrol_deg,
+        )
+
+        CYda = (plus["CY"] - minus["CY"]) / (2 * d_control_rad)
+        Clda = (plus["Cl"] - minus["Cl"]) / (2 * d_control_rad)
+        Cnda = (plus["Cn"] - minus["Cn"]) / (2 * d_control_rad)
+
+        # rudder derivatives
+        plus = self.run_aerobuildup_custom(
+            left_rudder=-dcontrol_deg,
+            right_rudder=-dcontrol_deg,
+        )
+        minus = self.run_aerobuildup_custom(
+            left_rudder=dcontrol_deg,
+            right_rudder=dcontrol_deg,
+        )
+
+        CYdr = (plus["CY"] - minus["CY"]) / (2 * d_control_rad)
+        Cldr = (plus["Cl"] - minus["Cl"]) / (2 * d_control_rad)
+        Cndr = (plus["Cn"] - minus["Cn"]) / (2 * d_control_rad)
+
+        return {
+            "CXu": CXu,
+            "CXa": CXa,
+            "CXq": CXq,
+            "CXde": CXde,
+
+            "CZu": CZu,
+            "CZa": CZa,
+            "CZq": CZq,
+            "CZde": CZde,
+
+            "Cm": Cm_base,
+            "Cmu": Cmu,
+            "Cma": Cma,
+            "Cmq": Cmq,
+            "Cmde": Cmde,
+
+            "CYb": CYb,
+            "CYp": CYp,
+            "CYr": CYr,
+            "CYda": CYda,
+            "CYdr": CYdr,
+
+            "Clb": Clb,
+            "Clp": Clp,
+            "Clr": Clr,
+            "Clda": Clda,
+            "Cldr": Cldr,
+
+            "Cnb": Cnb,
+            "Cnp": Cnp,
+            "Cnr": Cnr,
+            "Cnda": Cnda,
+            "Cndr": Cndr,
+        }
 
     def Coefficients(self):
-        CXu, CXa, CXq, CXde, CZu, CZa, CZq, CZde, Cm, Cmu, Cma, Cmq, Cmde = self.Pitching_Coefficients(other_coeffs=True)
-        CYb, CYp, CYr, CYda, CYdr, Clb, Clp, Clr, Clda, Cldr = self.Rolling_Coefficients(other_coeffs=True)
-        Cnb, Cnp, Cnr, Cnda, Cndr = self.Yawing_Coefficients(other_coeffs=True)
+        """
+        Returns coefficients in the exact order expected by:
 
-        return CXu, CXa, CXq, CXde, CZu, CZa, CZq, CZde, Cm, Cmu, Cma, Cmq, Cmde, CYb, CYp, CYr, CYda, CYdr, Clb, Clp, Clr, Clda, Cldr, Cnb, Cnp, Cnr, Cnda, Cndr
+        CXu, CXa, CXq, CXde,
+        CZu, CZa, CZq, CZde,
+        Cm, Cmu, Cma, Cmq, Cmde,
+        CYb, CYp, CYr, CYda, CYdr,
+        Clb, Clp, Clr, Clda, Cldr,
+        Cnb, Cnp, Cnr, Cnda, Cndr
+        """
 
+        d = self.compute_all_derivatives()
 
+        return (
+            d["CXu"],
+            d["CXa"],
+            d["CXq"],
+            d["CXde"],
 
-        # todo OEI
-        # todo controllability at forward cg
-        # todo dutch roll/spiral stability
+            d["CZu"],
+            d["CZa"],
+            d["CZq"],
+            d["CZde"],
 
+            d["Cm"],
+            d["Cmu"],
+            d["Cma"],
+            d["Cmq"],
+            d["Cmde"],
 
+            d["CYb"],
+            d["CYp"],
+            d["CYr"],
+            d["CYda"],
+            d["CYdr"],
 
+            d["Clb"],
+            d["Clp"],
+            d["Clr"],
+            d["Clda"],
+            d["Cldr"],
 
+            d["Cnb"],
+            d["Cnp"],
+            d["Cnr"],
+            d["Cnda"],
+            d["Cndr"],
+        )
+
+    def DynamicAnalysisInputs(self):
+        """
+        Returns the aircraft quantities typically required by
+        the dynamic-analysis classes.
+        """
+
+        op_point = self.make_op_point()
+
+        return {
+            "op_point": op_point,
+            "V0": self.velocity,
+            "b": self.span,
+            "c": self.c_ref_value(),
+            "S": self.s_ref_value(),
+            "rho": op_point.atmosphere.density(),
+            "alpha_deg": self.alpha,
+            "beta_deg": self.beta,
+        }
+
+    #test
+
+    # def body_axis_from_wind_axis(self, aero):
+    #     alpha = np.radians(self.alpha)
+    #
+    #     CL = aero["CL"]
+    #     CD = aero["CD"]
+    #
+    #     CX = -CD * np.cos(alpha) + CL * np.sin(alpha)
+    #     CZ = -CD * np.sin(alpha) - CL * np.cos(alpha)
+    #
+    #     # d/dalpha transform, approximate using returned CL/CD alpha derivatives
+    #     CXa = (
+    #             -aero["CDa"] * np.cos(alpha)
+    #             + CD * np.sin(alpha)
+    #             + aero["CLa"] * np.sin(alpha)
+    #             + CL * np.cos(alpha)
+    #     )
+    #
+    #     CZa = (
+    #             -aero["CDa"] * np.sin(alpha)
+    #             - CD * np.cos(alpha)
+    #             - aero["CLa"] * np.cos(alpha)
+    #             + CL * np.sin(alpha)
+    #     )
+    #
+    #     CXq = -aero["CDq"] * np.cos(alpha) + aero["CLq"] * np.sin(alpha)
+    #     CZq = -aero["CDq"] * np.sin(alpha) - aero["CLq"] * np.cos(alpha)
+    #
+    #     return CX, CZ, CXa, CZa, CXq, CZq
+    #
+    # def compute_all_derivatives_test(self):
+    #     aero = self.run_aerobuildup()
+    #
+    #     CX, CZ, CXa, CZa, CXq, CZq = self.body_axis_from_wind_axis(aero)
+    #
+    #     derivatives = {
+    #         "CXu": 0.0,  # AeroBuildup does not directly return velocity derivatives
+    #         "CXa": CXa,
+    #         "CXq": CXq,
+    #         "CXde": 0.0,  # use manual finite difference if needed
+    #
+    #         "CZu": 0.0,
+    #         "CZa": CZa,
+    #         "CZq": CZq,
+    #         "CZde": 0.0,
+    #
+    #         "Cm": aero["Cm"],
+    #         "Cmu": 0.0,
+    #         "Cma": aero["Cma"],
+    #         "Cmq": aero["Cmq"],
+    #         "Cmde": 0.0,
+    #
+    #         "CYb": aero["CYb"],
+    #         "CYp": aero["CYp"],
+    #         "CYr": aero["CYr"],
+    #         "CYda": 0.0,
+    #         "CYdr": 0.0,
+    #
+    #         "Clb": aero["Clb"],
+    #         "Clp": aero["Clp"],
+    #         "Clr": aero["Clr"],
+    #         "Clda": 0.0,
+    #         "Cldr": 0.0,
+    #
+    #         "Cnb": aero["Cnb"],
+    #         "Cnp": aero["Cnp"],
+    #         "Cnr": aero["Cnr"],
+    #         "Cnda": 0.0,
+    #         "Cndr": 0.0,
+    #     }
+    #
+    #     return derivatives
+    #
+    # def scalarize(self, v):
+    #     arr = np.asarray(v)
+    #
+    #     if arr.size == 1:
+    #         return float(arr.reshape(-1)[0])
+    #
+    #     return arr
+    #
+    # def print_derivatives_as_text(self):
+    #     derivatives = self.compute_all_derivatives()
+    #
+    #     print("\n--- AeroBuildup Stability Derivatives ---")
+    #     for k, v in derivatives.items():
+    #         v = self.scalarize(v)
+    #
+    #         if isinstance(v, float):
+    #             print(f"{k:>8s}: {v:+.6e}")
+    #         else:
+    #             print(f"{k:>8s}: {v}")
+
+    def Yaw_Check(self, T_eng=100, fraction_outer_engine=0.67):
+        op_point = self.make_op_point()
+        derivatives = self.compute_all_derivatives()
+
+        Cndr = derivatives["Cndr"]
+        Cnr = derivatives["Cnr"]
+
+        # Engine lateral arm should usually be fraction of half-span, not full span
+        y_eng = fraction_outer_engine * (self.span / 2)
+
+        M_engine = T_eng * y_eng
+
+        rho = op_point.atmosphere.density()
+        q_dyn = 0.5 * rho * op_point.velocity ** 2
+
+        # Use same S_ref as the aero model, not self.wing_area unless intentional
+        Cn_OEI = M_engine / (q_dyn * self.s_ref_value() * self.span)
+
+        deflection_OEI = -Cn_OEI / Cndr
+
+        deflection_max = np.radians(30)
+
+        r_max = (
+                (Cndr / Cnr)
+                * (deflection_max - deflection_OEI)
+                * 2 * self.velocity / self.span
+        )
+
+        print("Cndr:", Cndr)
+        print("Cnr:", Cnr)
+        print("y_eng:", y_eng, "m")
+        print("Cn_OEI:", Cn_OEI)
+        print("OEI rudder deflection:", np.degrees(deflection_OEI), "deg")
+        print("Remaining yaw rate:", np.degrees(r_max), "deg/s")
+
+        return {
+            "Cn_OEI": Cn_OEI,
+            "deflection_OEI_rad": deflection_OEI,
+            "deflection_OEI_deg": np.degrees(deflection_OEI),
+            "r_max_rad_s": r_max,
+            "r_max_deg_s": np.degrees(r_max),
+        }
 
 if __name__ == "__main__":
-    print("Starting simulation")
-    cs = Control_Surface_Sizing()
-    # cs.Airplane_Geo()
-    # cs.airplane.draw()
-    # cs.Control_Sizing()
-    # cs.Coefficients()
-    # cs.Spiral_Check()
-    cs.Cm_check()
+    aircraft = FlyingWingWithWingletsAeroBuildup()
+
+    aircraft.make_airplane().draw()
+
+    derivatives = aircraft.compute_all_derivatives()
+
+    for k, v in derivatives.items():
+        print(
+            k,
+            type(v),
+            np.asarray(v).shape,
+            v
+        )
+
+    print("\n--- Requested Stability and Control Derivatives ---")
+    for k, v in derivatives.items():
+        print(f"{k:>8s}: {v}")
+
+    print(aircraft.Yaw_Check())
