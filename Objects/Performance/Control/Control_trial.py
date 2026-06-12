@@ -38,7 +38,7 @@ class FlyingWingWithWingletsAeroBuildup:
         x_cg=2.64,
         z_cg=0,
 
-        control_layout="aileron_outboard",  # or "aileron_outboard"
+        control_layout="elevator_outboard",  # or "aileron_outboard"
     ):
         self.span = span
         self.root_chord = root_chord
