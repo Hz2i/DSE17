@@ -1,5 +1,6 @@
 import aerosandbox as asb
 import aerosandbox.numpy as np
+from aerosandbox import Atmosphere
 
 
 class FlyingWingWithWingletsAeroBuildup:
@@ -9,10 +10,12 @@ class FlyingWingWithWingletsAeroBuildup:
         root_chord=1.774,
         tip_chord=1.774,
         sweep_deg=15,
-        dihedral_deg=2,
+        dihedral_deg=1.5,
         twist_root_deg=0,
         twist_tip_deg=-4.675,
         wing_airfoil="mh91",
+
+        aspect_ratio = 20.0,
 
         winglet_height=2.0,
         winglet_root_chord=1.774,
@@ -25,6 +28,8 @@ class FlyingWingWithWingletsAeroBuildup:
         aileron_span_frac=0.20,      # aileron length, going inwards
         elevator_span_frac=0.10,     # elevator immediately inboard of aileron
         control_hinge=0.75,
+        rudder_span_frac=0.8,
+        rudder_hinge=0.75,
 
         velocity=32.70,
         altitude=60000 * 0.3048,
@@ -32,6 +37,8 @@ class FlyingWingWithWingletsAeroBuildup:
         beta=0,
         x_cg=2.64,
         z_cg=0,
+
+        control_layout="aileron_outboard",  # or "aileron_outboard"
     ):
         self.span = span
         self.root_chord = root_chord
@@ -41,6 +48,7 @@ class FlyingWingWithWingletsAeroBuildup:
         self.twist_root_deg = twist_root_deg
         self.twist_tip_deg = twist_tip_deg
         self.wing_airfoil = asb.Airfoil(wing_airfoil)
+        self.wing_area = span ** 2 / aspect_ratio
 
         self.winglet_height = winglet_height
         self.winglet_root_chord = winglet_root_chord
@@ -53,6 +61,8 @@ class FlyingWingWithWingletsAeroBuildup:
         self.aileron_span_frac = aileron_span_frac
         self.elevator_span_frac = elevator_span_frac
         self.control_hinge = control_hinge
+        self.rudder_span_frac = rudder_span_frac
+        self.rudder_hinge = rudder_hinge
 
         self.velocity = velocity
         self.altitude = altitude
@@ -61,6 +71,8 @@ class FlyingWingWithWingletsAeroBuildup:
 
         self.x_cg = x_cg
         self.z_cg = z_cg
+
+        self.control_layout = control_layout
 
     def chord_at_y(self, y_abs):
         half_span = self.span / 2
@@ -79,31 +91,38 @@ class FlyingWingWithWingletsAeroBuildup:
         return [x, y, z]
 
     def make_main_wing(
-        self,
-        left_aileron=0,
-        right_aileron=0,
-        left_elevator=0,
-        right_elevator=0,
+            self,
+            left_aileron=0,
+            right_aileron=0,
+            left_elevator=0,
+            right_elevator=0,
     ):
         half_span = self.span / 2
-
         y_tip = half_span
 
-        # Elevator nearest tip
-        y_elevator_outer = half_span * (
-                1 - self.aileron_tip_gap_frac
-        )
+        y_control_outer = half_span * (1 - self.aileron_tip_gap_frac)
 
-        y_elevator_inner = (
-                y_elevator_outer
-                - half_span * self.elevator_span_frac
-        )
+        if self.control_layout == "elevator_outboard":
+            # tip -> elevator -> aileron -> center
+            y_elevator_outer = y_control_outer
+            y_elevator_inner = y_elevator_outer - half_span * self.elevator_span_frac
 
-        # Aileron immediately inboard
-        y_aileron_inner = (
-                y_elevator_inner
-                - half_span * self.aileron_span_frac
-        )
+            y_aileron_outer = y_elevator_inner
+            y_aileron_inner = y_aileron_outer - half_span * self.aileron_span_frac
+
+        elif self.control_layout == "aileron_outboard":
+            # tip -> aileron -> elevator -> center
+            y_aileron_outer = y_control_outer
+            y_aileron_inner = y_aileron_outer - half_span * self.aileron_span_frac
+
+            y_elevator_outer = y_aileron_inner
+            y_elevator_inner = y_elevator_outer - half_span * self.elevator_span_frac
+
+        else:
+            raise ValueError(
+                "control_layout must be either "
+                "'elevator_outboard' or 'aileron_outboard'."
+            )
 
         def xsec(y, controls=None):
             if controls is None:
@@ -147,33 +166,36 @@ class FlyingWingWithWingletsAeroBuildup:
             hinge_point=self.control_hinge,
         )
 
+        if self.control_layout == "elevator_outboard":
+            xsecs = [
+                xsec(-y_tip),
+                xsec(-y_elevator_outer, [left_elevator_surface]),
+                xsec(-y_elevator_inner, [left_elevator_surface, left_aileron_surface]),
+                xsec(-y_aileron_inner, [left_aileron_surface]),
+                xsec(0),
+                xsec(y_aileron_inner, [right_aileron_surface]),
+                xsec(y_elevator_inner, [right_aileron_surface, right_elevator_surface]),
+                xsec(y_elevator_outer, [right_elevator_surface]),
+                xsec(y_tip),
+            ]
+
+        else:  # "aileron_outboard"
+            xsecs = [
+                xsec(-y_tip),
+                xsec(-y_aileron_outer, [left_aileron_surface]),
+                xsec(-y_aileron_inner, [left_aileron_surface, left_elevator_surface]),
+                xsec(-y_elevator_inner, [left_elevator_surface]),
+                xsec(0),
+                xsec(y_elevator_inner, [right_elevator_surface]),
+                xsec(y_aileron_inner, [right_elevator_surface, right_aileron_surface]),
+                xsec(y_aileron_outer, [right_aileron_surface]),
+                xsec(y_tip),
+            ]
+
         return asb.Wing(
             name="Main Flying Wing",
             symmetric=False,
-            xsecs=[
-                # Tip gap
-                xsec(-y_tip),
-
-                # Elevator
-                xsec(-y_elevator_outer, [left_elevator_surface]),
-                xsec(-y_elevator_inner, [left_elevator_surface]),
-
-                # Aileron
-                xsec(-y_aileron_inner, [left_aileron_surface]),
-
-                # Center
-                xsec(0),
-
-                # Aileron
-                xsec(y_aileron_inner, [right_aileron_surface]),
-
-                # Elevator
-                xsec(y_elevator_inner, [right_elevator_surface]),
-                xsec(y_elevator_outer, [right_elevator_surface]),
-
-                # Tip gap
-                xsec(y_tip),
-            ],
+            xsecs=xsecs,
         )
 
     def make_winglet(self, side="right", rudder_deflection=0):
@@ -190,8 +212,14 @@ class FlyingWingWithWingletsAeroBuildup:
             name=f"{side}_rudder",
             symmetric=False,
             deflection=rudder_deflection,
-            hinge_point=self.control_hinge,
+            hinge_point=self.rudder_hinge,
         )
+
+        rudder_frac = self.rudder_span_frac
+
+        x_rudder_end = x_root + rudder_frac * (x_tip - x_root)
+        y_rudder_end = y_root + rudder_frac * (y_tip - y_root)
+        z_rudder_end = z_root + rudder_frac * (z_tip - z_root)
 
         return asb.Wing(
             name=f"{side.capitalize()} Winglet",
@@ -205,11 +233,19 @@ class FlyingWingWithWingletsAeroBuildup:
                     control_surfaces=[rudder],
                 ),
                 asb.WingXSec(
+                    xyz_le=[x_rudder_end, y_rudder_end, z_rudder_end],
+                    chord=self.winglet_root_chord + rudder_frac * (
+                            self.winglet_tip_chord - self.winglet_root_chord
+                    ),
+                    dihedral=90,
+                    airfoil=self.winglet_airfoil,
+                    control_surfaces=[rudder],
+                ),
+                asb.WingXSec(
                     xyz_le=[x_tip, y_tip, z_tip],
                     chord=self.winglet_tip_chord,
                     dihedral=90,
                     airfoil=self.winglet_airfoil,
-                    control_surfaces=[rudder],
                 ),
             ],
         )
@@ -590,100 +626,145 @@ class FlyingWingWithWingletsAeroBuildup:
 
     #test
 
-    def body_axis_from_wind_axis(self, aero):
-        alpha = np.radians(self.alpha)
+    # def body_axis_from_wind_axis(self, aero):
+    #     alpha = np.radians(self.alpha)
+    #
+    #     CL = aero["CL"]
+    #     CD = aero["CD"]
+    #
+    #     CX = -CD * np.cos(alpha) + CL * np.sin(alpha)
+    #     CZ = -CD * np.sin(alpha) - CL * np.cos(alpha)
+    #
+    #     # d/dalpha transform, approximate using returned CL/CD alpha derivatives
+    #     CXa = (
+    #             -aero["CDa"] * np.cos(alpha)
+    #             + CD * np.sin(alpha)
+    #             + aero["CLa"] * np.sin(alpha)
+    #             + CL * np.cos(alpha)
+    #     )
+    #
+    #     CZa = (
+    #             -aero["CDa"] * np.sin(alpha)
+    #             - CD * np.cos(alpha)
+    #             - aero["CLa"] * np.cos(alpha)
+    #             + CL * np.sin(alpha)
+    #     )
+    #
+    #     CXq = -aero["CDq"] * np.cos(alpha) + aero["CLq"] * np.sin(alpha)
+    #     CZq = -aero["CDq"] * np.sin(alpha) - aero["CLq"] * np.cos(alpha)
+    #
+    #     return CX, CZ, CXa, CZa, CXq, CZq
+    #
+    # def compute_all_derivatives_test(self):
+    #     aero = self.run_aerobuildup()
+    #
+    #     CX, CZ, CXa, CZa, CXq, CZq = self.body_axis_from_wind_axis(aero)
+    #
+    #     derivatives = {
+    #         "CXu": 0.0,  # AeroBuildup does not directly return velocity derivatives
+    #         "CXa": CXa,
+    #         "CXq": CXq,
+    #         "CXde": 0.0,  # use manual finite difference if needed
+    #
+    #         "CZu": 0.0,
+    #         "CZa": CZa,
+    #         "CZq": CZq,
+    #         "CZde": 0.0,
+    #
+    #         "Cm": aero["Cm"],
+    #         "Cmu": 0.0,
+    #         "Cma": aero["Cma"],
+    #         "Cmq": aero["Cmq"],
+    #         "Cmde": 0.0,
+    #
+    #         "CYb": aero["CYb"],
+    #         "CYp": aero["CYp"],
+    #         "CYr": aero["CYr"],
+    #         "CYda": 0.0,
+    #         "CYdr": 0.0,
+    #
+    #         "Clb": aero["Clb"],
+    #         "Clp": aero["Clp"],
+    #         "Clr": aero["Clr"],
+    #         "Clda": 0.0,
+    #         "Cldr": 0.0,
+    #
+    #         "Cnb": aero["Cnb"],
+    #         "Cnp": aero["Cnp"],
+    #         "Cnr": aero["Cnr"],
+    #         "Cnda": 0.0,
+    #         "Cndr": 0.0,
+    #     }
+    #
+    #     return derivatives
+    #
+    # def scalarize(self, v):
+    #     arr = np.asarray(v)
+    #
+    #     if arr.size == 1:
+    #         return float(arr.reshape(-1)[0])
+    #
+    #     return arr
+    #
+    # def print_derivatives_as_text(self):
+    #     derivatives = self.compute_all_derivatives()
+    #
+    #     print("\n--- AeroBuildup Stability Derivatives ---")
+    #     for k, v in derivatives.items():
+    #         v = self.scalarize(v)
+    #
+    #         if isinstance(v, float):
+    #             print(f"{k:>8s}: {v:+.6e}")
+    #         else:
+    #             print(f"{k:>8s}: {v}")
 
-        CL = aero["CL"]
-        CD = aero["CD"]
-
-        CX = -CD * np.cos(alpha) + CL * np.sin(alpha)
-        CZ = -CD * np.sin(alpha) - CL * np.cos(alpha)
-
-        # d/dalpha transform, approximate using returned CL/CD alpha derivatives
-        CXa = (
-                -aero["CDa"] * np.cos(alpha)
-                + CD * np.sin(alpha)
-                + aero["CLa"] * np.sin(alpha)
-                + CL * np.cos(alpha)
-        )
-
-        CZa = (
-                -aero["CDa"] * np.sin(alpha)
-                - CD * np.cos(alpha)
-                - aero["CLa"] * np.cos(alpha)
-                + CL * np.sin(alpha)
-        )
-
-        CXq = -aero["CDq"] * np.cos(alpha) + aero["CLq"] * np.sin(alpha)
-        CZq = -aero["CDq"] * np.sin(alpha) - aero["CLq"] * np.cos(alpha)
-
-        return CX, CZ, CXa, CZa, CXq, CZq
-
-    def compute_all_derivatives_test(self):
-        aero = self.run_aerobuildup()
-
-        CX, CZ, CXa, CZa, CXq, CZq = self.body_axis_from_wind_axis(aero)
-
-        derivatives = {
-            "CXu": 0.0,  # AeroBuildup does not directly return velocity derivatives
-            "CXa": CXa,
-            "CXq": CXq,
-            "CXde": 0.0,  # use manual finite difference if needed
-
-            "CZu": 0.0,
-            "CZa": CZa,
-            "CZq": CZq,
-            "CZde": 0.0,
-
-            "Cm": aero["Cm"],
-            "Cmu": 0.0,
-            "Cma": aero["Cma"],
-            "Cmq": aero["Cmq"],
-            "Cmde": 0.0,
-
-            "CYb": aero["CYb"],
-            "CYp": aero["CYp"],
-            "CYr": aero["CYr"],
-            "CYda": 0.0,
-            "CYdr": 0.0,
-
-            "Clb": aero["Clb"],
-            "Clp": aero["Clp"],
-            "Clr": aero["Clr"],
-            "Clda": 0.0,
-            "Cldr": 0.0,
-
-            "Cnb": aero["Cnb"],
-            "Cnp": aero["Cnp"],
-            "Cnr": aero["Cnr"],
-            "Cnda": 0.0,
-            "Cndr": 0.0,
-        }
-
-        return derivatives
-
-    def scalarize(self, v):
-        arr = np.asarray(v)
-
-        if arr.size == 1:
-            return float(arr.reshape(-1)[0])
-
-        return arr
-
-    def print_derivatives_as_text(self):
+    def Yaw_Check(self, T_eng=100, fraction_outer_engine=0.67):
+        op_point = self.make_op_point()
         derivatives = self.compute_all_derivatives()
 
-        print("\n--- AeroBuildup Stability Derivatives ---")
-        for k, v in derivatives.items():
-            v = self.scalarize(v)
+        Cndr = derivatives["Cndr"]
+        Cnr = derivatives["Cnr"]
 
-            if isinstance(v, float):
-                print(f"{k:>8s}: {v:+.6e}")
-            else:
-                print(f"{k:>8s}: {v}")
+        # Engine lateral arm should usually be fraction of half-span, not full span
+        y_eng = fraction_outer_engine * (self.span / 2)
+
+        M_engine = T_eng * y_eng
+
+        rho = op_point.atmosphere.density()
+        q_dyn = 0.5 * rho * op_point.velocity ** 2
+
+        # Use same S_ref as the aero model, not self.wing_area unless intentional
+        Cn_OEI = M_engine / (q_dyn * self.s_ref_value() * self.span)
+
+        deflection_OEI = -Cn_OEI / Cndr
+
+        deflection_max = np.radians(30)
+
+        r_max = (
+                (Cndr / Cnr)
+                * (deflection_max - deflection_OEI)
+                * 2 * self.velocity / self.span
+        )
+
+        print("Cndr:", Cndr)
+        print("Cnr:", Cnr)
+        print("y_eng:", y_eng, "m")
+        print("Cn_OEI:", Cn_OEI)
+        print("OEI rudder deflection:", np.degrees(deflection_OEI), "deg")
+        print("Remaining yaw rate:", np.degrees(r_max), "deg/s")
+
+        return {
+            "Cn_OEI": Cn_OEI,
+            "deflection_OEI_rad": deflection_OEI,
+            "deflection_OEI_deg": np.degrees(deflection_OEI),
+            "r_max_rad_s": r_max,
+            "r_max_deg_s": np.degrees(r_max),
+        }
 
 if __name__ == "__main__":
     aircraft = FlyingWingWithWingletsAeroBuildup()
+
+    aircraft.make_airplane().draw()
 
     derivatives = aircraft.compute_all_derivatives()
 
@@ -698,3 +779,5 @@ if __name__ == "__main__":
     print("\n--- Requested Stability and Control Derivatives ---")
     for k, v in derivatives.items():
         print(f"{k:>8s}: {v}")
+
+    print(aircraft.Yaw_Check())

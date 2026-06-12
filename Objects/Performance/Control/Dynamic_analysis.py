@@ -1,12 +1,12 @@
 from math import *
-from urllib import error
 
 import numpy as np
-import control.matlab as control_matlab
 import control
 import matplotlib
-from control import exception
-from pyvista.plotting import scalar_bars
+import aerosandbox as asb
+from aerosandbox import Atmosphere
+
+from Old.objects_prelim.Aircraft import aircraft
 
 matplotlib.use('TkAgg')   # or 'Qt5Agg' if you have PyQt5 installed
 import matplotlib.pyplot as plt
@@ -85,15 +85,13 @@ class Coeff_Values(Mass_moments, FlyingWingWithWingletsAeroBuildup):
         # Stability derivatives
         self.CX0 = self.W * sin(self.th0) / (0.5 * self.rho * self.V0 ** 2 * self.S) # CHECK
         self.CXu = self.scalar(CXu) # todo check sign
-        self.CXa = 0.2 #self.scalar(CXa)
+        self.CXa = self.scalar(CXa)
         self.CXadot = 0.0
         self.CXq = self.scalar(CXq)
         self.CXde = self.scalar(CXde)
         self.CXdt = 0.0
 
-        self.CZ0 = - self.W * cos(self.th0) / (
-                0.5 * self.rho * self.V0 ** 2 * self.S
-        )
+        self.CZ0 = - self.W * cos(self.th0) / (0.5 * self.rho * self.V0 ** 2 * self.S)
         self.CZu = self.scalar(CZu) # todo check sign
         self.CZa = self.scalar(CZa)
         self.CZadot = 0.0
@@ -244,6 +242,7 @@ class Plotting(Dynamic_Analysis):
         x0 = [0.0, np.radians(alpha_perturb_deg), 0.0, 0.0]
         t = np.arange(0, t_end, dt)
         U = np.zeros((1, len(t)))
+        print(U)
         t, y = control.forced_response(self.sys_s, T=t, U=U, X0=x0)
 
         fig, axes = plt.subplots(2, 1, figsize=(10, 5), sharex=True)
@@ -322,6 +321,54 @@ class Plotting(Dynamic_Analysis):
         plt.tight_layout()
         plt.show()
 
+    def plot_aileron_response(self, aileron_deflect_deg=20.0, t_end=20.0, dt=0.001):
+        x0 = [0.0, np.radians(45.0), 0.0, 0.0]
+        t = np.arange(0, t_end, dt)
+        U = np.zeros((2, int(t_end / dt)))
+        for i in range(int(t_end / dt)):
+                U[0, i] = np.radians(aileron_deflect_deg)
+        print(U)
+        t, y = control.forced_response(self.sys_a, T=t, U=U, X0=x0)
+
+        fig, axes = plt.subplots(2, 1, figsize=(10, 5), sharex=True)
+        axes[0].plot(t, np.degrees(y[1]))
+        axes[0].set_ylabel('thi [deg]')
+        axes[1].plot(t, np.degrees(y[2]))
+        axes[1].set_ylabel('p [deg/s]')
+        for ax in axes:
+            ax.grid(True, alpha=0.3)
+            ax.axhline(0, color='k', lw=0.6)
+        axes[-1].set_xlabel('Time [s]')
+        fig.suptitle(f'Aileron response — Δa = {aileron_deflect_deg}°')
+        plt.tight_layout()
+        plt.show()
+
+    def plot_elevator_response(self, elevator_deflect_deg=-10.0, t_end=5.0, dt=0.001):
+        x0 = [0.0, 0.0, 0.0, 0.0]
+        t = np.arange(0, t_end, dt)
+        U = np.zeros((1, int(t_end / dt)))
+        for i in range(int(t_end / dt)):
+                U[0, i] = np.radians(elevator_deflect_deg)
+        print(U)
+        t, y = control.forced_response(self.sys_s, T=t, U=U, X0=x0)
+
+        fig, axes = plt.subplots(4, 1, figsize=(10, 5), sharex=True)
+        axes[0].plot(t, np.degrees(y[2]))
+        axes[0].set_ylabel('theta [deg]')
+        axes[1].plot(t, np.degrees(y[3]))
+        axes[1].set_ylabel('q [deg/s]')
+        axes[2].plot(t, np.degrees(y[1]))
+        axes[2].set_ylabel('alpha [deg/s]')
+        axes[3].plot(t, np.degrees(y[0]))
+        axes[3].set_ylabel('u [deg/s]')
+        for ax in axes:
+            ax.grid(True, alpha=0.3)
+            ax.axhline(0, color='k', lw=0.6)
+        axes[-1].set_xlabel('Time [s]')
+        fig.suptitle(f'Elevator response — Δe = {elevator_deflect_deg}°')
+        plt.tight_layout()
+        plt.show()
+
 if __name__ == "__main__":
     p = Coeff_Values()
     plot = Plotting(p)
@@ -343,3 +390,5 @@ if __name__ == "__main__":
     plot.plot_short_period(alpha_perturb_deg=2.0, t_end=10)
     plot.plot_dutch_roll(beta_perturb_deg=5.0, t_end=30)
     plot.plot_spiral(phi_perturb_deg=5.0)
+    plot.plot_aileron_response()
+    plot.plot_elevator_response()
