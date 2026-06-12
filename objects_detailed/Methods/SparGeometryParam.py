@@ -179,7 +179,7 @@ class AirfoilGeometry:
         plt.show()
 
 class SparGeometryOptimization:
-    def __init__(self, I_xx_spar_req, I_yy_spar_req, I_xx_sleeve_req, I_yy_sleeve_req, n_sections, airframe = Airframe(), airfoil_geometry = AirfoilGeometry(), min_eccentricity_factor=1.1, optimize_variables = optimize_variables, determined_geometry = determined_geometry, Plot=False, Optimize=False):
+    def __init__(self, I_xx_spar_req, I_yy_spar_req, I_xx_sleeve_req, I_yy_sleeve_req, n_sections, airframe = Airframe(), airfoil_geometry = AirfoilGeometry(), min_eccentricity_factor=1.1, optimize_variables = optimize_variables, determined_geometry = determined_geometry, Plot=False, Optimize=True):
         self.I_xx_spar_req = I_xx_spar_req
         self.I_yy_spar_req = I_yy_spar_req
         self.I_xx_sleeve_req = I_xx_sleeve_req

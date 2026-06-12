@@ -234,52 +234,48 @@ def plot_takeoff_dashboard(result, mass_kg):
     plt.show()
 
 
-if __name__ == "__main__":
-    propulsion = PropulsionSystem(
-        v_inf_cruise=v_inf_cruise,
-        required_thrust_cruise=required_thrust_cruise,
-        m_TO=m_TO,
-        S=S,
-        CL_max=CL_max,
-    )
+# if __name__ == "__main__":
+#     propulsion = PropulsionSystem(
+#         v_inf_cruise=v_inf_cruise,
+#         required_thrust_cruise=required_thrust_cruise,
+#         m_TO=m_TO,
+#         S=S,
+#         CL_max=CL_max,
+#     )
 
-    cruise_power_total, _ = propulsion.run_full_analysis()
-    propulsion.D = D
+#     cruise_power_total, _ = propulsion.run_full_analysis()
+#     propulsion.D = D
 
-    cl_interp_to, cd_interp_to = build_takeoff_airfoil_interpolants(propulsion)
-    takeoff_rpm = solve_power_limited_takeoff_rpm(propulsion, D, cl_interp_to, cd_interp_to)
-    result = simulate_takeoff_roll(propulsion, D, takeoff_rpm, cl_interp_to, cd_interp_to)
+#     cl_interp_to, cd_interp_to = build_takeoff_airfoil_interpolants(propulsion)
+#     takeoff_rpm = solve_power_limited_takeoff_rpm(propulsion, D, cl_interp_to, cd_interp_to)
+#     result = simulate_takeoff_roll(propulsion, D, takeoff_rpm, cl_interp_to, cd_interp_to)
 
-    print("================ Take-off Computation ================")
-    print(f"Fixed Propeller Diameter      : {D:.4f} m")
-    print(f"Power-Limited Take-off RPM    : {takeoff_rpm:.0f} RPM")
-    print(f"Lift-off Speed                : {result['v_to']:.2f} m/s")
-    print(f"Ground Roll Distance          : {result['distance']:.1f} m")
-    print(f"Take-off Time                 : {result['time']:.2f} s")
-    print("------------------------------------------------------")
-    print(f"thrust per propeller at liftoff : {result['thrust_liftoff_per_prop']:.2f} N")
-    print(f"Torque per propeller at liftoff : {result['torque_liftoff_per_prop']:.2f} Nm")
-    print(f"Efficiency Propeller at liftoff     : {result['eta_liftoff']:.3f}")
-    print(f"Advance ratio at liftoff              : {result['v_to'] / (takeoff_rpm * D / 60.0):.3f}")
-    print(f"Power Available at Propeller at liftoff : {result['power_mech_liftoff_per_prop'] * result['eta_liftoff']:.2f} W")
-    print(f"Liftoff Shaft Power per Prop  : {result['power_mech_liftoff_per_prop']:.2f} W")
-    print(f"Liftoff Motor Input per Prop  : {result['power_motor_input_per_prop']:.2f} W")
-    print(f"Liftoff Battery Power per Prop: {result['power_battery_per_prop']:.2f} W")
-    print(f"Liftoff Total Battery Power   : {result['power_battery_total'] / 1000.0:.3f} kW")
-    print(f"Liftoff Tip Mach              : {result['tip_mach_liftoff']:.3f}")
-    if result["failed"]:
-        print(f"WARNING: Acceleration stalled at {result['failure_speed']:.2f} m/s")
-    print("======================================================")
-    print(f"Reference Cruise Total Elec Power: {cruise_power_total / 1000.0:.3f} kW")
+# #     print("================ Take-off Computation ================")
+# #     print(f"Fixed Propeller Diameter      : {D:.4f} m")
+# #     print(f"Power-Limited Take-off RPM    : {takeoff_rpm:.0f} RPM")
+# #     print(f"Lift-off Speed                : {result['v_to']:.2f} m/s")
+# #     print(f"Ground Roll Distance          : {result['distance']:.1f} m")
+# #     print(f"Take-off Time                 : {result['time']:.2f} s")
+# #     print("------------------------------------------------------")
+# #     print(f"thrust per propeller at liftoff : {result['thrust_liftoff_per_prop']:.2f} N")
+# #     print(f"Liftoff Shaft Power per Prop  : {result['power_mech_liftoff_per_prop']:.2f} W")
+# #     print(f"Liftoff Motor Input per Prop  : {result['power_motor_input_per_prop']:.2f} W")
+# #     print(f"Liftoff Battery Power per Prop: {result['power_battery_per_prop']:.2f} W")
+# #     print(f"Liftoff Total Battery Power   : {result['power_battery_total'] / 1000.0:.3f} kW")
+# #     print(f"Liftoff Tip Mach              : {result['tip_mach_liftoff']:.3f}")
+# #     if result["failed"]:
+# #         print(f"WARNING: Acceleration stalled at {result['failure_speed']:.2f} m/s")
+# #     print("======================================================")
+# #     print(f"Reference Cruise Total Elec Power: {cruise_power_total / 1000.0:.3f} kW")
 
-    plot_takeoff_dashboard(result, m_TO)
+# #     plot_takeoff_dashboard(result, m_TO)
 
-print(f"\nBattery power at liftoff: {result['power_battery_total']/1000.0:.3f} kW")
+# # print(f"\nBattery power at liftoff: {result['power_battery_total']/1000.0:.3f} kW")
 
 
-# =============================================================
-# CLimb Performance Analysis
-# =============================================================
+# # =============================================================
+# # CLimb Performance Analysis
+# # =============================================================
 
 def evaluate_climb_state(propulsion, diameter, v_climb, altitude_m, p_battery_per_motor):
     """
@@ -290,7 +286,7 @@ def evaluate_climb_state(propulsion, diameter, v_climb, altitude_m, p_battery_pe
     rho_climb = atmo.density()
     a_climb = atmo.speed_of_sound()
     
-    current_reynolds = np.interp(altitude_m, [0.0, 18288.0], [1_000_000, 100_000])
+    current_reynolds = np.interp(altitude_m, [0.0, 18500.0], [1_000_000, 100_000])
     current_mach = v_climb / a_climb
 
     alphas = np.linspace(-30.0, 85.0, 300)
@@ -356,35 +352,50 @@ def evaluate_climb_state(propulsion, diameter, v_climb, altitude_m, p_battery_pe
         "tip_mach": tip_mach          
     }
 
-# --- Setup Inputs ---
-# 80 percent of take-off
-TO_BATTERY_PER_MOTOR = result['power_battery_total'] / 4
-CLIMB_BATTERY_PER_MOTOR = TO_BATTERY_PER_MOTOR * 0.80 
+# # --- Setup Inputs ---
+# # 80 percent of take-off
+# propulsion = PropulsionSystem(
+#         v_inf_cruise=v_inf_cruise,
+#         required_thrust_cruise=required_thrust_cruise,
+#         m_TO=m_TO,
+#         S=S,
+#         CL_max=CL_max,
+#     )
 
-# IAN change the speed!!!!
-v_climb_target = 30.0  # m/s
+# cruise_power_total, _ = propulsion.run_full_analysis()
+# propulsion.D = D
 
-# Altitudes from 100 to 60,000 ft (converted to meters)
-altitudes_ft = np.linspace(100, 60000, 20)
-altitudes_m = altitudes_ft * 0.3048
+# cl_interp_to, cd_interp_to = build_takeoff_airfoil_interpolants(propulsion)
+# takeoff_rpm = solve_power_limited_takeoff_rpm(propulsion, D, cl_interp_to, cd_interp_to)
+# result = simulate_takeoff_roll(propulsion, D, takeoff_rpm, cl_interp_to, cd_interp_to)
 
-# --- Compute Sweep ---
-climb_results = []
+# TO_BATTERY_PER_MOTOR = result['power_battery_total'] / 4
+# CLIMB_BATTERY_PER_MOTOR = TO_BATTERY_PER_MOTOR * 0.80 
 
-print(f"--- Climbing at {v_climb_target} m/s with {CLIMB_BATTERY_PER_MOTOR:.2f} W battery power per motor ---")
-print(f"{'Alt (ft)':>8} | {'Alt (m)':>7} | {'RPM':>5} | {'Thrust (N)':>10} | {'Power (W)':>10} | {'Prop Eta':>8} | {'Reynolds':>8} | {'Tip Mach':>8}")
-print("-" * 84)
+# # IAN change the speed!!!!
+# v_climb_target = 30.0  # m/s
 
-for alt_m, alt_ft in zip(altitudes_m, altitudes_ft):
-    res = evaluate_climb_state(
-        propulsion=propulsion,
-        diameter=D,
-        v_climb=v_climb_target,
-        altitude_m=alt_m,
-        p_battery_per_motor=CLIMB_BATTERY_PER_MOTOR
-    )
+# # Altitudes from 100 to 60,000 ft (converted to meters)
+# altitudes_ft = np.linspace(100, 60000, 20)
+# altitudes_m = altitudes_ft * 0.3048
+
+# # --- Compute Sweep ---
+# climb_results = []
+
+# print(f"--- Climbing at {v_climb_target} m/s with {CLIMB_BATTERY_PER_MOTOR:.2f} W battery power per motor ---")
+# print(f"{'Alt (ft)':>8} | {'Alt (m)':>7} | {'RPM':>5} | {'Thrust (N)':>10} | {'Power (W)':>10} | {'Prop Eta':>8} | {'Reynolds':>8} | {'Tip Mach':>8}")
+# print("-" * 84)
+
+# for alt_m, alt_ft in zip(altitudes_m, altitudes_ft):
+#     res = evaluate_climb_state(
+#         propulsion=propulsion,
+#         diameter=D,
+#         v_climb=v_climb_target,
+#         altitude_m=alt_m,
+#         p_battery_per_motor=CLIMB_BATTERY_PER_MOTOR
+#     )
     
-    # Updated 
-    print(f"{alt_ft:8.0f} | {alt_m:7.0f} | {res['rpm']:5.0f} | {res['thrust_total']:10.2f} | {res['power_available']:10.2f} | {res['propeller_efficiency']:8.3f} | {res['reynolds']:8.0f} | {res['tip_mach']:8.3f}")
+#     # Updated 
+#     print(f"{alt_ft:8.0f} | {alt_m:7.0f} | {res['rpm']:5.0f} | {res['thrust_total']:10.2f} | {res['power_available']:10.2f} | {res['propeller_efficiency']:8.3f} | {res['reynolds']:8.0f} | {res['tip_mach']:8.3f}")
     
-    climb_results.append(res)
+#     climb_results.append(res)

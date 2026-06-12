@@ -21,7 +21,7 @@ from objects_detailed.Methods.Heat_Management import heat_conduction
 # Post-implementation note: I was slightly wrong
 
 class Aircraft:
-    def __init__(self, MTOW_guess=200.0, TAS=25.0, h=18500.0, gamma=0.0, lat=30.0, day_margin=0, DoD=0.8, airframe=airframe(), m_skid=8.0, comp=ComputerSystem(), comms=CommunicationSystem(), flight_con=FlightConditionsSystem(), payload=PayloadSystem(), ctrls=ControlSystem(), use_batt=True, energy_delta=0.0):
+    def __init__(self, MTOW_guess=200.0, TAS=25.0, h=18500.0, gamma=0.0, lat=30.0, day_margin=0, DoD=0.8, airframe=airframe(), m_skid=9.15, comp=ComputerSystem(), comms=CommunicationSystem(), flight_con=FlightConditionsSystem(), payload=PayloadSystem(), ctrls=ControlSystem(), use_batt=True, energy_delta=0.0):
         self.MTOW = MTOW_guess
         self.const = Constants()
 
@@ -148,6 +148,7 @@ class Aircraft:
                 print("Wing surface:", self.airframe.S)
                 print("Surface difference:", self.solar.area - self.airframe.S)
                 print("_________________________")
+
 
         print("Optimal CL:", self.CL_opt)
         print("CL:", CL_current)

@@ -20,7 +20,7 @@ struct_frac_prev = 0.35
 gen_subsys_frac_prev = 0.05
 
 
-MTOW_initial = 270.0
+MTOW_initial = 310.0
 TAS_initial = 25.0
 gamma = 0.0
 h_cruise = 18500.0
