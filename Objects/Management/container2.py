@@ -76,7 +76,7 @@ def assess_packing_feasibility(packets, visualize=False):
         constants.container_mass_capacity
     ))
 
-    FILL_RATIO = 0.71
+    FILL_RATIO = 0.80
     scale = FILL_RATIO ** (1/3)
     CONTAINER_LENGTH = 5.867 
 
@@ -156,19 +156,19 @@ def assess_packing_feasibility(packets, visualize=False):
 def main():
     
     wing_list = [
-        {'name': 'Wing sec 1', 'width': 4.80, 'height': 1.67, 'depth': 0.25},
-        {'name': 'Wing sec 2', 'width': 4.80, 'height': 1.67, 'depth': 0.25},
-        {'name': 'Wing sec 3', 'width': 4.80, 'height': 1.67, 'depth': 0.25},
-        {'name': 'Wing sec 4', 'width': 4.80, 'height': 1.67, 'depth': 0.25},
-        {'name': 'Wing sec 5', 'width': 4.80, 'height': 1.67, 'depth': 0.25},
-        {'name': 'Wing sec 6', 'width': 4.80, 'height': 1.67, 'depth': 0.25},
-        {'name': 'Wing sec 7', 'width': 4.80, 'height': 1.67, 'depth': 0.25},
-        {'name': 'Wing sec 8', 'width': 2.40, 'height': 1.67, 'depth': 0.25},
-        {'name': 'Wing sec 9', 'width': 2.40, 'height': 1.67, 'depth': 0.25},
-        {'name': 'Rudder 1',    'width': 1.97, 'height': 1.67, 'depth': 0.25},
-        {'name': 'Rudder 2',    'width': 1.97, 'height': 1.67, 'depth': 0.25},
-        {'name': 'proppelor 1',    'width': 1.8,  'height': 0.5,  'depth': 0.25},
-        {'name': 'proppelor 2',    'width': 1.8,  'height': 0.5,  'depth': 0.25},
+        {'name': 'Wing sec 1', 'width': 4.38, 'height': 1.774, 'depth': 0.267},
+        {'name': 'Wing sec 2', 'width': 4.38, 'height': 1.774, 'depth': 0.267},
+        {'name': 'Wing sec 3', 'width': 4.38, 'height': 1.774, 'depth': 0.267},
+        {'name': 'Wing sec 4', 'width': 4.38, 'height': 1.774, 'depth': 0.267},
+        {'name': 'Wing sec 5', 'width': 4.38, 'height': 1.774, 'depth': 0.267},
+        {'name': 'Wing sec 6', 'width': 4.38, 'height': 1.774, 'depth': 0.267},
+        {'name': 'Wing sec 7', 'width': 4.38, 'height': 1.774, 'depth': 0.267},
+        {'name': 'Wing sec 8', 'width': 4.72, 'height': 1.774, 'depth': 0.267},
+        {'name': 'Wing sec 9', 'width': 4.72, 'height': 1.774, 'depth': 0.267},
+        {'name': 'Rudder 1',    'width': 1.97, 'height': 1.67, 'depth': 0.267},
+        {'name': 'Rudder 2',    'width': 1.97, 'height': 1.67, 'depth': 0.267},
+        {'name': 'proppelor 1',    'width': 1.8,  'height': 0.5,  'depth': 0.267},
+        {'name': 'proppelor 2',    'width': 1.8,  'height': 0.5,  'depth': 0.267},
         {'name': 'Battery box 1',      'width': 0.251,  'height': 0.251,  'depth': 0.251},
         {'name': 'Battery box 2',      'width': 0.251,  'height': 0.251,  'depth': 0.251},
         {'name': 'Battery box 3',      'width': 0.251,  'height': 0.251,  'depth': 0.251},
