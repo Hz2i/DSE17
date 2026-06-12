@@ -1,27 +1,50 @@
 from math import *
+from urllib import error
+
 import numpy as np
 import control.matlab as control_matlab
 import control
 import matplotlib
+from control import exception
+from pyvista.plotting import scalar_bars
+
 matplotlib.use('TkAgg')   # or 'Qt5Agg' if you have PyQt5 installed
 import matplotlib.pyplot as plt
 
 from Objects.Performance.Control.Mass_moments import Mass_moments
-from Objects.Performance.Control.Control import Control_Surface_Sizing
+from Objects.Performance.Control.Control_trial import FlyingWingWithWingletsAeroBuildup
 
-class Coeff_Values(Mass_moments, Control_Surface_Sizing):
+class Coeff_Values(Mass_moments, FlyingWingWithWingletsAeroBuildup):
 
     def __init__(self):
         mm = Mass_moments()
-        cs = Control_Surface_Sizing()
-        CXu, CXa, CXq, CXde, CZu, CZa, CZq, CZde, Cm, Cmu, Cma, Cmq, Cmde, CYb, CYp, CYr, CYda, CYdr, Clb, Clp, Clr, Clda, Cldr, Cnb, Cnp, Cnr, Cnda, Cndr = cs.Coefficients()
+        cs = FlyingWingWithWingletsAeroBuildup()
+
+        (
+            CXu, CXa, CXq, CXde,
+            CZu, CZa, CZq, CZde,
+            Cm, Cmu, Cma, Cmq, Cmde,
+            CYb, CYp, CYr, CYda, CYdr,
+            Clb, Clp, Clr, Clda, Cldr,
+            Cnb, Cnp, Cnr, Cnda, Cndr
+        ) = cs.Coefficients()
+
+        inputs = cs.DynamicAnalysisInputs()
+
+        V0 = inputs["V0"]
+        b = inputs["b"]
+        c = inputs["c"]
+        S = inputs["S"]
+        rho = inputs["rho"]
+
+        # print(self.scalar(CXu))
 
         super().__init__()
         self.m = mm.m_total
-        self.V0 = cs.op_point.velocity
-        self.b = cs.b
-        self.c = cs.c
-        self.S = cs.S
+        self.V0 = V0
+        self.b = b
+        self.c = c
+        self.S = S
 
         # Atmosphere
         self.rho0 = 1.225
@@ -29,7 +52,7 @@ class Coeff_Values(Mass_moments, Control_Surface_Sizing):
         self.Temp0 = 288.15
         self.R = 287.05
         self.g = 9.81
-        self.rho = cs.op_point.atmosphere.density()
+        self.rho = rho
         self.W = self.m * self.g
 
         # # Aerodynamic constants — fill in your actual values
@@ -39,7 +62,7 @@ class Coeff_Values(Mass_moments, Control_Surface_Sizing):
         # self.A = self.b ** 2 / self.S  # aspect ratio (or set manually: 20)
         # self.e = 0.85  # Oswald efficiency factor
         self.th0 = 0.0  # trim pitch angle [rad]
-        self.Cma = Cma  # pitch moment curve slope (placeholder)
+        self.Cma = self.scalar(Cma)  # pitch moment curve slope (placeholder)
 
         # Constant values concerning aircraft inertia
         self.muc = self.m / (self.rho * self.S * self.c)
@@ -56,52 +79,57 @@ class Coeff_Values(Mass_moments, Control_Surface_Sizing):
         # self.depsda = 4 / (self.A + 2)
 
         # # Lift and drag coefficient
-        self.CL = 0.826
-        self.CD = 0.0198
+        self.CL = 0.828
+        self.CD = 0.0196
 
         # Stability derivatives
         self.CX0 = self.W * sin(self.th0) / (0.5 * self.rho * self.V0 ** 2 * self.S) # CHECK
-        self.CXu = -CXu
-        self.CXa = CXa
-        self.CXadot = +0.0
-        self.CXq = CXq
-        self.CXde = CXde
-        self.CXdt = +0.0
+        self.CXu = self.scalar(CXu) # todo check sign
+        self.CXa = 0.2 #self.scalar(CXa)
+        self.CXadot = 0.0
+        self.CXq = self.scalar(CXq)
+        self.CXde = self.scalar(CXde)
+        self.CXdt = 0.0
 
-        self.CZ0 = self.W * sin(self.th0) / (0.5 * self.rho * self.V0 ** 2 * self.S) # CHECK
-        self.CZu = CZu        # standard approximation
-        self.CZa = CZa
-        self.CZadot = -0.0
-        self.CZq = CZq
-        self.CZde = CZde
-        self.CZdt = +0.0
+        self.CZ0 = - self.W * cos(self.th0) / (
+                0.5 * self.rho * self.V0 ** 2 * self.S
+        )
+        self.CZu = self.scalar(CZu) # todo check sign
+        self.CZa = self.scalar(CZa)
+        self.CZadot = 0.0
+        self.CZq = self.scalar(CZq)
+        self.CZde = self.scalar(CZde)
+        self.CZdt = 0.0
 
-        self.Cm0 = 0 #Cm
-        self.Cmu = Cmu
-        self.Cmadot = +0.0
-        self.Cmq = Cmq
-        self.CmTc = +0.0
-        self.Cmde = Cmde
+        self.Cm0 = 0.0  # or self.scalar(Cm)
+        self.Cmu = self.scalar(Cmu)
+        self.Cmadot = 0.0
+        self.Cmq = self.scalar(Cmq)
+        self.CmTc = 0.0
+        self.Cmde = self.scalar(Cmde)
 
-        self.CYb = CYb
-        self.CYbdot = 0.
-        self.CYp = CYp
-        self.CYr = CYr
-        self.CYda = CYda
-        self.CYdr = CYdr
+        self.CYb = self.scalar(CYb)
+        self.CYbdot = 0.0
+        self.CYp = self.scalar(CYp)
+        self.CYr = self.scalar(CYr)
+        self.CYda = self.scalar(CYda)
+        self.CYdr = self.scalar(CYdr)
 
-        self.Clb = Clb
-        self.Clp = Clp
-        self.Clr = Clr
-        self.Clda = Clda
-        self.Cldr = Cldr
+        self.Clb = self.scalar(Clb)
+        self.Clp = self.scalar(Clp)
+        self.Clr = self.scalar(Clr)
+        self.Clda = self.scalar(Clda)
+        self.Cldr = self.scalar(Cldr)
 
-        self.Cnb = Cnb
-        self.Cnbdot = +0.0
-        self.Cnp = Cnp
-        self.Cnr = Cnr
-        self.Cnda = Cnda
-        self.Cndr = Cndr
+        self.Cnb = self.scalar(Cnb)
+        self.Cnbdot = 0.0
+        self.Cnp = self.scalar(Cnp)
+        self.Cnr = self.scalar(Cnr)
+        self.Cnda = self.scalar(Cnda)
+        self.Cndr = self.scalar(Cndr)
+
+    def scalar(self, x):
+        return float(np.asarray(x).squeeze().item())
 
 
 class Dynamic_Analysis:

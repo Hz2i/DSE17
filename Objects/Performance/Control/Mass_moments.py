@@ -59,10 +59,6 @@ class Mass_moments:
         # self.spar_major_axis = 0.5
         # self.spar_minor_axis = 0.4
 
-        self.cg = (-2.275, 0.0, 0.0)
-        self.root = (-0.273, 0.0, 0.0)
-        # self.body_centre = (0.0, 0.0, 0.0) # body axis central point
-
         self.b        = 33.41
         self.half_b   = self.b / 2
         self.AR       = 20
@@ -72,6 +68,10 @@ class Mass_moments:
         self.dihedral = np.radians(2)
         self.twist    = np.radians(2) # twist not used - assumption that effect is minimal
         self.twist_rate = self.twist/self.half_b
+
+        self.cg = (-2.275, 0.0, 0.0)
+        self.root = (-0.273*self.c, 0.0, 0.0)
+        # self.body_centre = (0.0, 0.0, 0.0) # body axis central point
 
         # MH91 leading-20% battery box geometry
         self.battery_chord_fraction     = 0.20 #todo
@@ -83,12 +83,12 @@ class Mass_moments:
         I_spar = self.spar_inertia_fd(mass=29.7, length=self.half_b)
 
         I_batt, _ = self.batteries_inertia_fd(
-            total_mass=129.68 / 2,
+            total_mass=145.1 / 2,
             span_sections=[(0.3 * self.half_b, 0.8 * self.half_b)]
         )
         I_skin, _ = self.skin_inertia_fd(
             skin_density=1390.0,
-            skin_thickness=0.0002,
+            skin_thickness=0.00015,
             span_sections=[(0.0, self.half_b)],
         )
         ribs = [(0.2, 0.1 * self.half_b), (0.2, 0.2 * self.half_b), (0.2, 0.3 * self.half_b), (0.2, 0.4 * self.half_b), (0.2, 0.5 * self.half_b), (0.2, 0.6 * self.half_b), (0.2, 0.7 * self.half_b), (0.2, 0.8 * self.half_b), (0.2, 0.9 * self.half_b), (0.2, self.half_b)]
