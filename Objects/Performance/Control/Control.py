@@ -718,7 +718,7 @@ class FlyingWingWithWingletsAeroBuildup:
     #         else:
     #             print(f"{k:>8s}: {v}")
 
-    def Yaw_Check(self, T_eng=100, fraction_outer_engine=0.67):
+    def Yaw_Check(self, T_eng=50, fraction_outer_engine=0.67, k=2):
         op_point = self.make_op_point()
         derivatives = self.compute_all_derivatives()
 
@@ -734,7 +734,7 @@ class FlyingWingWithWingletsAeroBuildup:
         q_dyn = 0.5 * rho * op_point.velocity ** 2
 
         # Use same S_ref as the aero model, not self.wing_area unless intentional
-        Cn_OEI = M_engine / (q_dyn * self.s_ref_value() * self.span)
+        Cn_OEI = k * M_engine / (q_dyn * self.s_ref_value() * self.span)
 
         deflection_OEI = -Cn_OEI / Cndr
 
