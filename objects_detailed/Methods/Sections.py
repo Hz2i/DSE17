@@ -98,4 +98,4 @@ class Sections:
 
 
 if __name__ == "__main__":
-    sections = Sections(Plot=True, airframe=Airframe.airframe(qc_sweep=np.radians(15), S=55.8, A=20, init_polar=False))
+    sections = Sections(Plot=True, airframe=Airframe.airframe(qc_sweep=np.radians(15), S=62.94, A=20, init_polar=False))
