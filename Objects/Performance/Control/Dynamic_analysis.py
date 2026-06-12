@@ -269,7 +269,7 @@ class Plotting(Dynamic_Analysis):
         axes[0].set_ylabel('β [deg]')
         axes[1].plot(t, np.degrees(y[1]))
         axes[1].set_ylabel('φ [deg]')
-        axes[2].plot(t, np.degrees(y[3])*2*35.479/32.7) #todo
+        axes[2].plot(t, np.degrees(y[3]) * 2 * 32.7 / 35.479) #todo
         axes[2].set_ylabel('r [deg/s]')
         for ax in axes:
             ax.grid(True, alpha=0.3)
@@ -286,11 +286,13 @@ class Plotting(Dynamic_Analysis):
         U_long = np.zeros((2, len(t_long)))
         t_l, y_l = control.forced_response(self.sys_a, T=t_long, U=U_long, X0=x0)
 
-        fig, axes = plt.subplots(2, 1, figsize=(10, 6), sharex=True)
+        fig, axes = plt.subplots(3, 1, figsize=(10, 6), sharex=True)
         axes[0].plot(t_l, np.degrees(y_l[1]))
         axes[0].set_ylabel('φ [deg]')
-        axes[1].plot(t_l, np.degrees(y_l[3])*2*35.479/32.7) #todo
+        axes[1].plot(t_l, np.degrees(y_l[3]) * 2 * 32.7 / 35.479) #todo
         axes[1].set_ylabel('r [deg/s]')
+        axes[2].plot(t_l, np.degrees(y_l[0]))
+        axes[2].set_ylabel('beta [deg]')
         for ax in axes:
             ax.grid(True, alpha=0.3)
             ax.axhline(0, color='k', lw=0.6)
@@ -321,7 +323,7 @@ class Plotting(Dynamic_Analysis):
         plt.tight_layout()
         plt.show()
 
-    def plot_aileron_response(self, aileron_deflect_deg=20.0, t_end=12.0, dt=0.001):
+    def plot_aileron_response(self, aileron_deflect_deg=20.0, t_end=5.0, dt=0.001):
         x0 = [0.0, np.radians(45.0), 0.0, 0.0]
         t = np.arange(0, t_end, dt)
         U = np.zeros((2, int(t_end / dt)))
@@ -333,7 +335,7 @@ class Plotting(Dynamic_Analysis):
         fig, axes = plt.subplots(2, 1, figsize=(10, 5), sharex=True)
         axes[0].plot(t, np.degrees(y[1]))
         axes[0].set_ylabel('thi [deg]')
-        axes[1].plot(t, np.degrees(y[2])*2*35.479/32.7) #todo
+        axes[1].plot(t, np.degrees(y[2]) * 2 * 32.7 / 35.479) # todo
         axes[1].set_ylabel('p [deg/s]')
         for ax in axes:
             ax.grid(True, alpha=0.3)
@@ -343,7 +345,7 @@ class Plotting(Dynamic_Analysis):
         plt.tight_layout()
         plt.show()
 
-    def plot_elevator_response(self, elevator_deflect_deg=-20.0, t_end=5.0, dt=0.001):
+    def plot_elevator_response(self, elevator_deflect_deg=-20.0, t_end=2.0, dt=0.001):
         x0 = [0.0, 0.0, 0.0, 0.0]
         t = np.arange(0, t_end, dt)
         U = np.zeros((1, int(t_end / dt)))
@@ -352,15 +354,11 @@ class Plotting(Dynamic_Analysis):
         print(U)
         t, y = control.forced_response(self.sys_s, T=t, U=U, X0=x0)
 
-        fig, axes = plt.subplots(4, 1, figsize=(10, 5), sharex=True)
+        fig, axes = plt.subplots(2, 1, figsize=(10, 5), sharex=True)
         axes[0].plot(t, np.degrees(y[2]))
         axes[0].set_ylabel('theta [deg]')
-        axes[1].plot(t, np.degrees(y[3])*32.7/1.774) #todo
+        axes[1].plot(t, np.degrees(y[3]) * 32.7/1.774) #todo
         axes[1].set_ylabel('q [deg/s]')
-        axes[2].plot(t, np.degrees(y[1]))
-        axes[2].set_ylabel('alpha [deg]')
-        axes[3].plot(t, y[0])
-        axes[3].set_ylabel('u')
         for ax in axes:
             ax.grid(True, alpha=0.3)
             ax.axhline(0, color='k', lw=0.6)
