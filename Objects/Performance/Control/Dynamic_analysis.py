@@ -292,7 +292,7 @@ class Plotting(Dynamic_Analysis):
         axes[1].plot(t_l, np.degrees(y_l[3]) * 2 * 32.7 / 35.479) #todo
         axes[1].set_ylabel('r [deg/s]')
         axes[2].plot(t_l, np.degrees(y_l[0]))
-        axes[2].set_ylabel('beta [deg]')
+        axes[2].set_ylabel('β [deg]')
         for ax in axes:
             ax.grid(True, alpha=0.3)
             ax.axhline(0, color='k', lw=0.6)
@@ -304,15 +304,15 @@ class Plotting(Dynamic_Analysis):
     def plot_poles(self):
         fig, ax = plt.subplots(figsize=(7, 5))
         for sys, label, color in [
-            (self.sys_s, 'symmetric', 'steelblue'),
-            (self.sys_a, 'asymmetric', 'tomato'),
+            (self.sys_s, 'Symmetric', 'steelblue'),
+            (self.sys_a, 'Asymmetric', 'tomato'),
         ]:
             poles = control.poles(sys)
             ax.scatter(poles.real, poles.imag,
                        marker='x', s=100, linewidths=2,
                        color=color, label=label)
-            for p in poles:
-                ax.annotate(f'  {p:.3f}', (p.real, p.imag), fontsize=7)
+            # for p in poles:
+            #     ax.annotate(f'  {p:.3f}', (p.real, p.imag), fontsize=7)
         ax.axvline(0, color='k', lw=0.8, ls='--')
         ax.axhline(0, color='k', lw=0.8, ls='--')
         ax.set_xlabel('Real')
@@ -334,7 +334,7 @@ class Plotting(Dynamic_Analysis):
 
         fig, axes = plt.subplots(2, 1, figsize=(10, 5), sharex=True)
         axes[0].plot(t, np.degrees(y[1]))
-        axes[0].set_ylabel('thi [deg]')
+        axes[0].set_ylabel('φ [deg]')
         axes[1].plot(t, np.degrees(y[2]) * 2 * 32.7 / 35.479) # todo
         axes[1].set_ylabel('p [deg/s]')
         for ax in axes:
@@ -356,7 +356,7 @@ class Plotting(Dynamic_Analysis):
 
         fig, axes = plt.subplots(2, 1, figsize=(10, 5), sharex=True)
         axes[0].plot(t, np.degrees(y[2]))
-        axes[0].set_ylabel('theta [deg]')
+        axes[0].set_ylabel('θ [deg]')
         axes[1].plot(t, np.degrees(y[3]) * 32.7/1.774) #todo
         axes[1].set_ylabel('q [deg/s]')
         for ax in axes:
