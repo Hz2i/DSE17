@@ -342,8 +342,8 @@ class MissionProfile:
             days_from_solstice = day_of_year + 10 + days_passed
             time_of_day = t[-1] + start_time - days_passed * 24*60*60
             print(self.Pavg_cruise,self.E_battery_guess,self.S_guess,self.lat,days_from_solstice,time_of_day)
-            Endurance_class = Endurance(power_consumption=self.Pavg_cruise,init_bat_capacity=self.E_battery_guess,init_bat_charge=90,S=self.S_guess,latitude=self.lat,height=18288,solar_panel=solar,days_from_solstice_start=days_from_solstice,startingtimeofday=time_of_day)
-            endurance_pass = Endurance_class.compute_endurance(endurance_limit=86400*2,time_step=1800)
+            Endurance_class = Endurance(power_consumption=self.Pavg_cruise,init_bat_capacity=self.E_battery_guess,init_bat_charge=90,S=self.S_guess,latitude=self.lat,height=18288,solar_panel=solar,days_from_solstice_start=days_from_solstice,startingtimeofday=time_of_day-time_step)
+            endurance_pass = Endurance_class.compute_endurance(endurance_limit=86400*2,time_step=time_step)
             if not endurance_pass:
                 Profile_passed = 0
 
@@ -423,10 +423,10 @@ takeoff_rpm = solve_power_limited_takeoff_rpm(propulsion, D, cl_interp_to, cd_in
 result = simulate_takeoff_roll(propulsion, D, takeoff_rpm, cl_interp_to, cd_interp_to)
 
 TO_BATTERY_PER_MOTOR = result['power_battery_total'] / 4
-CLIMB_BATTERY_PER_MOTOR = TO_BATTERY_PER_MOTOR * 0.80
+CLIMB_BATTERY_PER_MOTOR = TO_BATTERY_PER_MOTOR * 0.70
 
-dt1 = 450/4
-dt2 = 900
+dt1 = 450
+dt2 = 450
 dt3 = 1
 day_of_year = np.arange(0,365+dt3,dt3)
 time_of_day = np.arange(0,86400+dt1,dt1)
