@@ -1,6 +1,6 @@
 import pytest
 import numpy as np
-from Objects.Performance.Control.Control import Control_Surface_Sizing
+from Objects.Performance.Control.Control_old import Control_Surface_Sizing
 
 @pytest.fixture(scope="module")
 def cs():
