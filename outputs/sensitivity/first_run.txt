@@ -1,0 +1,84 @@
+===================================
++0.05 factor change in: added_mass
+MTOW effect: 27.668422151564357
+Surface area effect: 6.533781022337202
+Total span effect: 1.79607552388633
+Total power consumption effect: 388.6784817928842
+___________________________________
+-0.05 factor change in: added_mass
+MTOW effect: 27.668422151564357
+Surface area effect: 6.533781022337202
+Total span effect: 1.79607552388633
+Total power consumption effect: 388.6784817928842
+===================================
++0.05 factor change in: added_pow
+MTOW effect: 27.668422151564357
+Surface area effect: 6.533781022337202
+Total span effect: 1.79607552388633
+Total power consumption effect: 388.6784817928842
+___________________________________
+-0.05 factor change in: added_pow
+MTOW effect: 27.668422151564357
+Surface area effect: 6.533781022337202
+Total span effect: 1.79607552388633
+Total power consumption effect: 388.6784817928842
+===================================
++0.05 factor change in: A
+MTOW effect: 21.79846348195167
+Surface area effect: 4.705829881503526
+Total span effect: 2.2107428165261425
+Total power consumption effect: 280.7680241604303
+___________________________________
+-0.05 factor change in: A
+MTOW effect: 35.30022656248394
+Surface area effect: 8.790353794721547
+Total span effect: 1.4375771986432966
+Total power consumption effect: 523.0561204987866
+===================================
++0.05 factor change in: batt_en_rho
+MTOW effect: 27.668422151564357
+Surface area effect: 6.533781022337202
+Total span effect: 1.79607552388633
+Total power consumption effect: 388.6784817928842
+___________________________________
+-0.05 factor change in: batt_en_rho
+MTOW effect: 27.668422151564357
+Surface area effect: 6.533781022337202
+Total span effect: 1.79607552388633
+Total power consumption effect: 388.6784817928842
+===================================
++0.05 factor change in: solar_eff
+MTOW effect: 27.668422151564357
+Surface area effect: 6.533781022337202
+Total span effect: 1.79607552388633
+Total power consumption effect: 388.6784817928842
+___________________________________
+-0.05 factor change in: solar_eff
+MTOW effect: 27.668422151564357
+Surface area effect: 6.533781022337202
+Total span effect: 1.79607552388633
+Total power consumption effect: 388.6784817928842
+===================================
++0.05 factor change in: taper
+MTOW effect: 27.5279832853833
+Surface area effect: 6.684198639151894
+Total span effect: 1.836406783913894
+Total power consumption effect: 397.6199773509593
+___________________________________
+-0.05 factor change in: taper
+MTOW effect: 29.36999204042081
+Surface area effect: 6.661906701858776
+Total span effect: 1.8304324305224071
+Total power consumption effect: 396.34753923359085
+===================================
++0.05 factor change in: twist
+MTOW effect: 28.014373121333563
+Surface area effect: 6.620866752828924
+Total span effect: 1.8194310113437808
+Total power consumption effect: 394.0660085143277
+___________________________________
+-0.05 factor change in: twist
+MTOW effect: 27.326867149332713
+Surface area effect: 6.4478507621236005
+Total span effect: 1.7730155688672866
+Total power consumption effect: 383.3612573593423

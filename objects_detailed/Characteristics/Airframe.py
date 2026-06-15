@@ -30,7 +30,7 @@ class nacelles:
         self.m = None
 
 class airframe:
-    def __init__(self, S=36.0, A=20.0, qc_sweep=15.0/180*np.pi, taper=1.0, dihedral=0.0, twist=-4.675, winglet_h=1.5, airfoil=asb.Airfoil("mh91"), fus = fuselage(), nac = nacelles(), display=False, init_polar=True):
+    def __init__(self, S=36.0, A=20.0, qc_sweep=15.0/180*np.pi, taper=1.0, dihedral=0.0, twist=-4.675, winglet_h=1.5, airfoil=asb.Airfoil("mh91"), added_drag=0.0, fus = fuselage(), nac = nacelles(), display=False, init_polar=True):
         self.foil = airfoil
         self.AR = A
         self.taper = taper
@@ -51,6 +51,8 @@ class airframe:
 
         self.fuselage = fus             # Fuselage geometry and parameters
         self.nacelles = nac             # Fuselage Geometry and parameters
+
+        self.added_drag = added_drag
 
         self.define_geometry()
         if init_polar:
@@ -172,6 +174,8 @@ class airframe:
                 llt_results[param] = np.array([result[param] for result in llt_batch])
             llt_results["alpha"] = alpha
 
+            llt_results["CD"] += self.added_drag
+
             return llt_results
 
 
@@ -185,6 +189,8 @@ class airframe:
                             spanwise_resolution=resolution
                             )
             llt_results = llt_an.run()
+
+            llt_results["CD"] += self.added_drag
 
             return llt_results, llt_an
 

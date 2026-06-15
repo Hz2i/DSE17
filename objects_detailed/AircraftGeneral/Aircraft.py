@@ -10,6 +10,7 @@ from objects_detailed.Characteristics.GeneralSubsystems import ComputerSystem, C
 from objects_detailed.Characteristics.PowerSystem_sizing import power_storage, power_generation
 from Objects.Characteristics.PropulsionSystem import PropulsionSystem
 from objects_detailed.Constants import Constants
+from objects_detailed.Characteristics.Components_Materials import battery, solar_panel
 
 from objects_detailed.Methods.StructuralAnalysis import bending_stress_lift, bending_stress_drag, torsional_stress
 from objects_detailed.Methods.SparGeometryParam import SparGeometryOptimization, AirfoilGeometry, optimize_variables, determined_geometry
@@ -21,7 +22,7 @@ from objects_detailed.Methods.Heat_Management import heat_conduction
 # Post-implementation note: I was slightly wrong
 
 class Aircraft:
-    def __init__(self, MTOW_guess=200.0, TAS=25.0, h=18500.0, gamma=0.0, lat=30.0, day_margin=0, DoD=0.8, airframe=airframe(), m_skid=9.15, comp=ComputerSystem(), comms=CommunicationSystem(), flight_con=FlightConditionsSystem(), payload=PayloadSystem(), ctrls=ControlSystem(), use_batt=True, energy_delta=0.0):
+    def __init__(self, MTOW_guess=200.0, TAS=25.0, h=18500.0, gamma=0.0, lat=30.0, day_margin=0, DoD=0.8, airframe=airframe(), m_skid=9.15, parasite_mass=0.0, parasite_power=0.0, battery=battery(), solar_panel=solar_panel(), comp=ComputerSystem(), comms=CommunicationSystem(), flight_con=FlightConditionsSystem(), payload=PayloadSystem(), ctrls=ControlSystem(), use_batt=True, energy_delta=0.0):
         self.MTOW = MTOW_guess
         self.const = Constants()
 
@@ -32,7 +33,13 @@ class Aircraft:
         self.payload = payload
         self.ctrls = ctrls
 
+        self.battery = battery
+        self.solar_panel = solar_panel
+
         self.m_skid = m_skid
+
+        self.parasite_mass = parasite_mass
+        self.parasite_power = parasite_power
 
         self.pow_store = None
         self.use_batt = use_batt
@@ -123,11 +130,13 @@ class Aircraft:
 
             self.Pow_req += self.Pow_heat
 
+            self.Pow_req += self.parasite_power
+
             # print(f"motor power: {self.Pow_motor} W, total motor mass: {self.Prop_mass} kg, power required: {self.Pow_req} W")
 
-            self.pow_store = power_storage(self.Pow_req, latitude=self.lat, days_from_solstice=self.day_margin, DOD=self.DoD, batteries_used=self.use_batt, energy_delta=self.energy_delta)
+            self.pow_store = power_storage(self.Pow_req, latitude=self.lat, days_from_solstice=self.day_margin, DOD=self.DoD, batteries_used=self.use_batt, energy_delta=self.energy_delta, battery_input=self.battery)
             self.pow_store.compute_weight_volume()
-            self.solar = power_generation(self.Pow_req, latitude=self.lat, days_from_solstice=self.day_margin, energy_delta=self.energy_delta)
+            self.solar = power_generation(self.Pow_req, latitude=self.lat, days_from_solstice=self.day_margin, energy_delta=self.energy_delta, solar_panel_input=self.solar_panel)
             self.solar.compute_weight_surface()
 
             # print(f"power storage weight: {self.pow_store.mass} kg")
