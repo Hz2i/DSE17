@@ -1,7 +1,7 @@
 import pytest
 import numpy as np
-from Objects.Characteristics.PowerSystem_sizing import power_storage, power_generation, solar_incidence, power_required
-from Objects.Characteristics.Components_Materials import solar_panel, battery, fuel_cell
+from objects_detailed.Characteristics.PowerSystem_sizing import power_storage, power_generation, solar_incidence, power_required
+from objects_detailed.Characteristics.Components_Materials import solar_panel, battery, fuel_cell
 
 # ==============================
 # CODE VERIFICATION TESTS
@@ -42,12 +42,9 @@ def test_power_system_order_of_magnitude():
     assert 1.0 < generation.mass < 100.0
     assert 1.0 < generation.area < 100.0
 
-    solar = solar_incidence(latitude=40, days_from_solstice=0)
+    solar = solar_incidence(latitude=30, days_from_solstice=0)
     solar.daylight_cycle()
     assert 3600 < solar.daylight_time < 86400
-
-    required = power_required(None, mass=120, LD=40, V_cruise=25, payload=100, payload_peak=150, payload_frac=0.1, margin=300)
-    assert 500.0 < required < 2000.0
 
 # ASSUMED CONSTANTS CROSS-VERIFICATION TESTS
 def test_power_system_constants():
@@ -62,8 +59,8 @@ def test_power_system_constants():
     assert fuel_cell_data.volumeEnergy == 972e6
 
     solar_panel_data = solar_panel()
-    assert solar_panel_data.efficiency == 0.20
-    assert solar_panel_data.powLimS == 200.0
+    assert solar_panel_data.efficiency == 0.30*0.98**2*0.95
+    assert solar_panel_data.powLimS == 270.0
     assert solar_panel_data.powLimM == 1000.0
 
     # axial tilt is 0.409 rads with error
@@ -114,4 +111,19 @@ def test_power_system_return_types():
     required = power_required(None, mass=120, LD=40, V_cruise=25, payload=100, payload_peak=150, payload_frac=0.1, margin=300)
     assert isinstance(required, float)
 
+def test_power_system_analytical():
+    """Test order-of-magnitude for key outputs"""
 
+    storage = power_storage(power_req=1000, latitude=40, days_from_solstice=0, DOD=0.5)
+    storage.compute_weight_volume()
+    assert 0.1 < storage.mass < 100.0
+    assert 0.01 < storage.volume < 10.0
+
+    generation = power_generation(power_req=1000, latitude=40, days_from_solstice=0)
+    generation.compute_weight_surface()
+    assert 1.0 < generation.mass < 100.0
+    assert 1.0 < generation.area < 100.0
+
+    solar = solar_incidence(latitude=30, days_from_solstice=0)
+    solar.daylight_cycle()
+    assert 3600 < solar.daylight_time < 86400

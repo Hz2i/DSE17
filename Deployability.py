@@ -12,7 +12,7 @@ from objects_detailed.Characteristics.Airframe import airframe, fuselage, nacell
 from objects_detailed.Characteristics.Components_Materials import solar_panel
 from Objects.Performance.Endurance import *
 
-solar = solar_panel(0.3*0.97**2*0.95)
+solar = solar_panel(0.3*0.98**2*0.94)
 
 
 # Solar Power
@@ -24,7 +24,7 @@ class SolarPower:
         self.days = np.arange(1, 366) if days is None else np.asarray(days, dtype=int)
         #self.solar_area_m2 = float(solar_area_m2)
 
-        self.efficiency = 0.3*0.97**2*0.95
+        self.efficiency = 0.3*0.98**2*0.94
         self.I0 = 1378.0
         self.powLimS = 270.0
 
@@ -59,9 +59,12 @@ class SolarPower:
 # -----------------------------
 class MissionProfile:
     def __init__(self,latitude, cruise_power_total, Propulsion,D,p_battery_per_motor, solarpower = SolarPower(), Aircraft=Aircraft()):
-        self.m_battery_guess = Aircraft.pow_store.mass
+
+        self.Aircraft = Aircraft
+        self.m_battery_guess = self.Aircraft.pow_store.mass
         self.gamma_guess = 2
-        self.S_guess = Aircraft.airframe.S
+        self.S = self.Aircraft.airframe.S
+        self.S_solar = self.Aircraft.airframe.S
         self.solarpower = solarpower
         self.propulsion = Propulsion
         self.D = D
@@ -71,21 +74,23 @@ class MissionProfile:
 
         self.E_battery_guess = self.m_battery_guess * 500 * 3600 * 0.96  # J
 
-        print(self.S_guess)
 
         # given
         self.g = 9.81
         self.alt = 60000 * 0.3048
-        self.CD0 = Aircraft.airframe.CD0
-        self.AR = Aircraft.airframe.AR
-        self.K1 = Aircraft.airframe.K1
-        self.K2 = Aircraft.airframe.K2
-        self.Pavg_climb_subsys = Aircraft.Pow_req - Aircraft.Pow_motor - 100
-        self.Pavg_cruise_subsys = Aircraft.Pow_req - Aircraft.Pow_motor
-        self.LD = Aircraft.airframe.CL_CD_max
-        self.V_cruise = 25.0
-        self.CL_max = 0.8*Aircraft.airframe.CL_max
+        self.CD0 = self.Aircraft.airframe.CD0
+        self.AR = self.Aircraft.airframe.AR
+        self.K1 = self.Aircraft.airframe.K1
+        self.K2 = self.Aircraft.airframe.K2
+        self.Pavg_climb_subsys = self.Aircraft.Pow_req - self.Aircraft.Pow_motor - 100
+        self.Pavg_cruise_subsys = self.Aircraft.Pow_req - self.Aircraft.Pow_motor
+        self.LD = self.Aircraft.airframe.CL_CD_max
+        self.V_cruise = self.Aircraft.TAS_cruise
+        self.CL_max = self.Aircraft.airframe.CL_max
         self.nr_of_engines = 4
+
+        if cruise_power_total <= 0 or D <= 0 or p_battery_per_motor <= 0 or self.LD <= 0 or self.CL_max <= 0 or self.V_cruise <= 0:
+            raise ValueError("Some of your values are invalid")
 
         # derived
         self.m_total_guess = Aircraft.MTOW
@@ -95,7 +100,6 @@ class MissionProfile:
         self.Pprop_cruise = Aircraft.Pow_motor
         self.Pavg_cruise = Aircraft.Pow_req
 
-        print(self.Pavg_cruise)
 
     def Calc_Cl_opt_climb(self):
         return (self.K1 + np.sqrt(self.K1**2 + 12 * self.CD0 * self.K2))/(2*self.K2)
@@ -104,29 +108,17 @@ class MissionProfile:
         return self.CD0 + self.K1*CL + self.K2*CL**2
 
     def Calc_V_Pr_climb(self,h):
-        V_opt =  np.sqrt(self.m_total_guess*9.81/self.S_guess * 2/am.Atmosphere(h).density * 1/self.Cl_opt_climb)
-        if self.Cl_opt_climb > self.CL_max:
-            CL = self.CL_max
-            V = np.sqrt(self.m_total_guess*9.81/self.S_guess * 2/am.Atmosphere(h).density * 1/CL)
+        V_opt =  np.sqrt(self.m_total_guess*9.81/self.S * 2/am.Atmosphere(h).density * 1/self.Cl_opt_climb)
+        if self.Cl_opt_climb > self.CL_max*0.8:
+            CL = self.CL_max*0.8
+            V = np.sqrt(self.m_total_guess*9.81/self.S * 2/am.Atmosphere(h).density * 1/CL)
             CD = self.Calc_CD_total(CL)
-
-            if V < self.V_cruise:
-                Pr = self.m_total_guess*9.81*np.sqrt(9.81*self.m_total_guess / self.S_guess * 2/am.Atmosphere(h).density * CD**2/CL**3)
-            else:
-                V = self.V_cruise
-                CL = 2*self.m_total_guess*9.81/(am.Atmosphere(h).density * (V)**2 * self.S_guess)
-                CD = self.Calc_CD_total(CL)
-                Pr = 1/2 * am.Atmosphere(h).density * V**2 * self.S_guess * CD * V
-        elif V_opt < self.V_cruise:
-            V = V_opt
-            Pr = self.m_total_guess*9.81*np.sqrt(9.81*self.m_total_guess / self.S_guess * 2/am.Atmosphere(h).density * self.CD_total_climb**2/self.Cl_opt_climb**3)
+            Pr = self.m_total_guess*9.81*np.sqrt(9.81*self.m_total_guess / self.S * 2/am.Atmosphere(h).density * CD**2/CL**3)
         else:
-            V = self.V_cruise
-            CL = 2*self.m_total_guess*9.81/(am.Atmosphere(h).density * (V)**2 * self.S_guess)
-            CD = self.Calc_CD_total(CL)
-            Pr = 1/2 * am.Atmosphere(h).density * V**2 * self.S_guess * CD * V
+            V = V_opt
+            Pr = self.m_total_guess*9.81*np.sqrt(9.81*self.m_total_guess / self.S * 2/am.Atmosphere(h).density * self.CD_total_climb**2/self.Cl_opt_climb**3)
 
-        return V, Pr
+        return np.asarray(V).item(), np.asarray(Pr).item()
 
     def Calc_Pprop_cruise(self):
         return self.cruise_power_total
@@ -135,11 +127,14 @@ class MissionProfile:
         V = self.Calc_V_Pr_climb(h)[0]
         Pr = self.Calc_V_Pr_climb(h)[1]
         propsystem = evaluate_climb_state(self.propulsion,self.D,V,h,self.climb_battery_per_motor)
-        return np.asarray(propsystem["power_available"]).item(), self.climb_battery_per_motor * self.nr_of_engines, (np.asarray(propsystem["power_available"]).item()-np.asarray(Pr).item())/(self.m_total_guess*9.81)
+        return np.asarray(propsystem["power_available"]).item(), self.climb_battery_per_motor * self.nr_of_engines, (np.asarray(propsystem["power_available"]).item()-np.asarray(Pr).item())/(self.m_total_guess*9.81), V
 
     
     def climb_profile_init(self,plot=False,extra_power = 1000,h_cloud=8000,cloud_cover = 4, day_of_year=0, start_time=0,time_step=3600):
 
+        if time_step <= 0:
+            raise ValueError("Timestep must be more than 0")
+        
         self.power_available_used_ROC_array = []
 
         self.time_cruise_start = 0
@@ -166,15 +161,17 @@ class MissionProfile:
 
         while timeofday < sunset or cruise == False or correctday == False:
 
-            power_available, power_required, Rate_of_climb = self.Calc_Pa(h[i],extra_power)
+            power_available, power_required, Rate_of_climb, Vel = self.Calc_Pa(h[i],extra_power)
+
+            print(f'at height {h[i]}, power available: {power_available} W, power required: {self.Calc_V_Pr_climb(h[i])[1]} W, ROC: {Rate_of_climb}, velocity: {self.Calc_V_Pr_climb(h[i])[0]} m/s')
             
             if h[i] < self.alt:
-                self.power_available_used_ROC_array.append([power_available,power_required,Rate_of_climb])
+                self.power_available_used_ROC_array.append([power_available,power_required,Rate_of_climb, Vel])
             else:
-                self.power_available_used_ROC_array.append([self.Pprop_cruise,self.Pprop_cruise,0])
+                self.power_available_used_ROC_array.append([self.Pprop_cruise,self.Pprop_cruise,0, self.V_cruise])
                 
             power_gen, sunrise, sunset, timeofday = self.solarpower.calc_power_per_m2(h[i],h_cloud,cloud_cover,day_of_year,t[i],0)
-            power_gen *= self.S_guess
+            power_gen *= self.S_solar
 
             if cruise == False:
                 power_req = power_required
@@ -216,6 +213,14 @@ class MissionProfile:
 
             if correctday == False and timeofday < sunset:
                 correctday = True
+
+            # Update polar:
+            self.Aircraft.airframe.compute_polar(alt=h[i+1],TAS=Vel)
+            self.CD0 = self.Aircraft.airframe.CD0
+            self.K1 = self.Aircraft.airframe.K1
+            self.K2 = self.Aircraft.airframe.K2
+            self.LD = self.Aircraft.airframe.CL_CD_max
+            self.CL_max = self.Aircraft.airframe.CL_max
 
             i += 1
             
@@ -259,6 +264,9 @@ class MissionProfile:
 
     def climb_profile(self,plot=False,extra_power = 1000,h_cloud=8000,cloud_cover = 4, day_of_year=0, start_time=0,time_step=3600):
 
+        if time_step <= 0:
+            raise ValueError("Timestep must be more than 0")
+
         self.time_cruise_start = 0
 
         cruise = False
@@ -288,7 +296,7 @@ class MissionProfile:
 
                 
             power_gen, sunrise, sunset, timeofday = self.solarpower.calc_power_per_m2(h[i],h_cloud,cloud_cover,day_of_year,t[i],0)
-            power_gen *= self.S_guess
+            power_gen *= self.S_solar
 
             if cruise == False:
                 power_req = power_required
@@ -341,9 +349,9 @@ class MissionProfile:
             days_passed = (t[-1]+start_time) // (24*60*60)
             days_from_solstice = day_of_year + 10 + days_passed
             time_of_day = t[-1] + start_time - days_passed * 24*60*60
-            print(self.Pavg_cruise,self.E_battery_guess,self.S_guess,self.lat,days_from_solstice,time_of_day)
-            Endurance_class = Endurance(power_consumption=self.Pavg_cruise,init_bat_capacity=self.E_battery_guess,init_bat_charge=90,S=self.S_guess,latitude=self.lat,height=18288,solar_panel=solar,days_from_solstice_start=days_from_solstice,startingtimeofday=time_of_day-time_step)
-            endurance_pass = Endurance_class.compute_endurance(endurance_limit=86400*2,time_step=time_step)
+            print(self.Pavg_cruise,self.E_battery_guess,self.S_solar,self.lat,days_from_solstice,time_of_day)
+            Endurance_class = Endurance(power_consumption=self.Pavg_cruise,init_bat_capacity=self.E_battery_guess,init_bat_charge=90,S=self.S_solar,latitude=self.lat,height=18288,solar_panel=solar,days_from_solstice_start=days_from_solstice,startingtimeofday=time_of_day-time_step)
+            endurance_pass = Endurance_class.compute_endurance(endurance_limit=86400*28,time_step=time_step)
             if not endurance_pass:
                 Profile_passed = 0
 
@@ -404,6 +412,7 @@ aircraft_class = Aircraft(MTOW_guess=MTOW, TAS=TAS_initial, gamma=gamma, lat=30,
 D = aircraft_class.prop.D # m (already optimized for cruise)
 v_inf_cruise = aircraft_class.TAS_cruise  # m/s
 required_thrust_cruise = aircraft_class.T_req  # N
+print(f"required power at cruise: {required_thrust_cruise*v_inf_cruise} W")
 m_TO = MTOW + 10.0  # kg 10 for landing gear!!
 CL_max = aircraft_class.airframe.CL_max # -
 
@@ -423,7 +432,9 @@ takeoff_rpm = solve_power_limited_takeoff_rpm(propulsion, D, cl_interp_to, cd_in
 result = simulate_takeoff_roll(propulsion, D, takeoff_rpm, cl_interp_to, cd_interp_to)
 
 TO_BATTERY_PER_MOTOR = result['power_battery_total'] / 4
-CLIMB_BATTERY_PER_MOTOR = TO_BATTERY_PER_MOTOR * 0.70
+CLIMB_BATTERY_PER_MOTOR = TO_BATTERY_PER_MOTOR * 0.8
+
+print(CLIMB_BATTERY_PER_MOTOR)
 
 dt1 = 450
 dt2 = 450
@@ -439,7 +450,7 @@ latitudes = [30,45,60]
 for k in range(len(latitudes)):
     mission_profile = MissionProfile(latitude=latitudes[k], cruise_power_total=cruise_power_total, Propulsion=propulsion,D=D,p_battery_per_motor=CLIMB_BATTERY_PER_MOTOR, solarpower=SolarPower(latitude_deg=latitudes[k]),Aircraft=aircraft_class)
 
-    _, _, _ = mission_profile.climb_profile_init(plot=False,extra_power=0,h_cloud=18500,cloud_cover = 4,day_of_year = day_of_year[0], start_time = time_of_day[0], time_step = dt2)
+    _, _, _ = mission_profile.climb_profile_init(plot=True,extra_power=0,h_cloud=18500,cloud_cover = 4,day_of_year = day_of_year[0], start_time = time_of_day[0], time_step = dt2)
 
     for i in range(len(day_of_year)):
         for j in range(len(time_of_day)):
@@ -473,7 +484,7 @@ fig, axs = plt.subplots(nrows=3,ncols=1,sharex=True,sharey=True,figsize=(12, 5),
 
 
 # Inspect how many windows each day has
-for k in range(3):
+for k in range(len(latitudes)):
     for i, day in enumerate(day_of_year):
         windows = get_windows(deployability[k][i], time_of_day)
         for t_open, t_close in windows:

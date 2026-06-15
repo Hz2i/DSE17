@@ -34,6 +34,17 @@ P_TO_ELEC_PER_MOTOR = 1162.0  # W electrical per motor
 DT = 0.05
 MAX_TAKEOFF_TIME = 60.0
 
+def Calc_V(self,h,MTOW,S,CL_max,CD0,K1,K2):
+    atmo = asb.Atmosphere(altitude=h)
+    rho = atmo.density()
+    CL_opt =  (K1 + np.sqrt(K1**2 + 12 * CD0 * K2))/(2*K2)
+    if CL_opt > self.CL_max*0.8:
+        CL = self.CL_max*0.8
+        V = np.sqrt(MTOW*9.81/S * 2/rho * 1/CL)
+    else:
+        V =  np.sqrt(MTOW*9.81/S * 2/rho * 1/CL_opt)
+    
+    return np.asarray(V).item()
 
 def build_takeoff_airfoil_interpolants(propulsion, v_ref=v_initial):
     mach_to = v_ref / propulsion.atmo_to.speed_of_sound()
