@@ -57,7 +57,7 @@ class Endurance:
         cycle = 0
         time_passed = 0
 
-        while Energy > self.init_bat_capacity * self.reduced_capacity_frac(cycle)*0.1 and time_passed < endurance_limit:
+        while Energy > self.init_bat_capacity * self.reduced_capacity_frac(cycle)*0.05 and time_passed < endurance_limit:
             iteration += 1
             time_passed = iteration * time_step
 
@@ -65,8 +65,8 @@ class Endurance:
 
             cycle = (time_passed-self.starting_timeofday)// 86400
 
-            if Energy > self.init_bat_capacity * self.reduced_capacity_frac(cycle)*0.9:
-                Energy = self.init_bat_capacity * self.reduced_capacity_frac(cycle)*0.9
+            if Energy > self.init_bat_capacity * self.reduced_capacity_frac(cycle)*0.95:
+                Energy = self.init_bat_capacity * self.reduced_capacity_frac(cycle)*0.95
             else:
                 continue
     
