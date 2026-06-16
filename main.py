@@ -26,7 +26,7 @@ gamma = 0.0
 h_cruise = 18500.0
 lat = 30.0
 day_margin = 0
-use_batt = True
+use_batt = TrueY
 energy_delta = 0.0
 DoD = 0.8
 night_time = 0.0
@@ -160,6 +160,12 @@ if save_bool == "Y":
     print(" - Required connection Ixx:", AHAPS.I_xx_sleeve_req, file=out_file)
     print(" - Required connection Iyy:", AHAPS.I_yy_sleeve_req, file=out_file)
     print(" - Wing internal structure parameters:", AHAPS.internal_struct.optimized_geometry, file=out_file)
+    print(" - Wing length incl. clamp", AHAPS.internal_struct.total_length_inc_clamp, file=out_file)
+    print(" - Wing length excl. clamp", AHAPS.internal_struct.total_span_exc_sleeve_clamp, file=out_file)
+    print(" - Weight Ribs", AHAPS.internal_struct.Weight_ribs, file=out_file)
+    print(" - Weight Skin", AHAPS.internal_struct.Weight_skin, file=out_file)
+    print(" - Weight Spar", AHAPS.internal_struct.total_mass_spar, file=out_file)
+    print(" - Min. num of ribs", AHAPS.internal_struct.min_no_ribs, file=out_file)
 
     out_file = open(powers_file_ID, "w")
 

@@ -301,9 +301,9 @@ class SparGeometryOptimization:
 
         #Inertia
         I_xx_sleeve = self.calc_I_xx_ellipse(a_sleeve_out, b_sleeve_out) - self.calc_I_xx_ellipse(a_sleeve_in, b_sleeve_in)
-        I_yy_sleeve = self.calc_I_yy_ellipse(b_sleeve_out, a_sleeve_out) - self.calc_I_yy_ellipse(b_sleeve_in, a_sleeve_in)
+        I_yy_sleeve = self.calc_I_yy_ellipse(a_sleeve_out, b_sleeve_out) - self.calc_I_yy_ellipse(a_sleeve_in, b_sleeve_in)
         I_xx_spar = self.calc_I_xx_ellipse(a_spar_out, b_spar_out) - self.calc_I_xx_ellipse(a_spar_in, b_spar_in)
-        I_yy_spar = self.calc_I_yy_ellipse(b_spar_out, a_spar_out) - self.calc_I_yy_ellipse(b_spar_in, a_spar_in)
+        I_yy_spar = self.calc_I_yy_ellipse(a_spar_out, b_spar_out) - self.calc_I_yy_ellipse(a_spar_in, b_spar_in)
 
         #Cross Sectional Weight
         weight_clamp = A_clamp_2x * self.pa_rho * 0.25 #Assume Clamp is hollow structure

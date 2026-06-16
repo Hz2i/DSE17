@@ -81,4 +81,4 @@ def m_skid(nr_of_skids=8,L1=0.3,L2=0.3,L3=0.3,LH=0.6,F2_frac=0.5,W=320*9.81,n=3.
 
     return m*nr_of_skids
 
-mass = m_skid(print_results=True)
+#mass = m_skid(print_results=True)

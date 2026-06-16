@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from ambiance import Atmosphere
 
 class VnDiagram:
-    def __init__(self,CL_max=1.1,CL_min=-0.8,MTOM=200,S=40,CD0=0.015,CL_alpha=2*np.pi,cbar=1.3):
+    def __init__(self,CL_max=1.2,CL_min=-0.8,MTOM=320,S=63,CD0=0.012,CL_alpha=2*np.pi*0.9,cbar=1.7):
         # Aircraft Properties
         self.CL_max = CL_max
         self.CL_max_flaps = self.CL_max
@@ -32,9 +32,9 @@ class VnDiagram:
         # CS 22.335 Design air speeds
         self.VA = self.VS1 * np.sqrt(self.n1) # CS22
         self.VA_min = self.VS11 * np.sqrt(np.abs(self.n4)) # same as VA but for minimum CL
-        self.VB = 9.5 # minimum cruise speed
-        self.VC = 12.5 # max cruise speed
-        self.VD = 15  # dive speed                             
+        self.VB = np.sqrt((1.5*self.MTOM*9.81) * (2)/(self.rho_0 * self.CL_max * self.S)) # minimum cruise speed
+        self.VC = np.sqrt((2.0*self.MTOM*9.81) * (2)/(self.rho_0 * self.CL_max * self.S)) # max cruise speed
+        self.VD = 16  # dive speed                             
 
     # CS 25.341(a)(5)(i)
     def gustspeed(self,altitude,dive=False):
@@ -44,10 +44,11 @@ class VnDiagram:
 
         H = 107 # gust gradient distance in m, CS25.341(a)(4)
 
-        if dive:
+        if dive == True:
             gust = 0.5*ref_gust*(H/107)**(1/6)
-        else:
+        elif dive == False:
             gust = ref_gust*(H/107)**(1/6)
+        
         return gust
 
     # CS 22.341 Gust load factors
@@ -107,9 +108,9 @@ class VnDiagram:
                     n_g = max(self.gustload(h,v)[i],sign*1.25*(v/VS1)**2)
             elif v >= self.VB:                              # gustload at altitude and airspeed, interpolating between dive speed (where gust load is halved), and design gust speed.
                 if sign == 1:
-                    n_g = min(np.interp(v,[self.VB,VD],[self.gustload(h,self.VB)[i],self.gustload(h,VD,dive=True)[i]]),sign*1.25*(v/VS1)**2)
+                    n_g = min(np.interp(v,[self.VB,VD],[self.gustload(h,self.VB,dive=False)[i],self.gustload(h,VD,dive=True)[i]]),self.gustload(h,v)[i],sign*1.25*(v/VS1)**2)
                 else:
-                    n_g = max(np.interp(v,[self.VB,VD],[self.gustload(h,self.VB)[i],self.gustload(h,VD,dive=True)[i]]),self.gustload(h,v)[i],sign*1.25*(v/VS1)**2)
+                    n_g = max(np.interp(v,[self.VB,VD],[self.gustload(h,self.VB,dive=False)[i],self.gustload(h,VD,dive=True)[i]]),self.gustload(h,v)[i],sign*1.25*(v/VS1)**2)
 
             else:
                 n_g = 0
@@ -201,7 +202,7 @@ plt.vlines(V[-1],n_min_600[-1],n_max_600[-1],colors=['black'])
 # plt.plot(V,nm_min_500,color='pink',linestyle="dashed")
 # plt.plot(V,ng_max_500,color='grey',linestyle="dashed",label="Gust Loads")
 # plt.plot(V,ng_min_500,color='grey',linestyle="dashed")
-plt.xlabel(f"V [m/s]")
+plt.xlabel(r"$V_{EAS}$ [m/s]")
 plt.ylabel(f'n [-]')
 plt.legend()
 

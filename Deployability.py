@@ -12,7 +12,7 @@ from objects_detailed.Characteristics.Airframe import airframe, fuselage, nacell
 from objects_detailed.Characteristics.Components_Materials import solar_panel
 from Objects.Performance.Endurance import *
 
-solar = solar_panel(0.3*0.98**2*0.94)
+solar_class = solar_panel(0.3*0.98**2*0.94)
 
 
 # Solar Power
@@ -342,18 +342,16 @@ class MissionProfile:
 
         if Energy[-1] > 0.9 * self.E_battery_guess or Energy[-2] > 0.9 * self.E_battery_guess:
             Profile_passed = 1
-        else:
-            Profile_passed = 0
-
-        if Profile_passed == 1:
-            days_passed = (t[-1]+start_time) // (24*60*60)
+            days_passed = (t[-1]) // (24*60*60)
             days_from_solstice = day_of_year + 10 + days_passed
-            time_of_day = t[-1] + start_time - days_passed * 24*60*60
-            print(self.Pavg_cruise,self.E_battery_guess,self.S_solar,self.lat,days_from_solstice,time_of_day)
-            Endurance_class = Endurance(power_consumption=self.Pavg_cruise,init_bat_capacity=self.E_battery_guess,init_bat_charge=90,S=self.S_solar,latitude=self.lat,height=18288,solar_panel=solar,days_from_solstice_start=days_from_solstice,startingtimeofday=time_of_day-time_step)
-            endurance_pass = Endurance_class.compute_endurance(endurance_limit=86400*28,time_step=time_step)
+            time_of_day = t[-1] - days_passed * 24*60*60
+            print(self.Pavg_cruise,90,self.E_battery_guess,self.S_solar,self.lat,18288,solar_class,days_from_solstice,time_of_day-time_step)
+            Endurance_class = Endurance(power_consumption=self.Pavg_cruise,init_bat_charge=90,init_bat_capacity=self.E_battery_guess,S=self.S_solar,latitude=self.lat,height=18288,days_from_solstice_start=days_from_solstice,startingtimeofday=time_of_day-time_step)
+            endurance_pass = Endurance_class.compute_endurance(endurance_limit=86400*2,time_step=1800)
             if not endurance_pass:
                 Profile_passed = 0
+        else:
+            Profile_passed = 0
 
         Energy_capacity = np.ones_like(Energy)*self.E_battery_guess*0.9
         Energy_capacity_min = np.ones_like(Energy)*self.E_battery_guess*0.1
@@ -450,7 +448,7 @@ latitudes = [30,45,60]
 for k in range(len(latitudes)):
     mission_profile = MissionProfile(latitude=latitudes[k], cruise_power_total=cruise_power_total, Propulsion=propulsion,D=D,p_battery_per_motor=CLIMB_BATTERY_PER_MOTOR, solarpower=SolarPower(latitude_deg=latitudes[k]),Aircraft=aircraft_class)
 
-    _, _, _ = mission_profile.climb_profile_init(plot=True,extra_power=0,h_cloud=18500,cloud_cover = 4,day_of_year = day_of_year[0], start_time = time_of_day[0], time_step = dt2)
+    _, _, _ = mission_profile.climb_profile_init(plot=False,extra_power=0,h_cloud=18500,cloud_cover = 4,day_of_year = 350, start_time = 23*3600, time_step = dt2)
 
     for i in range(len(day_of_year)):
         for j in range(len(time_of_day)):
