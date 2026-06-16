@@ -20,9 +20,10 @@ from objects_detailed.Methods.Heat_Management import heat_conduction
 # Note for Stefan: REFACTOR CODE TO FIT NEW FLOW DIAGRAM
 # It can be assumed that the general logic of this class (at least pertaining to airframe sizing) shall not significantly change.
 # Post-implementation note: I was slightly wrong
+# Post-sensitivity-analysis note: Kill me.
 
 class Aircraft:
-    def __init__(self, MTOW_guess=200.0, TAS=25.0, h=18500.0, gamma=0.0, lat=30.0, day_margin=0, DoD=0.8, airframe=airframe(), m_skid=9.15, parasite_mass=0.0, parasite_power=0.0, battery=battery(), solar_panel=solar_panel(), comp=ComputerSystem(), comms=CommunicationSystem(), flight_con=FlightConditionsSystem(), payload=PayloadSystem(), ctrls=ControlSystem(), use_batt=True, energy_delta=0.0):
+    def __init__(self, MTOW_guess=200.0, TAS=25.0, h=18500.0, gamma=0.0, lat=30.0, day_margin=0, DoD=0.8, airframe=airframe(), m_skid=9.15, parasite_mass=0.0, parasite_power=0.0, load_factor=1.5, battery=battery(), solar_panel=solar_panel(), comp=ComputerSystem(), comms=CommunicationSystem(), flight_con=FlightConditionsSystem(), payload=PayloadSystem(), ctrls=ControlSystem(), use_batt=True, energy_delta=0.0):
         self.MTOW = MTOW_guess
         self.const = Constants()
 
@@ -37,6 +38,7 @@ class Aircraft:
         self.solar_panel = solar_panel
 
         self.m_skid = m_skid
+        self.load_factor = load_factor
 
         self.parasite_mass = parasite_mass
         self.parasite_power = parasite_power
@@ -168,9 +170,9 @@ class Aircraft:
     def size_structure(self):
         self.airframe.compute_load_distribution(alpha=self.alpha, TAS=self.TAS_cruise, alt=self.h, res=20)
 
-        I_lift_spar, I_lift_connection = bending_stress_lift(airframe=self.airframe, ult_safety_factor=1.5)
-        I_drag_spar, I_drag_connection = bending_stress_drag(airframe=self.airframe, ult_safety_factor=1.5)
-        t_skin = torsional_stress(airframe=self.airframe, ult_safety_factor=1.5)
+        I_lift_spar, I_lift_connection = bending_stress_lift(airframe=self.airframe, ult_safety_factor=self.load_factor)
+        I_drag_spar, I_drag_connection = bending_stress_drag(airframe=self.airframe, ult_safety_factor=self.load_factor)
+        t_skin = torsional_stress(airframe=self.airframe, ult_safety_factor=self.load_factor)
 
         self.I_xx_spar_req = I_lift_spar
         self.I_yy_spar_req = I_drag_spar
