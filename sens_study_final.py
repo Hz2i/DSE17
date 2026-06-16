@@ -30,7 +30,7 @@ def size_aircraft(added_mass=0.0, added_pow=0.0, batt_en_rho=500.0, solar_eff=0.
     MTOW = MTOW_in
 
     # Compute initial error:
-    AHAPS = Aircraft(MTOW_guess=MTOW, m_skid=m_skid(), load_factor=load_factor, TAS=TAS_initial, gamma=gamma, lat=lat, day_margin=day_margin, DoD=DoD, airframe=planform, use_batt=use_batt, energy_delta=energy_delta)
+    AHAPS = Aircraft(MTOW_guess=MTOW, parasite_mass=added_mass, parasite_power=added_pow, m_skid=m_skid(), load_factor=load_factor, TAS=TAS_initial, gamma=gamma, lat=lat, day_margin=day_margin, DoD=DoD, airframe=planform, use_batt=use_batt, energy_delta=energy_delta, battery=battery_mod, solar_panel=solar_mod)
 
     planform.S = AHAPS.airframe.S
     MTOW_current = AHAPS.pow_store.mass + AHAPS.solar.mass + AHAPS.payload.mass + AHAPS.airframe.m_total + AHAPS.Prop_mass + AHAPS.compute_subsys_mass() + AHAPS.parasite_mass
@@ -49,7 +49,7 @@ def size_aircraft(added_mass=0.0, added_pow=0.0, batt_en_rho=500.0, solar_eff=0.
 
     iterations = 0
     while monitoring_var > tol or iterations < mon_iter:
-        AHAPS = Aircraft(MTOW_guess=MTOW, m_skid=m_skid(), load_factor=load_factor, TAS=TAS_initial, gamma=gamma, lat=lat, day_margin=day_margin, DoD=DoD, airframe=planform, use_batt=use_batt, energy_delta=energy_delta)
+        AHAPS = Aircraft(MTOW_guess=MTOW, parasite_mass=added_mass, parasite_power=added_pow, m_skid=m_skid(), load_factor=load_factor, TAS=TAS_initial, gamma=gamma, lat=lat, day_margin=day_margin, DoD=DoD, airframe=planform, use_batt=use_batt, energy_delta=energy_delta, battery=battery_mod, solar_panel=solar_mod)
 
         MTOW_current = AHAPS.pow_store.mass + AHAPS.solar.mass + AHAPS.payload.mass + AHAPS.airframe.m_total + AHAPS.Prop_mass + AHAPS.compute_subsys_mass() + AHAPS.parasite_mass
 
@@ -96,9 +96,18 @@ def size_aircraft(added_mass=0.0, added_pow=0.0, batt_en_rho=500.0, solar_eff=0.
     return AHAPS.MTOW, AHAPS.airframe.S, AHAPS.airframe.b, AHAPS.Pow_req
 
 
+AHAPS_ID = input("Please input the ID of the results file:")
+FILE_ID = "outputs/sensitivity/" + AHAPS_ID + ".txt"
+out_file = open(FILE_ID, "w")
+
+# Run default:
+MTOW_def, S_def, b_def, pow_def = size_aircraft()
+
+# Run modifications:
+
 default_values = {
-    "MTOW": 319.48,
-    "Power": 3745.5569,
+    "MTOW": MTOW_def,
+    "Power": pow_def,
     "A":20.0,
     "load_factor":1.5,
     "batt_en_rho":500.0,
@@ -116,11 +125,7 @@ modified_values = {
     "twist":-4.675
     }
 
-delta = 0.05
-
-AHAPS_ID = input("Please input the ID of the results file:")
-FILE_ID = "outputs/sensitivity/" + AHAPS_ID + ".txt"
-out_file = open(FILE_ID, "w")
+delta = 0.025
 
 for param in modified_values.keys():
     default = modified_values[param]
@@ -137,10 +142,10 @@ for param in modified_values.keys():
     print("===================================", file=out_file)
     print("+0.05 factor change in:", param, file=out_file)
 
-    print("MTOW effect:", MTOW_new - 319.48, file=out_file)
-    print("Surface area effect:", S_new - 62.9389, file=out_file)
-    print("Total span effect:", b_new - 35.4793, file=out_file)
-    print("Total power consumption effect:", pow_new - 3745.5569, file=out_file)
+    print("MTOW effect:", MTOW_new - MTOW_def, file=out_file)
+    print("Surface area effect:", S_new - S_def, file=out_file)
+    print("Total span effect:", b_new - b_def, file=out_file)
+    print("Total power consumption effect:", pow_new - pow_def, file=out_file)
 
     modified_values[param] = default
 
@@ -157,9 +162,9 @@ for param in modified_values.keys():
     print("___________________________________", file=out_file)
     print("-0.05 factor change in:", param, file=out_file)
 
-    print("MTOW effect:", MTOW_new - 319.48, file=out_file)
-    print("Surface area effect:", S_new - 62.9389, file=out_file)
-    print("Total span effect:", b_new - 35.4793, file=out_file)
-    print("Total power consumption effect:", pow_new - 3745.5569, file=out_file)
+    print("MTOW effect:", MTOW_new - MTOW_def, file=out_file)
+    print("Surface area effect:", S_new - S_def, file=out_file)
+    print("Total span effect:", b_new - b_def, file=out_file)
+    print("Total power consumption effect:", pow_new - pow_def, file=out_file)
 
     modified_values[param] = default
