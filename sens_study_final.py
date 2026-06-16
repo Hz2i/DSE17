@@ -14,7 +14,7 @@ from objects_detailed.Methods.LandingSkids import m_skid
 from objects_detailed.Characteristics.Components_Materials import battery, solar_panel
 
 
-def size_aircraft(added_mass=0.0, added_pow=0.0, added_drag=0.0, batt_en_rho=500.0, solar_eff=0.3, MTOW_in=120.0, S_in=36.0, A=20.0, load_factor=1.5, TAS_initial=25.0, qc_sweep=15.0*np.pi/180.0, taper=1.0, twist=-4.675, tol=5e-3, mon_iter=5, gamma = 0.0, h_cruise = 18500.0, lat = 30.0, day_margin = 0, use_batt = True, energy_delta = 0.0, DoD = 0.8, night_time = 0.0):
+def size_aircraft(added_mass=0.0, added_pow=0.0, added_drag=0.0, batt_en_rho=500.0, solar_eff=0.3, MTOW_in=120.0, S_in=36.0, A=20.0, load_factor=1.26, TAS_initial=25.0, qc_sweep=15.0*np.pi/180.0, taper=1.0, twist=-4.675, tol=5e-3, mon_iter=5, gamma = 0.0, h_cruise = 18500.0, lat = 30.0, day_margin = 0, use_batt = True, energy_delta = 0.0, DoD = 0.8, night_time = 0.0):
     pow_frac_prev = 0.5
     payload_frac_prev = 0.1
     struct_frac_prev = 0.35
@@ -110,7 +110,7 @@ default_values = {
     "Power": pow_def,
     "CD0":CD0_def,
     "A":20.0,
-    "load_factor":1.5,
+    "load_factor":1.26,
     "batt_en_rho":500.0,
     "solar_eff":0.3,
     "twist":-4.675
@@ -121,7 +121,7 @@ modified_values = {
     "added_pow": 0.0,
     "added_drag":0.0,
     "A":20.0,
-    "load_factor":1.5,
+    "load_factor":1.26,
     "batt_en_rho":500.0,
     "solar_eff":0.3,
     "twist":-4.675
@@ -136,7 +136,7 @@ for param in modified_values.keys():
         modified_values[param] = (1.0 + delta) * modified_values[param]
     elif param == "added_mass":
         modified_values[param] = (1.0) * delta * default_values["MTOW"]
-    elif param == "added_mass":
+    elif param == "added_pow":
         modified_values[param] = (1.0) * delta * default_values["Power"]
     else:
         modified_values[param] = (1.0) * delta * default_values["CD0"]
@@ -158,7 +158,7 @@ for param in modified_values.keys():
         modified_values[param] = (1.0 - delta) * modified_values[param]
     elif param == "added_mass":
         modified_values[param] = (-1.0) * delta * default_values["MTOW"]
-    elif param == "added_mass":
+    elif param == "added_pow":
         modified_values[param] = (-1.0) * delta * default_values["Power"]
     else:
         modified_values[param] = (-1.0) * delta * default_values["CD0"]
