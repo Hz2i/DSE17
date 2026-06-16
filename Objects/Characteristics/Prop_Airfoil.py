@@ -7,7 +7,7 @@ from scipy.interpolate import interp1d
 from scipy.optimize import brentq, minimize_scalar
 
 # SPEED + ALTITUDE
-v_inf = 27.6  # Freestream velocity in m/s
+v_inf = 32.7  # Freestream velocity in m/s
 altitude = 18288  # 60,000 ft operating altitude for HAPS
 atmo = asb.Atmosphere(altitude=altitude)
 rho = atmo.density() # (kg/m^3)
@@ -16,10 +16,10 @@ mach_number = v_inf / speed_of_sound
 
 # Propeller Constants
 Nb = 2            # Number of blades
-D = 1.8           # Propeller Diameter (m)
+D = 1.7890472741146266          # Propeller Diameter (m)
 R_abs = D / 2.0   # Tip radius (m)
 
-airfoil_names = ["S1223", "NACA4412", "E387", "SD7037", "FX63137"] 
+airfoil_names = ["SD7037"] 
 
 alphas_sweep = np.linspace(-30, 85, 250)
 
@@ -60,6 +60,7 @@ for name in airfoil_names:
     ct_curve = []
     cp_curve = []
     eta_curve = []
+    thrust_curve = []
 
     for J in lambda_J:
         # Compute the unique rotational speed matching this specific advance ratio
@@ -136,12 +137,14 @@ for name in airfoil_names:
         ct_curve.append(C_T)
         cp_curve.append(C_P)
         eta_curve.append(eta)
+        thrust_curve.append(Total_Thrust)
 
     results[name] = {
         'J': lambda_J,
         'CT': ct_curve,
         'CP': cp_curve,
-        'ETA': eta_curve
+        'ETA': eta_curve,
+        'total_thrust': thrust_curve
     }
 
 
@@ -218,3 +221,5 @@ ax2.tick_params(axis='y', labelcolor='r')
 ax1.tick_params(axis='both', which='major', labelsize=11)
 ax2.tick_params(axis='both', which='major', labelsize=11)
 plt.show()
+
+print(f"Total Thrust for SD7037 at J={results['SD7037']['J'][optimal_idx]:.3f}: {results['SD7037']['total_thrust'][optimal_idx]*4:.2f} N")

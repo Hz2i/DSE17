@@ -6,7 +6,7 @@ import csv
 # ==========================================
 # INPUT PARAMETERS
 # ==========================================
-D_ref = 2.1357*1000   # Reference Diameter in meters
+D_ref = 1.7890472741146266*1000   # Reference Diameter in meters
 beta_07 = 20.5   # Pitch angle at 75% station in degrees 
 
 num_stations = 20
