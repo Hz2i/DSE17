@@ -141,7 +141,7 @@ for param in modified_values.keys():
     else:
         modified_values[param] = (1.0) * delta * default_values["CD0"]
 
-    MTOW_new, S_new, b_new, pow_new = size_aircraft(added_mass=modified_values["added_mass"], added_pow=modified_values["added_pow"], added_drag=modified_values["added_drag"], A=modified_values["A"], load_factor=modified_values["load_factor"], batt_en_rho=modified_values["batt_en_rho"], solar_eff=modified_values["solar_eff"], twist=modified_values["twist"])
+    MTOW_new, S_new, b_new, pow_new,_ = size_aircraft(added_mass=modified_values["added_mass"], added_pow=modified_values["added_pow"], added_drag=modified_values["added_drag"], A=modified_values["A"], load_factor=modified_values["load_factor"], batt_en_rho=modified_values["batt_en_rho"], solar_eff=modified_values["solar_eff"], twist=modified_values["twist"])
 
     print("===================================", file=out_file)
     print("+0.025 factor change in:", param, file=out_file)
@@ -163,7 +163,7 @@ for param in modified_values.keys():
     else:
         modified_values[param] = (-1.0) * delta * default_values["CD0"]
 
-    MTOW_new, S_new, b_new, pow_new = size_aircraft(added_mass=modified_values["added_mass"], added_pow=modified_values["added_pow"], added_drag=modified_values["added_drag"], A=modified_values["A"], load_factor=modified_values["load_factor"], batt_en_rho=modified_values["batt_en_rho"], solar_eff=modified_values["solar_eff"], twist=modified_values["twist"])
+    MTOW_new, S_new, b_new, pow_new,_ = size_aircraft(added_mass=modified_values["added_mass"], added_pow=modified_values["added_pow"], added_drag=modified_values["added_drag"], A=modified_values["A"], load_factor=modified_values["load_factor"], batt_en_rho=modified_values["batt_en_rho"], solar_eff=modified_values["solar_eff"], twist=modified_values["twist"])
 
     print("___________________________________", file=out_file)
     print("-0.025 factor change in:", param, file=out_file)
