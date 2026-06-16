@@ -103,7 +103,7 @@ default_values = {
     "load_factor":1.5,
     "batt_en_rho":500.0,
     "solar_eff":0.3,
-    "twist":0.675
+    "twist":-4.675
     }
 
 modified_values = {
@@ -113,7 +113,7 @@ modified_values = {
     "load_factor":1.5,
     "batt_en_rho":500.0,
     "solar_eff":0.3,
-    "twist":0.675
+    "twist":-4.675
     }
 
 delta = 0.05
@@ -125,14 +125,14 @@ out_file = open(FILE_ID, "w")
 for param in modified_values.keys():
     default = modified_values[param]
 
-    if ~(param == "added_mass") and ~(param == "added_pow"):
+    if param != "added_mass" and param != "added_pow":
         modified_values[param] = (1.0 + delta) * modified_values[param]
     elif param == "added_mass":
         modified_values[param] = (1.0) * delta * default_values["MTOW"]
     else:
         modified_values[param] = (1.0) * delta * default_values["Power"]
 
-    MTOW_new, S_new, b_new, pow_new = size_aircraft(added_mass=modified_values["added_mass"], added_pow=modified_values["added_pow"], A=modified_values["A"], load_factor=modified_values["load_factor"], batt_en_rho=modified_values["batt_en_rho"], solar_eff=modified_values["solar_eff"], taper=modified_values["taper"], twist=modified_values["twist"])
+    MTOW_new, S_new, b_new, pow_new = size_aircraft(added_mass=modified_values["added_mass"], added_pow=modified_values["added_pow"], A=modified_values["A"], load_factor=modified_values["load_factor"], batt_en_rho=modified_values["batt_en_rho"], solar_eff=modified_values["solar_eff"], twist=modified_values["twist"])
 
     print("===================================", file=out_file)
     print("+0.05 factor change in:", param, file=out_file)
@@ -145,14 +145,14 @@ for param in modified_values.keys():
     modified_values[param] = default
 
 
-    if ~(param == "added_mass") and ~(param == "added_pow"):
+    if param != "added_mass" and param != "added_pow":
         modified_values[param] = (1.0 - delta) * modified_values[param]
     elif param == "added_mass":
         modified_values[param] = (-1.0) * delta * default_values["MTOW"]
     else:
         modified_values[param] = (-1.0) * delta * default_values["Power"]
 
-    MTOW_new, S_new, b_new, pow_new = size_aircraft(added_mass=modified_values["added_mass"], added_pow=modified_values["added_pow"], A=modified_values["A"], load_factor=modified_values["load_factor"], batt_en_rho=modified_values["batt_en_rho"], solar_eff=modified_values["solar_eff"], taper=modified_values["taper"], twist=modified_values["twist"])
+    MTOW_new, S_new, b_new, pow_new = size_aircraft(added_mass=modified_values["added_mass"], added_pow=modified_values["added_pow"], A=modified_values["A"], load_factor=modified_values["load_factor"], batt_en_rho=modified_values["batt_en_rho"], solar_eff=modified_values["solar_eff"], twist=modified_values["twist"])
 
     print("___________________________________", file=out_file)
     print("-0.05 factor change in:", param, file=out_file)
