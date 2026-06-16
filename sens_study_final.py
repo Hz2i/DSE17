@@ -14,7 +14,7 @@ from objects_detailed.Methods.LandingSkids import m_skid
 from objects_detailed.Characteristics.Components_Materials import battery, solar_panel
 
 
-def size_aircraft(added_mass=0.0, added_pow=0.0, batt_en_rho=500.0, solar_eff=0.3, MTOW_in=120.0, S_in=36.0, A=20.0, load_factor=1.5, TAS_initial=25.0, qc_sweep=15.0*np.pi/180.0, taper=1.0, twist=-4.675, tol=5e-3, mon_iter=5, gamma = 0.0, h_cruise = 18500.0, lat = 30.0, day_margin = 0, use_batt = True, energy_delta = 0.0, DoD = 0.8, night_time = 0.0):
+def size_aircraft(added_mass=0.0, added_pow=0.0, added_drag=0.0, batt_en_rho=500.0, solar_eff=0.3, MTOW_in=120.0, S_in=36.0, A=20.0, load_factor=1.5, TAS_initial=25.0, qc_sweep=15.0*np.pi/180.0, taper=1.0, twist=-4.675, tol=5e-3, mon_iter=5, gamma = 0.0, h_cruise = 18500.0, lat = 30.0, day_margin = 0, use_batt = True, energy_delta = 0.0, DoD = 0.8, night_time = 0.0):
     pow_frac_prev = 0.5
     payload_frac_prev = 0.1
     struct_frac_prev = 0.35
@@ -25,7 +25,7 @@ def size_aircraft(added_mass=0.0, added_pow=0.0, batt_en_rho=500.0, solar_eff=0.
 
     fus_geo = fuselage(D=0.0, L1=0.0, L2=0.0, L3=0.0)
     nac_geo = nacelles(nr_of_engines=0, pos=[])
-    planform = airframe(S=S_in, A=A, qc_sweep=qc_sweep, taper=taper, dihedral=0.0*np.pi/180.0, twist=twist, winglet_h=2.1, fus=fus_geo, nac=nac_geo, display=False, init_polar=True)
+    planform = airframe(S=S_in, A=A, qc_sweep=qc_sweep, added_drag=added_drag, taper=taper, dihedral=0.0*np.pi/180.0, twist=twist, winglet_h=2.1, fus=fus_geo, nac=nac_geo, display=False, init_polar=True)
 
     MTOW = MTOW_in
 
@@ -93,7 +93,7 @@ def size_aircraft(added_mass=0.0, added_pow=0.0, batt_en_rho=500.0, solar_eff=0.
         print("Current general subsystem mass fraction estimate:", gen_subsys_frac)
         print("___________________________________")
 
-    return AHAPS.MTOW, AHAPS.airframe.S, AHAPS.airframe.b, AHAPS.Pow_req
+    return AHAPS.MTOW, AHAPS.airframe.S, AHAPS.airframe.b, AHAPS.Pow_req, AHAPS.airframe.CD0
 
 
 AHAPS_ID = input("Please input the ID of the results file:")
@@ -101,13 +101,14 @@ FILE_ID = "outputs/sensitivity/" + AHAPS_ID + ".txt"
 out_file = open(FILE_ID, "w")
 
 # Run default:
-MTOW_def, S_def, b_def, pow_def = size_aircraft()
+MTOW_def, S_def, b_def, pow_def, CD0_def = size_aircraft()
 
 # Run modifications:
 
 default_values = {
     "MTOW": MTOW_def,
     "Power": pow_def,
+    "CD0":CD0_def,
     "A":20.0,
     "load_factor":1.5,
     "batt_en_rho":500.0,
@@ -118,6 +119,7 @@ default_values = {
 modified_values = {
     "added_mass": 0.0,
     "added_pow": 0.0,
+    "added_drag":0.0,
     "A":20.0,
     "load_factor":1.5,
     "batt_en_rho":500.0,
@@ -130,17 +132,19 @@ delta = 0.025
 for param in modified_values.keys():
     default = modified_values[param]
 
-    if param != "added_mass" and param != "added_pow":
+    if param != "added_mass" and param != "added_pow" and param != "added_drag":
         modified_values[param] = (1.0 + delta) * modified_values[param]
     elif param == "added_mass":
         modified_values[param] = (1.0) * delta * default_values["MTOW"]
-    else:
+    elif param == "added_mass":
         modified_values[param] = (1.0) * delta * default_values["Power"]
+    else:
+        modified_values[param] = (1.0) * delta * default_values["CD0"]
 
-    MTOW_new, S_new, b_new, pow_new = size_aircraft(added_mass=modified_values["added_mass"], added_pow=modified_values["added_pow"], A=modified_values["A"], load_factor=modified_values["load_factor"], batt_en_rho=modified_values["batt_en_rho"], solar_eff=modified_values["solar_eff"], twist=modified_values["twist"])
+    MTOW_new, S_new, b_new, pow_new = size_aircraft(added_mass=modified_values["added_mass"], added_pow=modified_values["added_pow"], added_drag=modified_values["added_drag"], A=modified_values["A"], load_factor=modified_values["load_factor"], batt_en_rho=modified_values["batt_en_rho"], solar_eff=modified_values["solar_eff"], twist=modified_values["twist"])
 
     print("===================================", file=out_file)
-    print("+0.05 factor change in:", param, file=out_file)
+    print("+0.025 factor change in:", param, file=out_file)
 
     print("MTOW effect:", MTOW_new - MTOW_def, file=out_file)
     print("Surface area effect:", S_new - S_def, file=out_file)
@@ -154,13 +158,15 @@ for param in modified_values.keys():
         modified_values[param] = (1.0 - delta) * modified_values[param]
     elif param == "added_mass":
         modified_values[param] = (-1.0) * delta * default_values["MTOW"]
-    else:
+    elif param == "added_mass":
         modified_values[param] = (-1.0) * delta * default_values["Power"]
+    else:
+        modified_values[param] = (-1.0) * delta * default_values["CD0"]
 
-    MTOW_new, S_new, b_new, pow_new = size_aircraft(added_mass=modified_values["added_mass"], added_pow=modified_values["added_pow"], A=modified_values["A"], load_factor=modified_values["load_factor"], batt_en_rho=modified_values["batt_en_rho"], solar_eff=modified_values["solar_eff"], twist=modified_values["twist"])
+    MTOW_new, S_new, b_new, pow_new = size_aircraft(added_mass=modified_values["added_mass"], added_pow=modified_values["added_pow"], added_drag=modified_values["added_drag"], A=modified_values["A"], load_factor=modified_values["load_factor"], batt_en_rho=modified_values["batt_en_rho"], solar_eff=modified_values["solar_eff"], twist=modified_values["twist"])
 
     print("___________________________________", file=out_file)
-    print("-0.05 factor change in:", param, file=out_file)
+    print("-0.025 factor change in:", param, file=out_file)
 
     print("MTOW effect:", MTOW_new - MTOW_def, file=out_file)
     print("Surface area effect:", S_new - S_def, file=out_file)
