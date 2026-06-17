@@ -23,7 +23,7 @@ from objects_detailed.Methods.Heat_Management import heat_conduction
 # Post-sensitivity-analysis note: Kill me.
 
 class Aircraft:
-    def __init__(self, MTOW_guess=200.0, TAS=25.0, h=18500.0, gamma=0.0, lat=30.0, day_margin=0, DoD=0.8, airframe=airframe(), m_skid=9.15, parasite_mass=0.0, parasite_power=0.0, load_factor=1.5, battery=battery(), solar_panel=solar_panel(), comp=ComputerSystem(), comms=CommunicationSystem(), flight_con=FlightConditionsSystem(), payload=PayloadSystem(), ctrls=ControlSystem(), use_batt=True, energy_delta=0.0):
+    def __init__(self, MTOW_guess=200.0, TAS=25.0, h=18500.0, gamma=0.0, lat=30.0, day_margin=0, DoD=0.8, airframe=airframe(), m_skid=9.15, parasite_mass=0.0, parasite_power=0.0, load_factor=1.26, battery=battery(), solar_panel=solar_panel(), comp=ComputerSystem(), comms=CommunicationSystem(), flight_con=FlightConditionsSystem(), payload=PayloadSystem(), ctrls=ControlSystem(), use_batt=True, energy_delta=0.0):
         self.MTOW = MTOW_guess
         self.const = Constants()
 

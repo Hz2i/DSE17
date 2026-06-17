@@ -20,13 +20,13 @@ struct_frac_prev = 0.35
 gen_subsys_frac_prev = 0.05
 
 
-MTOW_initial = 120.0
+MTOW_initial = 300.0
 TAS_initial = 25.0
 gamma = 0.0
 h_cruise = 18500.0
 lat = 30.0
 day_margin = 0
-use_batt = TrueY
+use_batt = True
 energy_delta = 0.0
 DoD = 0.8
 night_time = 0.0

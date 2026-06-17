@@ -252,12 +252,13 @@ class airframe:
         self.CL_CD_max = CL_CD_data[np.argmax(CL_CD_data)]
 
         if plot:
-            plt.scatter(CL_data, CD_data)
-            plt.plot(CL_data, self.CD0 + self.K1*CL_data + self.K2*CL_data**2, c='r')
-            plt.scatter(CL_data_vlm, CD_data_vlm, c="g")
+            plt.scatter(CL_data, CD_data, label="LLT Operating Points")
+            plt.plot(CL_data, self.CD0 + self.K1*CL_data + self.K2*CL_data**2, c='r', label="Polynomial Fit")
+            plt.scatter(CL_data_vlm, CD_data_vlm, c="g", label="VLM Operating Points")
             plt.xlabel("Lift Coefficient")
             plt.ylabel("Drag Coefficient")
-            plt.title("drag Polar")
+            plt.title("Drag Polar")
+            plt.legend()
             plt.show()
 
 
