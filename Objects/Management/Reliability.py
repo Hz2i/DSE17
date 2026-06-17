@@ -6,29 +6,41 @@ t = 672  # 28 days
 
 # -------- MTBF VALUES (EDIT THESE) --------
 # MTBF = {
-#     "airframe": 733.43,
-#     "power": 1315.5,
-#     "engine": 1315.5,
-#     "control": 4134.9,
-#     "computer": 1315.5,
-#     "fcs": 1315.5,
-#     "comms": 1315.5,
-#     "payload": 134063.7,
-#     "undercarriage": 4134.9,
-#     "thermal": 4134.9
+#     "airframe": 10 * 733.43,
+#     "power": 10 * 1315.5,
+#     "engine": 10 * 1315.5,
+#     "control": 10 * 4134.9,
+#     "computer": 10 * 1315.5,
+#     "fcs": 10 * 1315.5,
+#     "comms": 10 * 1315.5,
+#     "payload": 10 * 134063.7,
+#     "undercarriage": 10 * 4134.9,
+#     "thermal": 10 * 4134.9
 # }
 MTBF = {
-    "airframe": 4134.9,
-    "power": 4134.9,
-    "engine": 134063.7,
-    "control": 4134.9,
-    "computer": 4134.9,
-    "fcs": 134063.7,
-    "comms": 134063.7,
-    "payload": 134063.7,
-    "undercarriage": 4134.9,
-    "thermal": 4134.9
+    "airframe": 10 * 4134.9,
+    "power": 10 * 4134.9,
+    "engine": 10 * 134063.7,
+    "control": 10 * 4134.9,
+    "computer": 10 * 4134.9,
+    "fcs": 10 * 134063.7,
+    "comms": 10 * 134063.7,
+    "payload": 10 * 134063.7,
+    "undercarriage": 10 * 4134.9,
+    "thermal": 10 * 4134.9
 }
+# MTBF = {
+#     "airframe": 40000,
+#     "power": 40000,
+#     "engine": 40000,
+#     "control": 40000,
+#     "computer": 40000,
+#     "fcs": 40000,
+#     "comms": 40000,
+#     "payload": 40000,
+#     "undercarriage": 40000,
+#     "thermal": 40000
+# }
 
 # -------- BASIC RELIABILITY FUNCTION --------
 def reliability(mtbf, t):
@@ -41,7 +53,7 @@ def parallel_2(R1, R2):
 # -------- PROPULSION (2-out-of-4) --------
 def propulsion_reliability(R_engine):
     R = 0
-    for i in range(2, 5):
+    for i in range(3, 5):
         R += comb(4, i) * (R_engine**i) * ((1 - R_engine)**(4 - i))
     return R
 
