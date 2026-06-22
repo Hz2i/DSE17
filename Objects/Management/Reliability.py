@@ -5,30 +5,30 @@ from math import comb
 t = 672  # 28 days
 
 # -------- MTBF VALUES (EDIT THESE) --------
-# MTBF = {
-#     "airframe": 10 * 733.43,
-#     "power": 10 * 1315.5,
-#     "engine": 10 * 1315.5,
-#     "control": 10 * 4134.9,
-#     "computer": 10 * 1315.5,
-#     "fcs": 10 * 1315.5,
-#     "comms": 10 * 1315.5,
-#     "payload": 10 * 134063.7,
-#     "undercarriage": 10 * 4134.9,
-#     "thermal": 10 * 4134.9
-# }
 MTBF = {
-    "airframe": 10 * 4134.9,
-    "power": 10 * 4134.9,
-    "engine": 10 * 134063.7,
+    "airframe": 10 * 733.43,
+    "power": 10 * 1315.5,
+    "engine": 10 * 1315.5,
     "control": 10 * 4134.9,
-    "computer": 10 * 4134.9,
-    "fcs": 10 * 134063.7,
-    "comms": 10 * 134063.7,
+    "computer": 10 * 1315.5,
+    "fcs": 10 * 1315.5,
+    "comms": 10 * 1315.5,
     "payload": 10 * 134063.7,
     "undercarriage": 10 * 4134.9,
     "thermal": 10 * 4134.9
 }
+# MTBF = {
+#     "airframe": 10 * 4134.9,
+#     "power": 10 * 4134.9,
+#     "engine": 10 * 134063.7,
+#     "control": 10 * 4134.9,
+#     "computer": 10 * 4134.9,
+#     "fcs": 10 * 134063.7,
+#     "comms": 10 * 134063.7,
+#     "payload": 10 * 134063.7,
+#     "undercarriage": 10 * 4134.9,
+#     "thermal": 10 * 4134.9
+# }
 # MTBF = {
 #     "airframe": 40000,
 #     "power": 40000,
@@ -50,7 +50,7 @@ def reliability(mtbf, t):
 def parallel_2(R1, R2):
     return 1 - (1 - R1) * (1 - R2)
 
-# -------- PROPULSION (2-out-of-4) --------
+# -------- PROPULSION (3-out-of-4) --------
 def propulsion_reliability(R_engine):
     R = 0
     for i in range(3, 5):
@@ -107,6 +107,16 @@ R_total = (
     R_comms
 )
 
+R_aircraft = (
+    R_airframe *
+    R_power *
+    R_computer *
+    R_prop *
+    R_control *
+    R_fcs *
+    R_undercarriage *
+    R_thermal
+)
 # -------- OUTPUT --------
 print("Subsystem reliabilities:")
 print(f"Airframe: {R_airframe:.4f}")
@@ -122,3 +132,4 @@ print(f"Thermal: {R_thermal:.4f}")
 
 print("\nTotal system reliability:")
 print(f"R_total = {R_total:.4f}")
+print(f"R_aircraft (excluding payload and comms) = {R_aircraft:.4f}")

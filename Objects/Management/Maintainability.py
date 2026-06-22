@@ -15,7 +15,9 @@ durations = {
 }
 
 # -------- CHECK INTERVALS --------
-A_times = np.arange(0, total_years, 0.324)   # every 500 flight hours (~0.057 yr)
+# step = 0.324
+# A_times = step * np.arange(0, int(total_years / step))
+A_times = np.arange(0, total_years, 0.324)   # every 500 flight hours
 B_times = np.arange(0, total_years, 0.6)          # ~6–8 months
 C_times = np.arange(0, total_years, 1.8)            # every 2 years
 D_times = np.arange(0, total_years, 7)            # every 7 years
@@ -24,8 +26,9 @@ D_times = np.arange(0, total_years, 7)            # every 7 years
 plt.figure(figsize=(12, 3))
 
 # A checks
-for t in A_times:
-    plt.barh(0.0, durations["A"], left=t, color="black", alpha=1, label="A check" if t == 0 else "")
+# for t in A_times:
+#     plt.barh(0.0, durations["A"], left=t, color="black", alpha=1, label="A check" if t == 0 else "")
+plt.vlines(A_times, ymin=-0.4, ymax=0.4, color="black", linewidth=1, label="A check")
 
 # B checks
 for t in B_times:
