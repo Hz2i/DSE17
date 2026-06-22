@@ -43,12 +43,14 @@ for t in D_times:
     plt.barh(0.0, durations["D"], left=t, color="red", alpha=1, label="D check" if t == 0 else "")
 
 # Labels
-plt.xlabel("Time [years]")
-plt.title("Maintenance Schedule with Duration")
-plt.legend(loc="upper right")
+plt.xlabel("Time [years]", fontsize=18)
+#plt.title("Maintenance Schedule with Duration", fontsize=14)
+#plt.legend(loc="upper right")
 
 plt.xlim(0, total_years)
-plt.grid(True, axis='x', linestyle='--', alpha=0.5)
+plt.xticks(np.arange(0, total_years + 1, 1), fontsize=16)
+plt.yticks([])  # Hide y-axis ticks
+#plt.grid(True, axis='x', linestyle='--', alpha=0.5)
 
 plt.tight_layout()
 plt.show()
